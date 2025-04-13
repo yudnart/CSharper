@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>CSharpStarter</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Duy Tran</Authors>
+    <Description>A C# library providing common types and services (Mediator, Results, Extensions, etc.) to help developers quickly start building applications.</Description>
+    <RepositoryUrl>https://github.com/YourUsername/CSharpStarter</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>csharp;mediator;result;functional;app-development</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+</Project>
