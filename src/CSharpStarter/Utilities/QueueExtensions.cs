@@ -4,10 +4,9 @@ using System.Collections.Generic;
 namespace CSharpStarter.Utilities;
 
 /// <summary>
-/// Provides internal extension methods for <see cref="Queue{T}"/> to support additional functionality
-/// in .NET Standard 2.0 and compatible frameworks.
+/// Provides internal extension methods for <see cref="Queue{T}"/> to support additional dequeuing functionality.
 /// </summary>
-public static class QueueExtensions
+internal static class QueueExtensions
 {
     /// <summary>
     /// Attempts to dequeue an item from the queue, returning a boolean indicating success.
@@ -16,20 +15,21 @@ public static class QueueExtensions
     /// <param name="queue">The queue to dequeue from.</param>
     /// <param name="result">When this method returns, contains the dequeued item if successful,
     /// or the default value for <typeparamref name="T"/> if the queue is empty.</param>
-    /// <returns><c>true</c> if an item was dequeued; otherwise, <c>false</c> if the queue was empty.</returns>
+    /// <returns><c>true</c> if an item was dequeued; otherwise, <c>false</c> if the queue is empty.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="queue"/> is null.</exception>
     /// <remarks>
-    /// This method is necessary for .NET Standard 2.0 compatibility, where <see cref="Queue{T}"/>
-    /// does not provide a native <c>TryDequeue</c> method. It enables safe dequeuing without
-    /// exceptions for empty queues and is used internally. This method is not
-    /// thread-safe; use synchronization for concurrent access.
+    /// This method provides compatibility for .NET Standard 2.0, where the native
+    /// <see cref="Queue{T}.TryDequeue"/> method is unavailable. In .NET 8.0 and later,
+    /// it delegates to the native method for optimal performance. Used internally,
+    /// for example, in event processing. This method is not thread-safe; synchronize
+    /// access for concurrent scenarios.
     /// </remarks>
-    public static bool TryDequeue<T>(this Queue<T> queue, out T? result)
+    public static bool TryDequeueCommon<T>(this Queue<T> queue, out T? result)
     {
-        if (queue == null)
-        {
-            throw new ArgumentNullException(nameof(queue));
-        }
+#if NET8_0_OR_GREATER
+        return queue.TryDequeue(out result);
+#else
+        queue.ThrowIfNull(nameof(queue));
 
         if (queue.Count == 0)
         {
@@ -39,5 +39,6 @@ public static class QueueExtensions
 
         result = queue.Dequeue();
         return true;
+#endif
     }
 }

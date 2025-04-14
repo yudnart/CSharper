@@ -99,7 +99,7 @@ public abstract class Entity<TId>
     /// <returns>An enumerable of domain events.</returns>
     public IEnumerable<DomainEvent> FlushDomainEvents()
     {
-        while (_domainEvents.TryDequeue(out DomainEvent? result))
+        while (_domainEvents.TryDequeueCommon(out DomainEvent? result))
         {
             yield return result!;
         }
