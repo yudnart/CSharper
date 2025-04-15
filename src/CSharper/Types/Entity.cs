@@ -152,7 +152,7 @@ public abstract class Entity<TId>
     /// <returns>
     /// <c>true</c> if the specified object is equal to the current object; otherwise, <c>false</c>.
     /// </returns>
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is not Entity<TId> other)
         {

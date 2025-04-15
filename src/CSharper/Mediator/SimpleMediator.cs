@@ -1,5 +1,6 @@
 ﻿using CSharper.Functional;
 using CSharper.Results;
+using CSharper.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Concurrent;
@@ -48,7 +49,7 @@ internal sealed class SimpleMediator : IMediator
     /// <inheritdoc />
     public Task<Result> Send(IRequest request, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        request.ThrowIfNull(nameof(request));
         return ExecutePipeline(request, cancellationToken);
     }
 
@@ -56,7 +57,7 @@ internal sealed class SimpleMediator : IMediator
     public Task<Result<TValue>> Send<TValue>(
         IRequest<TValue> request, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        request.ThrowIfNull(nameof(request));
         return ExecutePipeline(request, cancellationToken);
     }
 

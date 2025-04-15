@@ -70,8 +70,8 @@ public class SimpleMediatorTests
     public async Task Send_NoBehaviorsNoHandler_ThrowsInvalidOperationException()
     {
         // Arrange
-        _serviceProviderMock.Setup(sp => sp.GetService(It.IsAny<Type>())).Returns(null);
-        SimpleMediator sut = new(_serviceProviderMock.Object, new IBehavior[0]);
+        _serviceProviderMock.Setup(sp => sp.GetService(It.IsAny<Type>())).Returns(null!);
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
         TestRequest request = new();
 
         // Act & Assert
@@ -82,7 +82,7 @@ public class SimpleMediatorTests
     public async Task SendTValue_NoBehaviorsNoHandler_ThrowsInvalidOperationException()
     {
         // Arrange
-        _serviceProviderMock.Setup(sp => sp.GetService(It.IsAny<Type>())).Returns(null);
+        _serviceProviderMock.Setup(sp => sp.GetService(It.IsAny<Type>())).Returns(null!);
         SimpleMediator sut = new(_serviceProviderMock.Object, new IBehavior[0]);
         TestRequest<string> request = new();
 
