@@ -1,6 +1,6 @@
 # CSharper
 
-CSharper is a C# class library distributed as a NuGet package, targeting .NET Standard 2.0 and .NET 8.0. It provides common types and services, such as Mediator, Results, and functional extensions, to help developers quickly build robust .NET applications. Currently in its early stages, CSharper is designed to streamline development with reusable, well-structured utilities.
+CSharper is a C# class library distributed as the [`dht.csharper` NuGet package](https://www.nuget.org/packages/dht.csharper), targeting .NET Standard 2.0 and .NET 8.0. It provides common types and services, such as Mediator, Results, and functional extensions, to help developers quickly build robust .NET applications. Currently in its early stages, CSharper is designed to streamline development with reusable, well-structured utilities.
 
 ## Features
 
@@ -18,35 +18,19 @@ CSharper is a C# class library distributed as a NuGet package, targeting .NET St
 
 ### Installation
 
-CSharper is not yet published to NuGet, but you can build and use it locally:
+CSharper is available as the `dht.csharper` NuGet package. To install it in your project:
 
-1. **Clone the repository**:
+1. Run the following command in your project directory:
    ```bash
-   git clone https://github.com/yudnart/CSharper.git
-   cd CSharper
+   dotnet add package dht.csharper
    ```
-
-2. **Build the library**:
-   ```bash
-   dotnet build
+2. Alternatively, use the Package Manager Console in Visual Studio:
+   ```powershell
+   Install-Package dht.csharper
    ```
+3. Or, add it via your IDE’s package manager (e.g., Visual Studio, Rider).
 
-3. **Create a NuGet package**:
-   ```bash
-   dotnet pack -c Release
-   ```
-
-   The package will be in `src/CSharper/bin/Release`.
-
-4. **Add to your project**:
-   - Install the local NuGet package:
-     ```bash
-     dotnet add package CSharper --source ./src/CSharper/bin/Release
-     ```
-   - Or reference the project directly:
-     ```bash
-     dotnet add reference ./src/CSharper/CSharper.csproj
-     ```
+For package details, see [dht.csharper on NuGet](https://www.nuget.org/packages/dht.csharper).
 
 ### Usage
 
@@ -87,10 +71,7 @@ CSharper supports:
 ## Roadmap
 
 CSharper will expand to include:
-- Mediator pattern implementation.
-- Result and Option types for functional error handling.
-- Extensions for common tasks (e.g., LINQ utilities, string manipulation).
-- XML documentation for all public APIs.
+- TBD
 
 ## Contributing
 

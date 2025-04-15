@@ -33,7 +33,8 @@ public abstract class Entity<TId>
     /// </returns>
     public virtual bool IsTransient()
     {
-        return Id is null || Id.Equals(default(TId));
+        return Id is null || Id.Equals(default(TId))
+            || (Id is string idStr && string.IsNullOrWhiteSpace(idStr));
     }
 
     #region Metadata
