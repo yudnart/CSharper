@@ -4,11 +4,11 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <AssemblyName>$(MSBuildProjectName)</AssemblyName>
-    <PackageId>CSharpStarter</PackageId>
+    <PackageId>CSharper</PackageId>
     <Version>1.0.0</Version>
     <Authors>Duy Tran</Authors>
     <Description>A C# library providing common types and services (Mediator, Results, Extensions, etc.) to help developers quickly start building applications.</Description>
-    <RepositoryUrl>https://github.com/yudnart/CSharpStarter</RepositoryUrl>
+    <RepositoryUrl>https://github.com/yudnart/CSharper</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>csharp;mediator;result;functional;app-development</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
