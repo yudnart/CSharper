@@ -15,7 +15,7 @@ public static class MediatorModule
     /// <param name="services">The <see cref="IServiceCollection"/> to add the mediator service to.</param>
     /// <returns>The same <see cref="IServiceCollection"/> instance for chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="services"/> is null.</exception>
-    public static IServiceCollection AddMediator(this IServiceCollection services)
+    public static IServiceCollection AddSimpleMediator(this IServiceCollection services)
     {
         services.ThrowIfNull(nameof(services));
         services.AddScoped<IMediator, SimpleMediator>();

@@ -17,7 +17,10 @@ namespace CSharpStarter.Mediator;
 /// <remarks>
 /// This class uses the mediator pattern to decouple request initiation from processing, supporting
 /// both global and request-specific behaviors (e.g., logging, validation) before invoking a handler.
-/// It leverages dependency injection and caching for performance.
+/// Global behaviors execute in registration order (first registered executes first), followed by
+/// request-specific behaviors in registration order, then the handler. It optimizes performance by
+/// caching handler types and method information, assuming the mediator is scoped to handle
+/// dependencies like the application context correctly.
 /// </remarks>
 internal sealed class SimpleMediator : IMediator
 {
@@ -25,37 +28,36 @@ internal sealed class SimpleMediator : IMediator
     private const string HANDLE_NOT_FOUND_ERROR_FORMAT = "Handle method not found on handler type {0}";
 
     private readonly IServiceProvider _serviceProvider;
-    private readonly ConcurrentDictionary<Type, (object Handler, MethodInfo HandleMethod)> _handlerCache = new();
-    private readonly IReadOnlyCollection<IBehavior<IRequest>> _globalBehaviors;
-    private readonly ConcurrentDictionary<Type, IReadOnlyList<IBehavior<IRequest>>> _specificBehaviorCache = new();
+    private readonly IBehavior<IRequest>[] _globalBehaviors;
+    private readonly ConcurrentDictionary<Type, (Type HandlerType, MethodInfo HandleMethod)> _handlerCache = new();
+    private readonly ConcurrentDictionary<Type, Func<IServiceProvider, IBehavior<IRequest>[]>> _behaviorFactoryCache = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Mediator"/> class.
+    /// Initializes a new instance of the <see cref="SimpleMediator"/> class.
     /// </summary>
-    /// <param name="serviceProvider">The service provider for resolving dependencies.</param>
-    /// <param name="globalBehaviors">The global behaviors to apply to all requests.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceProvider"/> or <paramref name="globalBehaviors"/> is null.</exception>
+    /// <param name="serviceProvider">The scoped service provider for resolving dependencies.</param>
+    /// <param name="globalBehaviors">The global behaviors to apply to all requests, in registration order.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceProvider"/> is null.</exception>
     public SimpleMediator(IServiceProvider serviceProvider, IEnumerable<IBehavior> globalBehaviors)
     {
         _serviceProvider = serviceProvider
             ?? throw new ArgumentNullException(nameof(serviceProvider));
-        _globalBehaviors = globalBehaviors?.ToList().AsReadOnly()
-            ?? throw new ArgumentNullException(nameof(globalBehaviors));
+        _globalBehaviors = globalBehaviors?.ToArray() ?? [];
     }
 
     /// <inheritdoc />
-    public async Task<Result> Send(IRequest request, CancellationToken cancellationToken = default)
+    public Task<Result> Send(IRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        return await ExecutePipeline(request, cancellationToken);
+        return ExecutePipeline(request, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<Result<TValue>> Send<TValue>(
+    public Task<Result<TValue>> Send<TValue>(
         IRequest<TValue> request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        return await ExecutePipeline(request, cancellationToken);
+        return ExecutePipeline(request, cancellationToken);
     }
 
     #region Internal
@@ -66,17 +68,24 @@ internal sealed class SimpleMediator : IMediator
     /// <param name="request">The request to process.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A task yielding the result of the pipeline execution.</returns>
-    private Task<Result> ExecutePipeline(IRequest request, CancellationToken cancellationToken)
+    private async Task<Result> ExecutePipeline(IRequest request, CancellationToken cancellationToken)
     {
-        IEnumerable<IBehavior<IRequest>> behaviors = [.. _globalBehaviors, .. ResolveBehaviors(request)];
-        BehaviorDelegate next = Handle;
-        foreach (IBehavior<IRequest> behavior in behaviors.Reverse())
+        IBehavior<IRequest>[] behaviors = [.. _globalBehaviors, .. ResolveBehaviors(request)];
+        if (behaviors.Length == 0)
         {
-            BehaviorDelegate previous = next;
-            next = (req, ct) => behavior.Handle(req, previous, ct);
+            return await Handle(request, cancellationToken);
         }
 
-        return next(request, cancellationToken);
+        async Task<Result> Execute(int index, IRequest req, CancellationToken ct)
+        {
+            if (index >= behaviors.Length)
+            {
+                return await Handle(req, ct);
+            }
+            return await behaviors[index].Handle(req, (r, c) => Execute(index + 1, r, c), ct);
+        }
+
+        return await Execute(0, request, cancellationToken);
     }
 
     /// <summary>
@@ -86,51 +95,47 @@ internal sealed class SimpleMediator : IMediator
     /// <param name="request">The request to process.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A task yielding the result of the pipeline execution, including the value.</returns>
-    private Task<Result<TValue>> ExecutePipeline<TValue>(
+    private async Task<Result<TValue>> ExecutePipeline<TValue>(
         IRequest<TValue> request, CancellationToken cancellationToken)
     {
-        IEnumerable<IBehavior<IRequest>> behaviors = [.. _globalBehaviors, .. ResolveBehaviors(request)];
-
-        Result<TValue> result = null!;
-        BehaviorDelegate next = (req, ct) =>
+        IBehavior<IRequest>[] behaviors = [.. _globalBehaviors, .. ResolveBehaviors(request)];
+        if (behaviors.Length == 0)
         {
-            return Handle((IRequest<TValue>)req, ct)
-                .Tap(value => result = Result.Ok(value))
-                .Bind(_ => Result.Ok());
-        };
-
-        foreach (IBehavior<IRequest> behavior in behaviors.Reverse())
-        {
-            BehaviorDelegate previous = next;
-            next = (req, ct) => behavior.Handle(req, previous, ct);
+            return await Handle(request, cancellationToken);
         }
 
-        return next(request, cancellationToken).Bind(() => result);
+        async Task<Result> Execute(int index, CancellationToken ct)
+        {
+            if (index >= behaviors.Length)
+            {
+                return Result.Ok();
+            }
+            return await behaviors[index].Handle(request, (r, c) => Execute(index + 1, c), ct);
+        }
+
+        return await Execute(0, cancellationToken)
+            .Bind(() => Handle(request, cancellationToken));
     }
 
     /// <summary>
-    /// Retrieves or caches a handler and its Handle method for a given request type.
+    /// Retrieves or caches the handler type and its Handle method for a given request type.
     /// </summary>
     /// <param name="requestType">The type of the request.</param>
     /// <param name="handlerBaseType">The base handler type (e.g., <see cref="IRequestHandler{TRequest}"/>).</param>
     /// <param name="valueType">The return value type, if applicable. Null for void requests.</param>
-    /// <returns>A tuple containing the handler instance and its Handle method.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if the handler or Handle method is not found.</exception>
-    private (object Handler, MethodInfo HandleMethod) GetCachedHandler(
-        Type requestType, Type handlerBaseType, Type? valueType = null)
+    /// <returns>A tuple containing the handler type and its Handle method.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the handler type or Handle method is not found.</exception>
+    private (Type HandlerType, MethodInfo HandleMethod) GetCachedHandler(Type requestType, Type handlerBaseType, Type? valueType = null)
     {
         return _handlerCache.GetOrAdd(requestType, _ =>
         {
             Type handlerType = valueType == null
                 ? handlerBaseType.MakeGenericType(requestType)
                 : handlerBaseType.MakeGenericType(requestType, valueType);
-            object handler = _serviceProvider.GetService(handlerType)
-                ?? throw new InvalidOperationException(
-                    $"No handler registered for request type {requestType.FullName}. " +
-                    $"Expected handler type: {handlerType.FullName}");
             MethodInfo handleMethod = handlerType.GetMethod(HANDLE_METHOD_NAME)
-                ?? throw new InvalidOperationException(string.Format(HANDLE_NOT_FOUND_ERROR_FORMAT, handlerType.FullName));
-            return (handler, handleMethod);
+                ?? throw new InvalidOperationException(
+                    string.Format(HANDLE_NOT_FOUND_ERROR_FORMAT, handlerType.FullName));
+            return (handlerType, handleMethod);
         });
     }
 
@@ -140,11 +145,19 @@ internal sealed class SimpleMediator : IMediator
     /// <param name="request">The request to handle.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A task yielding the result of the handler execution.</returns>
-    private Task<Result> Handle(IRequest request, CancellationToken cancellationToken)
+    private async Task<Result> Handle(IRequest request, CancellationToken cancellationToken)
     {
-        (object handler, MethodInfo handleMethod) = GetCachedHandler(
+        (Type handlerType, MethodInfo handleMethod) = GetCachedHandler(
             request.GetType(), typeof(IRequestHandler<>));
-        return (Task<Result>)handleMethod.Invoke(handler, [request, cancellationToken])!;
+        object handler = _serviceProvider.GetRequiredService(handlerType);
+        try
+        {
+            return await (Task<Result>)handleMethod.Invoke(handler, [request, cancellationToken])!;
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException != null)
+        {
+            throw ex.InnerException;
+        }
     }
 
     /// <summary>
@@ -154,34 +167,39 @@ internal sealed class SimpleMediator : IMediator
     /// <param name="request">The request to handle.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A task yielding the result of the handler execution, including the value.</returns>
-    private Task<Result<TValue>> Handle<TValue>(IRequest<TValue> request, CancellationToken cancellationToken)
+    private async Task<Result<TValue>> Handle<TValue>(IRequest<TValue> request, CancellationToken cancellationToken)
     {
-        (object handler, MethodInfo handleMethod) = GetCachedHandler(
+        (Type handlerType, MethodInfo handleMethod) = GetCachedHandler(
             request.GetType(), typeof(IRequestHandler<,>), typeof(TValue));
-        return (Task<Result<TValue>>)handleMethod.Invoke(handler, [request, cancellationToken])!;
+        object handler = _serviceProvider.GetRequiredService(handlerType);
+        try
+        {
+            return await (Task<Result<TValue>>)handleMethod.Invoke(handler, [request, cancellationToken])!;
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException != null)
+        {
+            throw ex.InnerException;
+        }
     }
 
     /// <summary>
-    /// Resolves behaviors specific to a request type, caching the result.
+    /// Resolves behaviors specific to a request type using a cached factory.
     /// </summary>
     /// <param name="request">The request for which to resolve behaviors.</param>
     /// <returns>A collection of behaviors adapted to the <see cref="IBehavior{IRequest}"/> interface.</returns>
-    private IReadOnlyList<IBehavior<IRequest>> ResolveBehaviors(IRequest request)
+    private IBehavior<IRequest>[] ResolveBehaviors(IRequest request)
     {
         Type requestType = request.GetType();
-
-        return _specificBehaviorCache.GetOrAdd(requestType, _ =>
+        Func<IServiceProvider, IBehavior<IRequest>[]> factory = _behaviorFactoryCache.GetOrAdd(requestType, _ =>
         {
             Type behaviorType = typeof(IBehavior<>).MakeGenericType(requestType);
-            var specificBehaviors = _serviceProvider.GetServices(behaviorType);
-
             Type behaviorAdapter = typeof(BehaviorAdapter<>).MakeGenericType(requestType);
-            return specificBehaviors
+            return sp => sp.GetServices(behaviorType)
                 .Where(b => b != null)
                 .Select(behavior => (IBehavior<IRequest>)Activator.CreateInstance(behaviorAdapter, behavior)!)
-                .ToList()
-                .AsReadOnly();
+                .ToArray();
         });
+        return factory(_serviceProvider);
     }
 
     /// <summary>
@@ -207,21 +225,15 @@ internal sealed class SimpleMediator : IMediator
         }
 
         /// <summary>
-        /// Handles the request by delegating to the type-specific behavior if the request matches the expected type.
+        /// Handles the request by delegating to the type-specific behavior.
         /// </summary>
         /// <param name="request">The request to handle.</param>
         /// <param name="next">The delegate to invoke the next behavior or handler in the pipeline.</param>
         /// <param name="cancellationToken">A token to cancel the operation.</param>
-        /// <returns>A task yielding the result of the behavior or the next delegate.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if the request type does not match <typeparamref name="TRequest"/>.</exception>
+        /// <returns>A task yielding the result of the behavior.</returns>
         public Task<Result> Handle(IRequest request, BehaviorDelegate next, CancellationToken cancellationToken)
         {
-            if (request is TRequest specificRequest)
-            {
-                return _requestBehavior.Handle(specificRequest, (req, ct) => next(req, ct), cancellationToken);
-            }
-            throw new InvalidOperationException(
-                $"Behavior expects request of type {typeof(TRequest).FullName}, but received {request.GetType().FullName}");
+            return _requestBehavior.Handle((TRequest)request, next, cancellationToken);
         }
     }
 
