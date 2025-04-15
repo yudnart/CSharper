@@ -105,17 +105,18 @@ internal sealed class SimpleMediator : IMediator
             return await Handle(request, cancellationToken);
         }
 
-        async Task<Result> Execute(int index, CancellationToken ct)
+        Result<TValue> value = null!;
+        async Task<Result> Execute(int index, IRequest req, CancellationToken ct)
         {
             if (index >= behaviors.Length)
             {
-                return Result.Ok();
+                value = await Handle(request, cancellationToken);
+                return value.Bind(_ => Result.Ok());
             }
-            return await behaviors[index].Handle(request, (r, c) => Execute(index + 1, c), ct);
+            return await behaviors[index].Handle(req, (r, c) => Execute(index + 1, r, c), ct);
         }
 
-        return await Execute(0, cancellationToken)
-            .Bind(() => Handle(request, cancellationToken));
+        return await Execute(0, request, cancellationToken).Bind(() => value);
     }
 
     /// <summary>

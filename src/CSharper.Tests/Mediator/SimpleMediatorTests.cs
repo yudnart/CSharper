@@ -6,7 +6,7 @@ using Moq;
 
 namespace CSharper.Tests.Mediator;
 
-public class SimpleMediatorTests
+public sealed class SimpleMediatorTests
 {
     private readonly Mock<IServiceProvider> _serviceProviderMock;
     private readonly List<string> _executionOrder;
@@ -83,7 +83,7 @@ public class SimpleMediatorTests
     {
         // Arrange
         _serviceProviderMock.Setup(sp => sp.GetService(It.IsAny<Type>())).Returns(null!);
-        SimpleMediator sut = new(_serviceProviderMock.Object, new IBehavior[0]);
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
         TestRequest<string> request = new();
 
         // Act & Assert
@@ -96,7 +96,7 @@ public class SimpleMediatorTests
         // Arrange
         TestHandler handler = new(_executionOrder);
         SetupRequest(_serviceProviderMock, handler);
-        SimpleMediator sut = new(_serviceProviderMock.Object, new IBehavior[0]);
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
         TestRequest request = new();
 
         // Act
@@ -113,7 +113,7 @@ public class SimpleMediatorTests
         // Arrange
         TestHandlerTValue handler = new(_executionOrder);
         SetupRequest(_serviceProviderMock, handler);
-        SimpleMediator sut = new(_serviceProviderMock.Object, new IBehavior[0]);
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
         TestRequest<string> request = new();
 
         // Act
@@ -229,9 +229,9 @@ public class SimpleMediatorTests
     {
         // Arrange
         SlowHandler handler = new();
-        SetupRequest(_serviceProviderMock, handler, new IBehavior<TestRequest>[0]);
+        SetupRequest(_serviceProviderMock, handler, []);
 
-        SimpleMediator sut = new(_serviceProviderMock.Object, new IBehavior[0]);
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
         TestRequest request = new();
         CancellationTokenSource cts = new();
 
@@ -248,9 +248,9 @@ public class SimpleMediatorTests
     {
         // Arrange
         SlowHandlerTValue handler = new();
-        SetupRequest(_serviceProviderMock, handler, new IBehavior<TestRequest<string>>[0]);
+        SetupRequest(_serviceProviderMock, handler, []);
 
-        SimpleMediator sut = new(_serviceProviderMock.Object, new IBehavior[0]);
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
         TestRequest<string> request = new();
         CancellationTokenSource cts = new();
 
@@ -268,7 +268,7 @@ public class SimpleMediatorTests
         // Arrange
         ThrowingHandler handler = new();
         SetupRequest(_serviceProviderMock, handler);
-        SimpleMediator sut = new(_serviceProviderMock.Object, new IBehavior[0]);
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
         TestRequest request = new();
 
         // Act & Assert
@@ -281,7 +281,7 @@ public class SimpleMediatorTests
         // Arrange
         ThrowingHandlerT handler = new();
         SetupRequest(_serviceProviderMock, handler);
-        SimpleMediator sut = new(_serviceProviderMock.Object, new IBehavior[0]);
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
         TestRequest<string> request = new();
 
         // Act & Assert
@@ -295,11 +295,55 @@ public class SimpleMediatorTests
         _serviceProviderMock.Setup(sp => sp
             .GetService(typeof(IEnumerable<IBehavior<TestRequest>>)))
             .Returns(Enumerable.Empty<IBehavior<TestRequest>>());
-        SimpleMediator sut = new(_serviceProviderMock.Object, new IBehavior[0]);
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
         TestRequest request = new();
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+    }
+
+    [Fact]
+    public async Task Send_HandlerThrowsException_CascadesThroughBehaviors()
+    {
+        // Arrange
+        TestGlobalBehavior globalBehavior = new("G1", _executionOrder);
+        TestSpecificBehavior specificBehavior = new("S1", _executionOrder);
+        ThrowingHandler handler = new();
+
+        ServiceCollection services = new();
+        services.AddScoped<IBehavior>(_ => globalBehavior);
+        services.AddScoped<IBehavior<TestRequest>>(_ => specificBehavior);
+        services.AddScoped<IRequestHandler<TestRequest>, ThrowingHandler>(_ => handler);
+        IServiceProvider provider = services.BuildServiceProvider().CreateScope().ServiceProvider;
+
+        SimpleMediator sut = new(provider, provider.GetServices<IBehavior>());
+        TestRequest request = new();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+        _executionOrder.Should().Equal("G1", "S1");
+    }
+
+    [Fact]
+    public async Task SendTValue_HandlerThrowsException_CascadesThroughBehaviors()
+    {
+        // Arrange
+        TestGlobalBehavior globalBehavior = new("G1", _executionOrder);
+        TestSpecificBehaviorTValue specificBehavior = new("S1", _executionOrder);
+        ThrowingHandlerT handler = new();
+
+        ServiceCollection services = new();
+        services.AddScoped<IBehavior>(_ => globalBehavior);
+        services.AddScoped<IBehavior<TestRequest<string>>>(_ => specificBehavior);
+        services.AddScoped<IRequestHandler<TestRequest<string>, string>, ThrowingHandlerT>(_ => handler);
+        IServiceProvider provider = services.BuildServiceProvider().CreateScope().ServiceProvider;
+
+        SimpleMediator sut = new(provider, provider.GetServices<IBehavior>());
+        TestRequest<string> request = new();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+        _executionOrder.Should().Equal("G1", "S1");
     }
 
     #region Helpers
@@ -333,10 +377,10 @@ public class SimpleMediatorTests
     }
 
     // Test classes
-    public class TestRequest : IRequest { }
-    public class TestRequest<T> : IRequest<T> { }
+    public sealed class TestRequest : IRequest { }
+    public sealed class TestRequest<T> : IRequest<T> { }
 
-    public class TestGlobalBehavior : IBehavior
+    public sealed class TestGlobalBehavior : IBehavior
     {
         private readonly string _id;
         private readonly List<string> _order;
@@ -354,7 +398,7 @@ public class SimpleMediatorTests
         }
     }
 
-    public class TestSpecificBehavior : IBehavior<TestRequest>
+    public sealed class TestSpecificBehavior : IBehavior<TestRequest>
     {
         private readonly string _id;
         private readonly List<string> _order;
@@ -372,7 +416,7 @@ public class SimpleMediatorTests
         }
     }
 
-    public class TestSpecificBehaviorTValue : IBehavior<TestRequest<string>>
+    public sealed class TestSpecificBehaviorTValue : IBehavior<TestRequest<string>>
     {
         private readonly string _id;
         private readonly List<string> _order;
@@ -390,7 +434,7 @@ public class SimpleMediatorTests
         }
     }
 
-    public class FailingBehavior : IBehavior
+    public sealed class FailingBehavior : IBehavior
     {
         public Task<Result> Handle(IRequest request, BehaviorDelegate next, CancellationToken ct)
         {
@@ -398,7 +442,7 @@ public class SimpleMediatorTests
         }
     }
 
-    public class TestHandler : IRequestHandler<TestRequest>
+    public sealed class TestHandler : IRequestHandler<TestRequest>
     {
         private readonly List<string> _order;
 
@@ -414,7 +458,7 @@ public class SimpleMediatorTests
         }
     }
 
-    public class TestHandlerTValue : IRequestHandler<TestRequest<string>, string>
+    public sealed class TestHandlerTValue : IRequestHandler<TestRequest<string>, string>
     {
         private readonly List<string> _order;
 
@@ -430,7 +474,7 @@ public class SimpleMediatorTests
         }
     }
 
-    public class SlowHandler : IRequestHandler<TestRequest>
+    public sealed class SlowHandler : IRequestHandler<TestRequest>
     {
         public async Task<Result> Handle(TestRequest request, CancellationToken ct)
         {
@@ -439,7 +483,7 @@ public class SimpleMediatorTests
         }
     }
 
-    public class SlowHandlerTValue : IRequestHandler<TestRequest<string>, string>
+    public sealed class SlowHandlerTValue : IRequestHandler<TestRequest<string>, string>
     {
         public async Task<Result<string>> Handle(TestRequest<string> request, CancellationToken ct)
         {
@@ -448,7 +492,7 @@ public class SimpleMediatorTests
         }
     }
 
-    public class ThrowingHandler : IRequestHandler<TestRequest>
+    public sealed class ThrowingHandler : IRequestHandler<TestRequest>
     {
         public Task<Result> Handle(TestRequest request, CancellationToken ct)
         {
@@ -456,7 +500,7 @@ public class SimpleMediatorTests
         }
     }
 
-    public class ThrowingHandlerT : IRequestHandler<TestRequest<string>, string>
+    public sealed class ThrowingHandlerT : IRequestHandler<TestRequest<string>, string>
     {
         public Task<Result<string>> Handle(TestRequest<string> request, CancellationToken ct)
         {
