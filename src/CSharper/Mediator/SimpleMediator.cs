@@ -120,28 +120,6 @@ internal sealed class SimpleMediator : IMediator
     }
 
     /// <summary>
-    /// Retrieves or caches the handler type and its Handle method for a given request type.
-    /// </summary>
-    /// <param name="requestType">The type of the request.</param>
-    /// <param name="handlerBaseType">The base handler type (e.g., <see cref="IRequestHandler{TRequest}"/>).</param>
-    /// <param name="valueType">The return value type, if applicable. Null for void requests.</param>
-    /// <returns>A tuple containing the handler type and its Handle method.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if the handler type or Handle method is not found.</exception>
-    private (Type HandlerType, MethodInfo HandleMethod) GetCachedHandler(Type requestType, Type handlerBaseType, Type? valueType = null)
-    {
-        return _handlerCache.GetOrAdd(requestType, _ =>
-        {
-            Type handlerType = valueType == null
-                ? handlerBaseType.MakeGenericType(requestType)
-                : handlerBaseType.MakeGenericType(requestType, valueType);
-            MethodInfo handleMethod = handlerType.GetMethod(HANDLE_METHOD_NAME)
-                ?? throw new InvalidOperationException(
-                    string.Format(HANDLE_NOT_FOUND_ERROR_FORMAT, handlerType.FullName));
-            return (handlerType, handleMethod);
-        });
-    }
-
-    /// <summary>
     /// Invokes the handler for a request without a return value.
     /// </summary>
     /// <param name="request">The request to handle.</param>
@@ -149,7 +127,7 @@ internal sealed class SimpleMediator : IMediator
     /// <returns>A task yielding the result of the handler execution.</returns>
     private async Task<Result> Handle(IRequest request, CancellationToken cancellationToken)
     {
-        (Type handlerType, MethodInfo handleMethod) = GetCachedHandler(
+        (Type handlerType, MethodInfo handleMethod) = ResolveHandler(
             request.GetType(), typeof(IRequestHandler<>));
         object handler = _serviceProvider.GetRequiredService(handlerType);
         try
@@ -171,7 +149,7 @@ internal sealed class SimpleMediator : IMediator
     /// <returns>A task yielding the result of the handler execution, including the value.</returns>
     private async Task<Result<TValue>> Handle<TValue>(IRequest<TValue> request, CancellationToken cancellationToken)
     {
-        (Type handlerType, MethodInfo handleMethod) = GetCachedHandler(
+        (Type handlerType, MethodInfo handleMethod) = ResolveHandler(
             request.GetType(), typeof(IRequestHandler<,>), typeof(TValue));
         object handler = _serviceProvider.GetRequiredService(handlerType);
         try
@@ -202,6 +180,28 @@ internal sealed class SimpleMediator : IMediator
                 .ToArray();
         });
         return factory(_serviceProvider);
+    }
+
+    /// <summary>
+    /// Retrieves or caches the handler type and its Handle method for a given request type.
+    /// </summary>
+    /// <param name="requestType">The type of the request.</param>
+    /// <param name="handlerBaseType">The base handler type (e.g., <see cref="IRequestHandler{TRequest}"/>).</param>
+    /// <param name="valueType">The return value type, if applicable. Null for void requests.</param>
+    /// <returns>A tuple containing the handler type and its Handle method.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the handler type or Handle method is not found.</exception>
+    private (Type HandlerType, MethodInfo HandleMethod) ResolveHandler(Type requestType, Type handlerBaseType, Type? valueType = null)
+    {
+        return _handlerCache.GetOrAdd(requestType, _ =>
+        {
+            Type handlerType = valueType == null
+                ? handlerBaseType.MakeGenericType(requestType)
+                : handlerBaseType.MakeGenericType(requestType, valueType);
+            MethodInfo handleMethod = handlerType.GetMethod(HANDLE_METHOD_NAME)
+                ?? throw new InvalidOperationException(
+                    string.Format(HANDLE_NOT_FOUND_ERROR_FORMAT, handlerType.FullName));
+            return (handlerType, handleMethod);
+        });
     }
 
     /// <summary>

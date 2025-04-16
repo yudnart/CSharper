@@ -87,7 +87,8 @@ public abstract class ResultBase
     }
 
     /// <summary>
-    /// Validates the consistency of the result's state, ensuring success results have no errors and failure results have at least one.
+    /// Validates the consistency of the result's state, ensuring success results does not
+    /// have any errors and failure results have at least one.
     /// </summary>
     /// <exception cref="InvalidOperationException">
     /// Thrown if a success result has errors or a failure result has no errors.
@@ -96,13 +97,11 @@ public abstract class ResultBase
     {
         if (IsSuccess && _errors.Count > 0)
         {
-            throw new InvalidOperationException(
-                "Success results cannot have errors.");
+            throw new InvalidOperationException("Success results cannot have errors.");
         }
         else if (IsFailure && _errors.Count == 0)
         {
-            throw new InvalidOperationException(
-                "Failure results must have at least one error.");
+            throw new InvalidOperationException("Failure results must have at least one error.");
         }
     }
 }
