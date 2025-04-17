@@ -6,7 +6,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharper", "src\CSharper\CS
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{A58B06E7-6BF0-44FC-B7FA-FC780EE810B7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharper.Tests", "src\CSharper.Tests\CSharper.Tests.csproj", "{86124DC6-95A3-414E-BB12-4A98956F32D0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharper.Tests", "tests\CSharper.Tests\CSharper.Tests.csproj", "{86124DC6-95A3-414E-BB12-4A98956F32D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
