@@ -91,7 +91,7 @@ public sealed class SimpleMediatorTests
     }
 
     [Fact]
-    public async Task Send_NoBehaviors_SuccessfulHandler_ReturnsOk()
+    public async Task Send_NoBehaviorsSuccessfulHandler_ReturnsOk()
     {
         // Arrange
         TestHandler handler = new(_executionOrder);
@@ -108,7 +108,7 @@ public sealed class SimpleMediatorTests
     }
 
     [Fact]
-    public async Task SendT_NoBehaviors_SuccessfulHandler_ReturnsValue()
+    public async Task SendT_NoBehaviorsSuccessfulHandler_ReturnsValue()
     {
         // Arrange
         TestHandlerTValue handler = new(_executionOrder);
@@ -126,7 +126,7 @@ public sealed class SimpleMediatorTests
     }
 
     [Fact]
-    public async Task Send_WithBehaviors_SuccessfulPipeline_ReturnsOk()
+    public async Task Send_WithBehaviorsSuccessfulPipeline_ReturnsOk()
     {
         // Arrange
         TestGlobalBehavior global1 = new("G1", _executionOrder);
@@ -155,7 +155,7 @@ public sealed class SimpleMediatorTests
     }
 
     [Fact]
-    public async Task SendT_WithBehaviors_SuccessfulPipeline_ReturnsValue()
+    public async Task SendT_WithBehaviorsSuccessfulPipeline_ReturnsValue()
     {
         // Arrange
         TestGlobalBehavior global1 = new("G1", _executionOrder);

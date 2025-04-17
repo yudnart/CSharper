@@ -27,11 +27,8 @@ public sealed class LoggingBehaviorTests
         _appContextMock = new Mock<IAppContext>();
     }
 
-    /// <summary>
-    /// Tests that a request without app context logs with a generated correlation ID.
-    /// </summary>
     [Fact]
-    public async Task Handle_LogsRequest()
+    public async Task Handle_Request_LogsRequest()
     {
         // Arrange
         Mock<BehaviorDelegate> next = SetupNextDelegate(Result.Ok());
@@ -55,9 +52,6 @@ public sealed class LoggingBehaviorTests
         AssertRequestLogged(state);
     }
 
-    /// <summary>
-    /// Tests that a request without app context logs with a generated correlation ID.
-    /// </summary>
     [Fact]
     public async Task Handle_WithoutAppContext_LogsRequestWithGeneratedCorrelationId()
     {
@@ -82,7 +76,7 @@ public sealed class LoggingBehaviorTests
             .Should().BeOfType<Dictionary<string, object>>().Subject;
 
         AssertRequestLogged(state);
-        
+
         state.Should().ContainKey("CorrelationId").WhoseValue.As<string>()
             .Should().MatchRegex(@"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
 
@@ -91,9 +85,6 @@ public sealed class LoggingBehaviorTests
         successLog!.Level.Should().Be(LogLevel.Information);
     }
 
-    /// <summary>
-    /// Tests that a request with app context logs structured properties correctly.
-    /// </summary>
     [Fact]
     public async Task Handle_WithAppContext_LogsRequestWithContext()
     {
@@ -116,7 +107,7 @@ public sealed class LoggingBehaviorTests
 
         Dictionary<string, object> state = requestLog.State
             .Should().BeOfType<Dictionary<string, object>>().Subject;
-        
+
         AssertRequestLogged(state);
 
         state.Should().ContainKey(nameof(IAppContext.RequestId)).WhoseValue.Should().Be(TestAppContext.DefaultRequestId);
@@ -138,9 +129,6 @@ public sealed class LoggingBehaviorTests
         successLog!.Level.Should().Be(LogLevel.Information);
     }
 
-    /// <summary>
-    /// Tests that a successful request logs the success message.
-    /// </summary>
     [Fact]
     public async Task Handle_SuccessfulRequest_LogsSuccess()
     {
@@ -164,9 +152,6 @@ public sealed class LoggingBehaviorTests
         successLog!.Level.Should().Be(LogLevel.Information);
     }
 
-    /// <summary>
-    /// Tests that a failed request logs errors correctly.
-    /// </summary>
     [Fact]
     public async Task Handle_FailedRequest_LogsErrors()
     {
@@ -191,9 +176,6 @@ public sealed class LoggingBehaviorTests
         failureLog!.Level.Should().Be(LogLevel.Warning);
     }
 
-    /// <summary>
-    /// Tests that an exception with app context logs with the context's correlation ID.
-    /// </summary>
     [Fact]
     public async Task Handle_ExceptionWithAppContext_LogsException()
     {
@@ -260,7 +242,7 @@ public sealed class LoggingBehaviorTests
     }
 
     [Fact]
-    public async Task Handle_LargeRequestJson_TruncatesAndLogsWarning()
+    public async Task Handle_LargeRequestJson_LogsWarningAndTruncates()
     {
         // Arrange
         string largeString = new('A', 15_000);
@@ -298,7 +280,7 @@ public sealed class LoggingBehaviorTests
     }
 
     [Fact]
-    public async Task Handle_TooManyExtensions_LimitsAndLogsWarning()
+    public async Task Handle_TooManyExtensions_LogsWarningAndLimits()
     {
         // Arrange
         Dictionary<string, object> extensions = Enumerable.Range(1, 60)

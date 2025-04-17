@@ -9,7 +9,7 @@ namespace CSharper.Tests.Functional;
 public sealed class ResultValidationChainTests
 {
     [Fact]
-    public void Constructor_WithNullResult_ThrowsArgumentNullException()
+    public void Ctor_WithNullResult_ThrowsArgumentNullException()
     {
         Result<string> initialResult = null!;
 
