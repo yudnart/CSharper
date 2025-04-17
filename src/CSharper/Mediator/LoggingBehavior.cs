@@ -35,7 +35,7 @@ internal sealed class LoggingBehavior : IBehavior
 
     // Expose internal for unit testing
     internal const string _extensionPrefix = "_";
-    
+
     private const int _maxRequestJsonLength = 10000;
     private const int _maxExtensions = 50;
 

@@ -20,7 +20,7 @@ public class ResultValidationChain<T>
     /// Initializes a new instance of the <see cref="ResultValidationChain{T}"/> class with an initial result.
     /// </summary>
     /// <param name="initialResult">The initial <see cref="Result{T}"/> to validate.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="initialResult"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if initialResult is null.</exception>
     internal ResultValidationChain(Result<T> initialResult)
     {
         _initialResult = initialResult
@@ -32,9 +32,9 @@ public class ResultValidationChain<T>
     /// Adds a predicate and associated error to the validation chain.
     /// </summary>
     /// <param name="predicate">The synchronous predicate to evaluate the result's value.</param>
-    /// <param name="error">The error to include if the predicate fails.</param>
+    /// <param name="error">The <see cref="Error"/> to include if the predicate fails.</param>
     /// <returns>The current <see cref="ResultValidationChain{T}"/> for method chaining.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="error"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if predicate or error is null.</exception>
     public ResultValidationChain<T> And(Func<T, bool> predicate, Error error)
     {
         predicate.ThrowIfNull(nameof(predicate));
@@ -84,7 +84,7 @@ public class ResultValidationChain<T>
 }
 
 /// <summary>
-/// Provides extension methods for handling <see cref="ResultValidationChain{T}"/> and <see cref="System.Threading.Tasks.Task`1{CSharper.Results.Result{T}}"/> 
+/// Provides extension methods for handling both synchronous and asynchronous <see cref="ResultValidationChain{T}"/> 
 /// operations in a functional programming style.
 /// </summary>
 public static class ResultValidationChainExtensions
@@ -96,7 +96,7 @@ public static class ResultValidationChainExtensions
     /// <param name="builder">The <see cref="ResultValidationChain{T}"/> containing the validation chain.</param>
     /// <param name="next">The function to execute if validation succeeds.</param>
     /// <returns>A <see cref="Result"/> representing the outcome of the binding operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="builder"/> or <paramref name="next"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if builder or next is null.</exception>
     public static Result Bind<T>(this ResultValidationChain<T> builder, Func<T, Result> next)
     {
         builder.ThrowIfNull(nameof(builder));
@@ -112,7 +112,7 @@ public static class ResultValidationChainExtensions
     /// <param name="builder">The <see cref="ResultValidationChain{T}"/> containing the validation chain.</param>
     /// <param name="next">The function to execute if validation succeeds.</param>
     /// <returns>A <see cref="Result{U}"/> representing the outcome of the binding operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="builder"/> or <paramref name="next"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if builder or next is null.</exception>
     public static Result<U> Bind<T, U>(this ResultValidationChain<T> builder, Func<T, Result<U>> next)
     {
         builder.ThrowIfNull(nameof(builder));
@@ -126,8 +126,8 @@ public static class ResultValidationChainExtensions
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <param name="builder">The <see cref="ResultValidationChain{T}"/> containing the validation chain.</param>
     /// <param name="next">The asynchronous function to execute if validation succeeds.</param>
-    /// <returns>A <see cref="System.Threading.Tasks.Task`1{CSharper.Results.Result}"/> representing the asynchronous outcome of the binding operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="builder"/> or <paramref name="next"/> is null.</exception>
+    /// <returns>A Task containing a <see cref="Result"/> representing the asynchronous outcome.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if builder or next is null.</exception>
     public static Task<Result> Bind<T>(this ResultValidationChain<T> builder, Func<T, Task<Result>> next)
     {
         builder.ThrowIfNull(nameof(builder));
@@ -142,8 +142,8 @@ public static class ResultValidationChainExtensions
     /// <typeparam name="U">The type of the successful result value of the next operation.</typeparam>
     /// <param name="builder">The <see cref="ResultValidationChain{T}"/> containing the validation chain.</param>
     /// <param name="next">The asynchronous function to execute if validation succeeds.</param>
-    /// <returns>A <see cref="System.Threading.Tasks.Task`1{CSharper.Results.Result{U}}"/> representing the asynchronous outcome of the binding operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="builder"/> or <paramref name="next"/> is null.</exception>
+    /// <returns>A Task containing a <see cref="Result{U}"/> representing the asynchronous outcome.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if builder or next is null.</exception>
     public static Task<Result<U>> Bind<T, U>(this ResultValidationChain<T> builder, Func<T, Task<Result<U>>> next)
     {
         builder.ThrowIfNull(nameof(builder));
@@ -155,11 +155,11 @@ public static class ResultValidationChainExtensions
     /// Adds a predicate and associated error to the validation chain of an asynchronous <see cref="ResultValidationChain{T}"/>.
     /// </summary>
     /// <typeparam name="T">The type of the successful result value.</typeparam>
-    /// <param name="asyncBuilder">The asynchronous <see cref="System.Threading.Tasks.Task`1{CSharper.Functional.ResultValidationBuilder{T}}"/> containing the validation builder.</param>
+    /// <param name="asyncBuilder">The Task containing the <see cref="ResultValidationChain{T}"/>.</param>
     /// <param name="predicate">The synchronous predicate to evaluate the result's value.</param>
-    /// <param name="error">The error to include if the predicate fails.</param>
-    /// <returns>A <see cref="System.Threading.Tasks.Task`1{CSharper.Functional.ResultValidationBuilder{T}}"/> containing the updated validation builder.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncBuilder"/>, <paramref name="predicate"/>, or <paramref name="error"/> is null.</exception>
+    /// <param name="error">The <see cref="Error"/> to include if the predicate fails.</param>
+    /// <returns>A Task containing the updated <see cref="ResultValidationChain{T}"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if asyncBuilder, predicate, or error is null.</exception>
     public static async Task<ResultValidationChain<T>> And<T>(this Task<ResultValidationChain<T>> asyncBuilder,
         Func<T, bool> predicate, Error error)
     {
@@ -173,10 +173,10 @@ public static class ResultValidationChainExtensions
     /// Binds the validated result of an asynchronous <see cref="ResultValidationChain{T}"/> to a function that returns a non-typed <see cref="Result"/>.
     /// </summary>
     /// <typeparam name="T">The type of the successful result value.</typeparam>
-    /// <param name="asyncBuilder">The asynchronous <see cref="System.Threading.Tasks.Task`1{CSharper.Functional.ResultValidationBuilder{T}}"/> containing the validation builder.</param>
+    /// <param name="asyncBuilder">The Task containing the <see cref="ResultValidationChain{T}"/>.</param>
     /// <param name="next">The function to execute if validation succeeds.</param>
-    /// <returns>A <see cref="System.Threading.Tasks.Task`1{CSharper.Results.Result}"/> representing the asynchronous outcome of the binding operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncBuilder"/> or <paramref name="next"/> is null.</exception>
+    /// <returns>A Task containing a <see cref="Result"/> representing the asynchronous outcome.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if asyncBuilder or next is null.</exception>
     public static async Task<Result> Bind<T>(this Task<ResultValidationChain<T>> asyncBuilder, Func<T, Result> next)
     {
         asyncBuilder.ThrowIfNull(nameof(asyncBuilder));
@@ -189,10 +189,10 @@ public static class ResultValidationChainExtensions
     /// </summary>
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <typeparam name="U">The type of the successful result value of the next operation.</typeparam>
-    /// <param name="asyncBuilder">The asynchronous <see cref="System.Threading.Tasks.Task`1{CSharper.Functional.ResultValidationBuilder{T}}"/> containing the validation builder.</param>
+    /// <param name="asyncBuilder">The Task containing the <see cref="ResultValidationChain{T}"/>.</param>
     /// <param name="next">The function to execute if validation succeeds.</param>
-    /// <returns>A <see cref="System.Threading.Tasks.Task`1{CSharper.Results.Result{U}}"/> representing the asynchronous outcome of the binding operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncBuilder"/> or <paramref name="next"/> is null.</exception>
+    /// <returns>A Task containing a <see cref="Result{U}"/> representing the asynchronous outcome.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if asyncBuilder or next is null.</exception>
     public static async Task<Result<U>> Bind<T, U>(this Task<ResultValidationChain<T>> asyncBuilder, Func<T, Result<U>> next)
     {
         asyncBuilder.ThrowIfNull(nameof(asyncBuilder));
@@ -204,10 +204,10 @@ public static class ResultValidationChainExtensions
     /// Binds the validated result of an asynchronous <see cref="ResultValidationChain{T}"/> to an asynchronous function that returns a non-typed <see cref="Result"/>.
     /// </summary>
     /// <typeparam name="T">The type of the successful result value.</typeparam>
-    /// <param name="asyncBuilder">The asynchronous <see cref="System.Threading.Tasks.Task`1{CSharper.Functional.ResultValidationBuilder{T}}"/> containing the validation builder.</param>
+    /// <param name="asyncBuilder">The Task containing the <see cref="ResultValidationChain{T}"/>.</param>
     /// <param name="next">The asynchronous function to execute if validation succeeds.</param>
-    /// <returns>A <see cref="System.Threading.Tasks.Task`1{CSharper.Results.Result}"/> representing the asynchronous outcome of the binding operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncBuilder"/> or <paramref name="next"/> is null.</exception>
+    /// <returns>A Task containing a <see cref="Result"/> representing the asynchronous outcome.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if asyncBuilder or next is null.</exception>
     public static async Task<Result> Bind<T>(this Task<ResultValidationChain<T>> asyncBuilder, Func<T, Task<Result>> next)
     {
         asyncBuilder.ThrowIfNull(nameof(asyncBuilder));
@@ -221,10 +221,10 @@ public static class ResultValidationChainExtensions
     /// </summary>
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <typeparam name="U">The type of the successful result value of the next operation.</typeparam>
-    /// <param name="asyncBuilder">The asynchronous <see cref="System.Threading.Tasks.Task`1{CSharper.Functional.ResultValidationBuilder{T}}"/> containing the validation builder.</param>
+    /// <param name="asyncBuilder">The Task containing the <see cref="ResultValidationChain{T}"/>.</param>
     /// <param name="next">The asynchronous function to execute if validation succeeds.</param>
-    /// <returns>A <see cref="System.Threading.Tasks.Task`1{CSharper.Results.Result{U}}"/> representing the asynchronous outcome of the binding operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncBuilder"/> or <paramref name="next"/> is null.</exception>
+    /// <returns>A Task containing a <see cref="Result{U}"/> representing the asynchronous outcome.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if asyncBuilder or next is null.</exception>
     public static async Task<Result<U>> Bind<T, U>(this Task<ResultValidationChain<T>> asyncBuilder, Func<T, Task<Result<U>>> next)
     {
         asyncBuilder.ThrowIfNull(nameof(asyncBuilder));

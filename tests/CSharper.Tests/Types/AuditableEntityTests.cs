@@ -194,7 +194,7 @@ public sealed class AuditableEntityTests
 
     #region Test Helpers
 
-    private class TestAuditableEntity : AuditableEntity<string>
+    private sealed class TestAuditableEntity : AuditableEntity<string>
     {
         public TestAuditableEntity(string id)
         {

@@ -131,7 +131,7 @@ public sealed class ResultExtensionsTests
     public void Match_SuccessOnly_NullOnSuccess_ThrowsArgumentNullException()
     {
         Result initial = Result.Ok();
-        Func<int> onSuccess = null;
+        Func<int> onSuccess = null!;
 
         Action act = () => initial.Match(onSuccess!);
 

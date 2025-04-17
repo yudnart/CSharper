@@ -217,7 +217,7 @@ public sealed class EntityTests
 
     #region Test Helpers
 
-    private class TestEntity : Entity<string>
+    private sealed class TestEntity : Entity<string>
     {
         public TestEntity(string id)
         {

@@ -64,7 +64,7 @@ internal sealed class MemoryLogger<T> : ILogger<T>
         _logEntries.Add(new LogEntry(logLevel, message, mergedState, exception));
     }
 
-    private class ScopeDisposable : IDisposable
+    private sealed class ScopeDisposable : IDisposable
     {
         private readonly Stack<Dictionary<string, object>> _scopes;
 

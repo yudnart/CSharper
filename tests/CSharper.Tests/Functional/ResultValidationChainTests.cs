@@ -149,7 +149,7 @@ public sealed class ResultValidationChainTests
     [Fact]
     public void Bind_SyncToSyncNonTyped_WithNullBuilder_ThrowsArgumentNullException()
     {
-        ResultValidationChain<string> chain = null;
+        ResultValidationChain<string> chain = null!;
         Func<string, Result> next = _ => Result.Ok();
 
         Action act = () => chain.Bind(next);
@@ -162,7 +162,7 @@ public sealed class ResultValidationChainTests
     {
         var initialResult = Result.Ok("test");
         var chain = new ResultValidationChain<string>(initialResult);
-        Func<string, Result> next = null;
+        Func<string, Result> next = null!;
 
         Action act = () => chain.Bind(next);
 
@@ -187,7 +187,7 @@ public sealed class ResultValidationChainTests
     [Fact]
     public async Task And_Async_WithNullAsyncBuilder_ThrowsArgumentNullException()
     {
-        Task<ResultValidationChain<string>> chainTask = null;
+        Task<ResultValidationChain<string>> chainTask = null!;
         var predicate = new Func<string, bool>(s => true);
         var error = new Error("Invalid", code: "INVALID");
 
@@ -253,7 +253,7 @@ public sealed class ResultValidationChainTests
     [Fact]
     public async Task Bind_AsyncToSyncNonTyped_WithNullAsyncBuilder_ThrowsArgumentNullException()
     {
-        Task<ResultValidationChain<string>> chainTask = null;
+        Task<ResultValidationChain<string>> chainTask = null!;
         Func<string, Result> next = _ => Result.Ok();
 
         Func<Task> act = () => chainTask.Bind(next);
@@ -266,7 +266,7 @@ public sealed class ResultValidationChainTests
     {
         var initialResult = Result.Ok("test");
         var chainTask = Task.FromResult(new ResultValidationChain<string>(initialResult));
-        Func<string, Result> next = null;
+        Func<string, Result> next = null!;
 
         Func<Task> act = () => chainTask.Bind(next);
 
