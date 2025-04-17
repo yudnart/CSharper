@@ -8,6 +8,8 @@ namespace CSharper.Tests.Functional;
 
 public sealed class ResultTExtensionsTests
 {
+    #region Bind Tests
+
     [Fact]
     public void Bind_SuccessResult_CallsNextAndReturnsResult()
     {
@@ -47,7 +49,7 @@ public sealed class ResultTExtensionsTests
     public void BindT_SuccessResult_CallsNextAndReturnsResultT()
     {
         string initialValue = "42";
-        int expected = int.Parse(initialValue); ;
+        int expected = int.Parse(initialValue);
         Result<string> initial = Result.Ok(initialValue);
         Func<string, Result<int>> next = s => Result.Ok(expected);
 
@@ -79,6 +81,10 @@ public sealed class ResultTExtensionsTests
 
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
+
+    #endregion
+
+    #region Ensure Tests
 
     [Fact]
     public void Ensure_SuccessResult_ReturnsValidationChain()
@@ -132,6 +138,10 @@ public sealed class ResultTExtensionsTests
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
+    #endregion
+
+    #region Map Tests
+
     [Fact]
     public void Map_SuccessResult_TransformsValueAndReturnsResult()
     {
@@ -167,6 +177,10 @@ public sealed class ResultTExtensionsTests
 
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
+
+    #endregion
+
+    #region MapError Tests
 
     [Fact]
     public void MapError_FailureResult_ReturnsNonTypedFailure()
@@ -212,8 +226,12 @@ public sealed class ResultTExtensionsTests
         AssertHelper.AssertException<InvalidOperationException>(act);
     }
 
+    #endregion
+
+    #region Match Tests
+
     [Fact]
-    public void Match_SuccessOnly_SuccessResult_CallsOnSuccessAndReturnsValue()
+    public void Match_SuccessOnly_CallsOnSuccessAndReturnsValue()
     {
         Result<string> initial = Result.Ok("test");
         Func<string, int> onSuccess = s => s.Length;
@@ -225,9 +243,9 @@ public sealed class ResultTExtensionsTests
     }
 
     [Fact]
-    public void Match_SuccessOnly_FailureResult_ReturnsDefault()
+    public void Match_SuccessOnlyFailure_ReturnsDefault()
     {
-        Result<string> initial = Result.Fail<string>("Error");
+        Result<string> initial = Result.Fail<string>("Error", code: "FAIL");
         Func<string, int> onSuccess = s => s.Length;
 
         int? result = initial.Match(onSuccess);
@@ -236,7 +254,7 @@ public sealed class ResultTExtensionsTests
     }
 
     [Fact]
-    public void Match_SuccessOnly_NullOnSuccess_ThrowsArgumentNullException()
+    public void Match_SuccessOnlyNullOnSuccess_ThrowsArgumentNullException()
     {
         Result<string> initial = Result.Ok("test");
         Func<string, int> onSuccess = null!;
@@ -247,7 +265,7 @@ public sealed class ResultTExtensionsTests
     }
 
     [Fact]
-    public void Match_SuccessAndFailure_SuccessResult_CallsOnSuccessAndReturnsValue()
+    public void Match_SuccessAndFailure_CallsOnSuccessAndReturnsValue()
     {
         Result<string> initial = Result.Ok("test");
         Func<string, int> onSuccess = s => s.Length;
@@ -260,9 +278,9 @@ public sealed class ResultTExtensionsTests
     }
 
     [Fact]
-    public void Match_SuccessAndFailure_FailureResult_CallsOnFailureAndReturnsValue()
+    public void Match_SuccessAndFailureFailure_CallsOnFailureAndReturnsValue()
     {
-        Result<string> initial = Result.Fail<string>("Error");
+        Result<string> initial = Result.Fail<string>("Error", code: "FAIL");
         Func<string, int> onSuccess = s => s.Length;
         Func<Error[], int> onFailure = errors => errors.Length;
 
@@ -272,7 +290,7 @@ public sealed class ResultTExtensionsTests
     }
 
     [Fact]
-    public void Match_SuccessAndFailure_NullOnSuccess_ThrowsArgumentNullException()
+    public void Match_SuccessAndFailureNullOnSuccess_ThrowsArgumentNullException()
     {
         Result<string> initial = Result.Ok("test");
         Func<string, int> onSuccess = null!;
@@ -284,7 +302,7 @@ public sealed class ResultTExtensionsTests
     }
 
     [Fact]
-    public void Match_SuccessAndFailure_NullOnFailure_ThrowsArgumentNullException()
+    public void Match_SuccessAndFailureNullOnFailure_ThrowsArgumentNullException()
     {
         Result<string> initial = Result.Ok("test");
         Func<string, int> onSuccess = s => s.Length;
@@ -294,6 +312,10 @@ public sealed class ResultTExtensionsTests
 
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
+
+    #endregion
+
+    #region Recover Tests
 
     [Fact]
     public void Recover_FailureResult_CallsFallbackAndReturnsResult()
@@ -323,13 +345,17 @@ public sealed class ResultTExtensionsTests
     [Fact]
     public void Recover_NullFallback_ThrowsArgumentNullException()
     {
-        Result<string> initial = Result.Fail<string>("Error");
+        Result<string> initial = Result.Fail<string>("Error", code: "FAIL");
         Func<Error[], Result<string>> fallback = null!;
 
         Action act = () => initial.Recover(fallback);
 
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
+
+    #endregion
+
+    #region Tap Tests
 
     [Fact]
     public void Tap_SuccessResult_CallsActionAndReturnsOriginal()
@@ -371,6 +397,10 @@ public sealed class ResultTExtensionsTests
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
+    #endregion
+
+    #region TapError Tests
+
     [Fact]
     public void TapError_FailureResult_CallsActionAndReturnsOriginal()
     {
@@ -403,11 +433,13 @@ public sealed class ResultTExtensionsTests
     [Fact]
     public void TapError_NullAction_ThrowsArgumentNullException()
     {
-        Result<string> initial = Result.Fail<string>("Error");
+        Result<string> initial = Result.Fail<string>("Error", code: "FAIL");
         Action<Error[]> action = null!;
 
         Action act = () => initial.TapError(action);
 
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
+
+    #endregion
 }

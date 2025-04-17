@@ -6,12 +6,12 @@ using FluentAssertions;
 
 namespace CSharper.Tests.Functional;
 
-public class AsyncResultExtensionsTests
+public sealed class AsyncResultExtensionsTests
 {
     #region Bind Tests
 
     [Fact]
-    public async Task Bind_ResultToAsyncNonTyped_SuccessResult_CallsNextAndReturnsResult()
+    public async Task BindAsync_SuccessResult_CallsNextAndReturnsResult()
     {
         Result initial = Result.Ok();
         Func<Task<Result>> next = () => Task.FromResult(Result.Ok());
@@ -22,7 +22,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Bind_ResultToAsyncNonTyped_FailureResult_ReturnsOriginalFailure()
+    public async Task BindAsync_FailureResult_ReturnsOriginalFailure()
     {
         Error error = new("Error", code: "FAIL");
         Result initial = Result.Fail(error);
@@ -35,7 +35,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Bind_ResultToAsyncNonTyped_NullNext_ThrowsArgumentNullException()
+    public void BindAsync_NullNext_ThrowsArgumentNullException()
     {
         Result initial = Result.Ok();
         Func<Task<Result>> next = null!;
@@ -46,7 +46,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Bind_ResultToAsyncTyped_SuccessResult_CallsNextAndReturnsResultT()
+    public async Task BindAsyncT_SuccessResult_CallsNextAndReturnsResultT()
     {
         Result initial = Result.Ok();
         int value = 42;
@@ -58,7 +58,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Bind_ResultToAsyncTyped_FailureResult_MapsErrorsToResultT()
+    public async Task BindAsyncT_FailureResult_MapsErrorsToResultT()
     {
         Error error = new("Error", code: "FAIL");
         Result initial = Result.Fail(error);
@@ -71,7 +71,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Bind_ResultToAsyncTyped_NullNext_ThrowsArgumentNullException()
+    public void BindAsyncT_NullNext_ThrowsArgumentNullException()
     {
         Result initial = Result.Ok();
         Func<Task<Result<int>>> next = null!;
@@ -82,7 +82,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Bind_TaskResultToSyncNonTyped_SuccessResult_CallsNextAndReturnsResult()
+    public async Task BindAsync_TaskResult_CallsNextAndReturnsResult()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         Func<Result> next = () => Result.Ok();
@@ -93,7 +93,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Bind_TaskResultToSyncNonTyped_FailureResult_ReturnsOriginalFailure()
+    public async Task BindAsync_TaskResultFailure_ReturnsOriginalFailure()
     {
         Error error = new("Error", code: "FAIL");
         Task<Result> initial = Task.FromResult(Result.Fail(error));
@@ -106,7 +106,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Bind_TaskResultToSyncNonTyped_NullNext_ThrowsArgumentNullException()
+    public void BindAsync_TaskResultNullNext_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         Func<Result> next = null!;
@@ -117,7 +117,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Bind_TaskResultToSyncTyped_SuccessResult_CallsNextAndReturnsResultT()
+    public async Task BindAsyncT_TaskResult_CallsNextAndReturnsResultT()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         int value = 42;
@@ -129,7 +129,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Bind_TaskResultToSyncTyped_FailureResult_MapsErrorsToResultT()
+    public async Task BindAsyncT_TaskResultFailure_MapsErrorsToResultT()
     {
         Error error = new("Error", code: "FAIL");
         Task<Result> initial = Task.FromResult(Result.Fail(error));
@@ -142,7 +142,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Bind_TaskResultToSyncTyped_NullNext_ThrowsArgumentNullException()
+    public void BindAsyncT_TaskResultNullNext_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         Func<Result<int>> next = null!;
@@ -153,7 +153,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Bind_TaskResultToAsyncNonTyped_SuccessResult_CallsNextAndReturnsResult()
+    public async Task BindAsync_TaskResultAsync_CallsNextAndReturnsResult()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         Func<Task<Result>> next = () => Task.FromResult(Result.Ok());
@@ -164,7 +164,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Bind_TaskResultToAsyncNonTyped_FailureResult_ReturnsOriginalFailure()
+    public async Task BindAsync_TaskResultAsyncFailure_ReturnsOriginalFailure()
     {
         Error error = new("Error", code: "FAIL");
         Task<Result> initial = Task.FromResult(Result.Fail(error));
@@ -177,7 +177,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Bind_TaskResultToAsyncNonTyped_NullNext_ThrowsArgumentNullException()
+    public void BindAsync_TaskResultAsyncNullNext_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         Func<Task<Result>> next = null!;
@@ -188,7 +188,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Bind_TaskResultToAsyncTyped_SuccessResult_CallsNextAndReturnsResultT()
+    public async Task BindAsyncT_TaskResultAsync_CallsNextAndReturnsResultT()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         int value = 42;
@@ -200,7 +200,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Bind_TaskResultToAsyncTyped_FailureResult_MapsErrorsToResultT()
+    public async Task BindAsyncT_TaskResultAsyncFailure_MapsErrorsToResultT()
     {
         Error error = new("Error", code: "FAIL");
         Task<Result> initial = Task.FromResult(Result.Fail(error));
@@ -213,7 +213,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Bind_TaskResultToAsyncTyped_NullNext_ThrowsArgumentNullException()
+    public void BindAsyncT_TaskResultAsyncNullNext_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         Func<Task<Result<int>>> next = null!;
@@ -228,7 +228,7 @@ public class AsyncResultExtensionsTests
     #region MapError Tests
 
     [Fact]
-    public async Task MapError_TaskResult_FailureResult_ReturnsResultFailureT()
+    public async Task MapErrorAsync_FailureResult_ReturnsResultFailureT()
     {
         Error error = new("Error", code: "FAIL");
         Task<Result> initial = Task.FromResult(Result.Fail(error));
@@ -240,11 +240,11 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task MapError_TaskResult_SuccessResult_ThrowsInvalidOperationException()
+    public async Task MapErrorAsync_SuccessResult_ThrowsInvalidOperationException()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
 
-        Func<Task> act = initial.MapError<int>;
+        Func<Task> act = () => initial.MapError<int>();
 
         await AssertHelper.AssertException<InvalidOperationException>(act);
     }
@@ -254,7 +254,7 @@ public class AsyncResultExtensionsTests
     #region Match Tests
 
     [Fact]
-    public async Task Match_ResultAsyncSuccessOnly_SuccessResult_CallsOnSuccessAndReturnsValue()
+    public async Task MatchAsync_SuccessOnly_CallsOnSuccessAndReturnsValue()
     {
         Result initial = Result.Ok();
         int value = 42;
@@ -266,7 +266,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Match_ResultAsyncSuccessOnly_FailureResult_ReturnsDefault()
+    public async Task MatchAsync_SuccessOnlyFailure_ReturnsDefault()
     {
         Result initial = Result.Fail("Error", code: "FAIL");
         Func<Task<int>> onSuccess = () => Task.FromResult(42);
@@ -277,7 +277,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Match_ResultAsyncSuccessOnly_NullOnSuccess_ThrowsArgumentNullException()
+    public void MatchAsync_SuccessOnlyNullOnSuccess_ThrowsArgumentNullException()
     {
         Result initial = Result.Ok();
         Func<Task<int>> onSuccess = null!;
@@ -288,7 +288,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Match_ResultAsyncSuccessAndFailure_SuccessResult_CallsOnSuccessAndReturnsValue()
+    public async Task MatchAsync_SuccessAndFailure_CallsOnSuccessAndReturnsValue()
     {
         Result initial = Result.Ok();
         int value = 42;
@@ -301,7 +301,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Match_ResultAsyncSuccessAndFailure_FailureResult_CallsOnFailureAndReturnsValue()
+    public async Task MatchAsync_SuccessAndFailureFailure_CallsOnFailureAndReturnsValue()
     {
         Result initial = Result.Fail("Error", code: "FAIL");
         Func<Task<int>> onSuccess = () => Task.FromResult(42);
@@ -313,7 +313,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Match_ResultAsyncSuccessAndFailure_NullOnSuccess_ThrowsArgumentNullException()
+    public void MatchAsync_SuccessAndFailureNullOnSuccess_ThrowsArgumentNullException()
     {
         Result initial = Result.Ok();
         Func<Task<int>> onSuccess = null!;
@@ -325,7 +325,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Match_ResultAsyncSuccessAndFailure_NullOnFailure_ThrowsArgumentNullException()
+    public void MatchAsync_SuccessAndFailureNullOnFailure_ThrowsArgumentNullException()
     {
         Result initial = Result.Ok();
         Func<Task<int>> onSuccess = () => Task.FromResult(42);
@@ -337,7 +337,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Match_TaskResultSyncSuccessOnly_SuccessResult_CallsOnSuccessAndReturnsValue()
+    public async Task MatchAsync_TaskResultSync_CallsOnSuccessAndReturnsValue()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         int value = 42;
@@ -349,7 +349,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Match_TaskResultSyncSuccessOnly_FailureResult_ReturnsDefault()
+    public async Task MatchAsync_TaskResultSyncFailure_ReturnsDefault()
     {
         Task<Result> initial = Task.FromResult(Result.Fail("Error", code: "FAIL"));
         Func<int> onSuccess = () => 42;
@@ -360,7 +360,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Match_TaskResultSyncSuccessOnly_NullOnSuccess_ThrowsArgumentNullException()
+    public void MatchAsync_TaskResultSyncNullOnSuccess_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         Func<int> onSuccess = null!;
@@ -371,7 +371,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Match_TaskResultSyncSuccessAndFailure_SuccessResult_CallsOnSuccessAndReturnsValue()
+    public async Task MatchAsync_TaskResultSyncSuccessAndFailure_CallsOnSuccessAndReturnsValue()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         int value = 42;
@@ -384,7 +384,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Match_TaskResultSyncSuccessAndFailure_FailureResult_CallsOnFailureAndReturnsValue()
+    public async Task MatchAsync_TaskResultSyncSuccessAndFailureFailure_CallsOnFailureAndReturnsValue()
     {
         Task<Result> initial = Task.FromResult(Result.Fail("Error", code: "FAIL"));
         Func<int> onSuccess = () => 42;
@@ -396,7 +396,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Match_TaskResultSyncSuccessAndFailure_NullOnSuccess_ThrowsArgumentNullException()
+    public void MatchAsync_TaskResultSyncSuccessAndFailureNullOnSuccess_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         Func<int> onSuccess = null!;
@@ -408,7 +408,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Match_TaskResultSyncSuccessAndFailure_NullOnFailure_ThrowsArgumentNullException()
+    public void MatchAsync_TaskResultSyncSuccessAndFailureNullOnFailure_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         Func<int> onSuccess = () => 42;
@@ -420,7 +420,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Match_TaskResultAsyncSuccessOnly_SuccessResult_CallsOnSuccessAndReturnsValue()
+    public async Task MatchAsync_TaskResult_CallsOnSuccessAndReturnsValue()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         int value = 42;
@@ -432,7 +432,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Match_TaskResultAsyncSuccessOnly_FailureResult_ReturnsDefault()
+    public async Task MatchAsync_TaskResultFailure_ReturnsDefault()
     {
         Task<Result> initial = Task.FromResult(Result.Fail("Error", code: "FAIL"));
         Func<Task<int>> onSuccess = () => Task.FromResult(42);
@@ -443,7 +443,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Match_TaskResultAsyncSuccessOnly_NullOnSuccess_ThrowsArgumentNullException()
+    public void MatchAsync_TaskResultNullOnSuccess_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         Func<Task<int>> onSuccess = null!;
@@ -454,7 +454,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Match_TaskResultAsyncSuccessAndFailure_SuccessResult_CallsOnSuccessAndReturnsValue()
+    public async Task MatchAsync_TaskResultSuccessAndFailure_CallsOnSuccessAndReturnsValue()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         int value = 42;
@@ -467,7 +467,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Match_TaskResultAsyncSuccessAndFailure_FailureResult_CallsOnFailureAndReturnsValue()
+    public async Task MatchAsync_TaskResultSuccessAndFailureFailure_CallsOnFailureAndReturnsValue()
     {
         Task<Result> initial = Task.FromResult(Result.Fail("Error", code: "FAIL"));
         Func<Task<int>> onSuccess = () => Task.FromResult(42);
@@ -479,7 +479,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Match_TaskResultAsyncSuccessAndFailure_NullOnSuccess_ThrowsArgumentNullException()
+    public void MatchAsync_TaskResultSuccessAndFailureNullOnSuccess_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         Func<Task<int>> onSuccess = null!;
@@ -491,7 +491,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Match_TaskResultAsyncSuccessAndFailure_NullOnFailure_ThrowsArgumentNullException()
+    public void MatchAsync_TaskResultSuccessAndFailureNullOnFailure_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         Func<Task<int>> onSuccess = () => Task.FromResult(42);
@@ -507,7 +507,7 @@ public class AsyncResultExtensionsTests
     #region Recover Tests
 
     [Fact]
-    public async Task Recover_ResultAsync_FailureResult_CallsOnFailureAndReturnsSuccess()
+    public async Task RecoverAsync_FailureResult_CallsOnFailureAndReturnsSuccess()
     {
         Result initial = Result.Fail("Error", code: "FAIL");
         bool wasCalled = false;
@@ -520,7 +520,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Recover_ResultAsync_SuccessResult_DoesNotCallOnFailureAndReturnsOriginal()
+    public async Task RecoverAsync_SuccessResult_DoesNotCallOnFailureAndReturnsOriginal()
     {
         Result initial = Result.Ok();
         bool wasCalled = false;
@@ -533,7 +533,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Recover_ResultAsync_NullOnFailure_ThrowsArgumentNullException()
+    public void RecoverAsync_NullOnFailure_ThrowsArgumentNullException()
     {
         Result initial = Result.Fail("Error", code: "FAIL");
         Func<Error[], Task> onFailure = null!;
@@ -544,7 +544,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Recover_TaskResultSync_FailureResult_CallsOnFailureAndReturnsSuccess()
+    public async Task RecoverAsync_TaskResultSync_CallsOnFailureAndReturnsSuccess()
     {
         Task<Result> initial = Task.FromResult(Result.Fail("Error", code: "FAIL"));
         bool wasCalled = false;
@@ -557,7 +557,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Recover_TaskResultSync_SuccessResult_DoesNotCallOnFailureAndReturnsOriginal()
+    public async Task RecoverAsync_TaskResultSyncSuccess_DoesNotCallOnFailureAndReturnsOriginal()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         bool wasCalled = false;
@@ -570,7 +570,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Recover_TaskResultSync_NullOnFailure_ThrowsArgumentNullException()
+    public void RecoverAsync_TaskResultSyncNullOnFailure_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Fail("Error", code: "FAIL"));
         Action<Error[]> onFailure = null!;
@@ -581,7 +581,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Recover_TaskResultAsync_FailureResult_CallsOnFailureAndReturnsSuccess()
+    public async Task RecoverAsync_TaskResult_CallsOnFailureAndReturnsSuccess()
     {
         Task<Result> initial = Task.FromResult(Result.Fail("Error", code: "FAIL"));
         bool wasCalled = false;
@@ -594,7 +594,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Recover_TaskResultAsync_SuccessResult_DoesNotCallOnFailureAndReturnsOriginal()
+    public async Task RecoverAsync_TaskResultSuccess_DoesNotCallOnFailureAndReturnsOriginal()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         bool wasCalled = false;
@@ -607,7 +607,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Recover_TaskResultAsync_NullOnFailure_ThrowsArgumentNullException()
+    public void RecoverAsync_TaskResultNullOnFailure_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Fail("Error", code: "FAIL"));
         Func<Error[], Task> onFailure = null!;
@@ -622,7 +622,7 @@ public class AsyncResultExtensionsTests
     #region Tap Tests
 
     [Fact]
-    public async Task Tap_ResultAsync_SuccessResult_CallsActionAndReturnsOriginal()
+    public async Task TapAsync_SuccessResult_CallsActionAndReturnsOriginal()
     {
         Result initial = Result.Ok();
         bool wasCalled = false;
@@ -635,7 +635,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Tap_ResultAsync_FailureResult_DoesNotCallActionAndReturnsOriginal()
+    public async Task TapAsync_FailureResult_DoesNotCallActionAndReturnsOriginal()
     {
         Error error = new("Error", code: "FAIL");
         Result initial = Result.Fail(error);
@@ -650,7 +650,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Tap_ResultAsync_NullAction_ThrowsArgumentNullException()
+    public void TapAsync_NullAction_ThrowsArgumentNullException()
     {
         Result initial = Result.Ok();
         Func<Task> action = null!;
@@ -661,7 +661,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Tap_TaskResultSync_SuccessResult_CallsActionAndReturnsOriginal()
+    public async Task TapAsync_TaskResultSync_CallsActionAndReturnsOriginal()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         bool wasCalled = false;
@@ -674,7 +674,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Tap_TaskResultSync_FailureResult_DoesNotCallActionAndReturnsOriginal()
+    public async Task TapAsync_TaskResultSyncFailure_DoesNotCallActionAndReturnsOriginal()
     {
         Error error = new("Error", code: "FAIL");
         Task<Result> initial = Task.FromResult(Result.Fail(error));
@@ -689,7 +689,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Tap_TaskResultSync_NullAction_ThrowsArgumentNullException()
+    public void TapAsync_TaskResultSyncNullAction_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         Action action = null!;
@@ -700,7 +700,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Tap_TaskResultAsync_SuccessResult_CallsActionAndReturnsOriginal()
+    public async Task TapAsync_TaskResult_CallsActionAndReturnsOriginal()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         bool wasCalled = false;
@@ -713,7 +713,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task Tap_TaskResultAsync_FailureResult_DoesNotCallActionAndReturnsOriginal()
+    public async Task TapAsync_TaskResultFailure_DoesNotCallActionAndReturnsOriginal()
     {
         Error error = new("Error", code: "FAIL");
         Task<Result> initial = Task.FromResult(Result.Fail(error));
@@ -728,7 +728,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void Tap_TaskResultAsync_NullAction_ThrowsArgumentNullException()
+    public void TapAsync_TaskResultNullAction_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         Func<Task> action = null!;
@@ -743,7 +743,7 @@ public class AsyncResultExtensionsTests
     #region TapError Tests
 
     [Fact]
-    public async Task TapError_ResultAsync_FailureResult_CallsActionAndReturnsOriginal()
+    public async Task TapErrorAsync_FailureResult_CallsActionAndReturnsOriginal()
     {
         Error error = new("Error", code: "FAIL");
         Result initial = Result.Fail(error);
@@ -758,7 +758,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task TapError_ResultAsync_SuccessResult_DoesNotCallActionAndReturnsOriginal()
+    public async Task TapErrorAsync_SuccessResult_DoesNotCallActionAndReturnsOriginal()
     {
         Result initial = Result.Ok();
         bool wasCalled = false;
@@ -771,7 +771,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void TapError_ResultAsync_NullAction_ThrowsArgumentNullException()
+    public void TapErrorAsync_NullAction_ThrowsArgumentNullException()
     {
         Result initial = Result.Fail("Error", code: "FAIL");
         Func<Error[], Task> action = null!;
@@ -782,7 +782,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task TapError_TaskResultSync_FailureResult_CallsActionAndReturnsOriginal()
+    public async Task TapErrorAsync_TaskResultSync_CallsActionAndReturnsOriginal()
     {
         Error error = new("Error", code: "FAIL");
         Task<Result> initial = Task.FromResult(Result.Fail(error));
@@ -797,7 +797,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task TapError_TaskResultSync_SuccessResult_DoesNotCallActionAndReturnsOriginal()
+    public async Task TapErrorAsync_TaskResultSyncSuccess_DoesNotCallActionAndReturnsOriginal()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         bool wasCalled = false;
@@ -810,7 +810,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void TapError_TaskResultSync_NullAction_ThrowsArgumentNullException()
+    public void TapErrorAsync_TaskResultSyncNullAction_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Fail("Error", code: "FAIL"));
         Action<Error[]> action = null!;
@@ -821,7 +821,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task TapError_TaskResultAsync_FailureResult_CallsActionAndReturnsOriginal()
+    public async Task TapErrorAsync_TaskResult_CallsActionAndReturnsOriginal()
     {
         Error error = new("Error", code: "FAIL");
         Task<Result> initial = Task.FromResult(Result.Fail(error));
@@ -836,7 +836,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public async Task TapError_TaskResultAsync_SuccessResult_DoesNotCallActionAndReturnsOriginal()
+    public async Task TapErrorAsync_TaskResultSuccess_DoesNotCallActionAndReturnsOriginal()
     {
         Task<Result> initial = Task.FromResult(Result.Ok());
         bool wasCalled = false;
@@ -849,7 +849,7 @@ public class AsyncResultExtensionsTests
     }
 
     [Fact]
-    public void TapError_TaskResultAsync_NullAction_ThrowsArgumentNullException()
+    public void TapErrorAsync_TaskResultNullAction_ThrowsArgumentNullException()
     {
         Task<Result> initial = Task.FromResult(Result.Fail("Error", code: "FAIL"));
         Func<Error[], Task> action = null!;
