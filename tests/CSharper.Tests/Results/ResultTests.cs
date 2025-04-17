@@ -12,9 +12,7 @@ public class ResultTests
         Result result = Result.Ok();
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.IsFailure.Should().BeFalse();
-        result.Errors.Should().BeEmpty();
+        ResultTestHelpers.AssertResult(result);
     }
 
     [Fact]
@@ -38,8 +36,7 @@ public class ResultTests
         Result result = Result.Fail(error);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.IsFailure.Should().BeTrue();
+        ResultTestHelpers.AssertResult(result, false);
         result.Errors.Should().HaveCount(1);
         result.Errors[0].Should().Be(error);
     }
@@ -56,8 +53,7 @@ public class ResultTests
         Result result = Result.Fail(mainError, detailError1, detailError2);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.IsFailure.Should().BeTrue();
+        ResultTestHelpers.AssertResult(result, false);
         result.Errors.Should().HaveCount(3);
         result.Errors.Should().ContainInOrder(mainError, detailError1, detailError2);
     }

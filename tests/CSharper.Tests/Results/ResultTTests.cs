@@ -18,9 +18,7 @@ public class ResultTTests
         Result<object> result = Result.Ok(value);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.IsFailure.Should().BeFalse();
-        result.Errors.Should().BeEmpty();
+        ResultTestHelpers.AssertResult(result);
         result.Value.Should().Be(value);
     }
 
@@ -34,9 +32,7 @@ public class ResultTTests
         Result<string> result = Result.Ok(nullString);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.IsFailure.Should().BeFalse();
-        result.Errors.Should().BeEmpty();
+        ResultTestHelpers.AssertResult(result);
         result.Value.Should().Be(nullString);
     }
 
@@ -51,8 +47,7 @@ public class ResultTTests
         Action act = () => _ = result.Value;
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.IsFailure.Should().BeTrue();
+        ResultTestHelpers.AssertResult(result, false);
         result.Errors.Should().HaveCount(1);
         result.Errors[0].Should().Be(error);
         act.Should().Throw<InvalidOperationException>()
@@ -71,8 +66,7 @@ public class ResultTTests
         Result<int> result = Result.Fail<int>(mainError, detailError1, detailError2);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.IsFailure.Should().BeTrue();
+        ResultTestHelpers.AssertResult(result, false);
         result.Errors.Should().HaveCount(3);
         result.Errors.Should().ContainInOrder(mainError, detailError1, detailError2);
         Action act = () => _ = result.Value;

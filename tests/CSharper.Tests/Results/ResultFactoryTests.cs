@@ -1,8 +1,6 @@
 ﻿using CSharper.Results;
+using CSharper.Tests.TestUtilities;
 using FluentAssertions;
-using Moq;
-using Newtonsoft.Json.Linq;
-using System.Reflection;
 
 namespace CSharper.Tests.Results;
 
@@ -15,7 +13,7 @@ public class ResultFactoryTests
         Result result = Result.Ok();
 
         // Assert
-        AssertResult(result);
+        ResultTestHelpers.AssertResult(result);
     }
 
     [Theory]
@@ -31,7 +29,7 @@ public class ResultFactoryTests
         Result<object> result = Result.Ok(value);
 
         // Assert
-        AssertResult(result);
+        ResultTestHelpers.AssertResult(result);
         result.Value.Should().Be(value);
     }
 
@@ -45,7 +43,7 @@ public class ResultFactoryTests
         Result<string> result = Result.Ok(nullString);
 
         // Assert
-        AssertResult(result);
+        ResultTestHelpers.AssertResult(result);
         result.Value.Should().BeNull();
     }
 
@@ -59,7 +57,7 @@ public class ResultFactoryTests
         Result result = Result.Fail(error);
 
         // Assert
-        AssertResult(result, false);
+        ResultTestHelpers.AssertResult(result, false);
         result.Errors.Should().ContainSingle(e => e == error);
     }
 
@@ -73,7 +71,7 @@ public class ResultFactoryTests
         Result<string> result = Result.Fail<string>(error);
 
         // Assert
-        AssertResult(result, false);
+        ResultTestHelpers.AssertResult(result, false);
         result.Errors.Should().ContainSingle(e => e == error);
     }
 
@@ -89,7 +87,7 @@ public class ResultFactoryTests
         Result result = Result.Fail(mainError, detailError1, detailError2);
 
         // Assert
-        AssertResult(result, false);
+        ResultTestHelpers.AssertResult(result, false);
         result.Errors.Should().HaveCount(3);
         result.Errors.Should().ContainInOrder(mainError, detailError1, detailError2);
     }
@@ -106,7 +104,7 @@ public class ResultFactoryTests
         Result<int> result = Result.Fail<int>(mainError, detailError1, detailError2);
 
         // Assert
-        AssertResult(result, false);
+        ResultTestHelpers.AssertResult(result, false);
         result.Errors.Should().HaveCount(3);
         result.Errors.Should().ContainInOrder(mainError, detailError1, detailError2);
     }
@@ -117,7 +115,7 @@ public class ResultFactoryTests
         Error nullError = null!;
         // Act & Assert
         Action act = () => Result.Fail(nullError);
-        AssertArgumentException<ArgumentNullException>(act);
+        AssertHelpers.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -126,7 +124,7 @@ public class ResultFactoryTests
         Error nullError = null!;
         // Act & Assert
         Action act = () => Result.Fail<int>(nullError);
-        AssertArgumentException<ArgumentNullException>(act);
+        AssertHelpers.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -141,7 +139,7 @@ public class ResultFactoryTests
         Result result = Result.Fail(message, code, path);
 
         // Assert
-        AssertResult(result, false);
+        ResultTestHelpers.AssertResult(result, false);
         result.Errors.Should().HaveCount(1);
         result.Errors[0].Message.Should().Be(message);
         result.Errors[0].Code.Should().Be(code);
@@ -160,7 +158,7 @@ public class ResultFactoryTests
         Result<double> result = Result.Fail<double>(message, code, path);
 
         // Assert
-        AssertResult(result, false);
+        ResultTestHelpers.AssertResult(result, false);
         result.Errors.Should().HaveCount(1);
         result.Errors[0].Message.Should().Be(message);
         result.Errors[0].Code.Should().Be(code);
@@ -175,7 +173,7 @@ public class ResultFactoryTests
     {
         // Act & Assert
         Action act = () => Result.Fail(invalidMessage!);
-        AssertArgumentException<ArgumentException>(act);
+        AssertHelpers.AssertArgumentException<ArgumentException>(act);
     }
 
     [Theory]
@@ -204,7 +202,7 @@ public class ResultFactoryTests
         Action act = () => Result.Collect(results);
 
         // Assert
-        AssertArgumentException<ArgumentNullException>(act);
+        AssertHelpers.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -217,7 +215,7 @@ public class ResultFactoryTests
         Action act = () => Result.Collect(results);
 
         // Assert
-        AssertArgumentException<ArgumentException>(act);
+        AssertHelpers.AssertArgumentException<ArgumentException>(act);
     }
 
     [Fact]
@@ -227,20 +225,18 @@ public class ResultFactoryTests
         Result result1 = Result.Ok();
         Result<string> result2 = Result.Ok("Success");
         Result<int> result3 = Result.Ok(42);
-        List<ResultLike> results = new List<ResultLike>
-            {
-                result1,
-                result2,
-                result3
-            };
+        List<ResultLike> results =
+        [
+            result1,
+            result2,
+            result3
+        ];
 
         // Act
         Result actual = Result.Collect(results);
 
         // Assert
-        actual.IsSuccess.Should().BeTrue();
-        actual.IsFailure.Should().BeFalse();
-        actual.Errors.Should().BeEmpty();
+        ResultTestHelpers.AssertResult(actual);
     }
 
     [Fact]
@@ -248,15 +244,13 @@ public class ResultFactoryTests
     {
         // Arrange
         Result result = Result.Ok();
-        List<ResultLike> results = new List<ResultLike> { result };
+        List<ResultLike> results = [result];
 
         // Act
         Result actual = Result.Collect(results);
 
         // Assert
-        actual.IsSuccess.Should().BeTrue();
-        actual.IsFailure.Should().BeFalse();
-        actual.Errors.Should().BeEmpty();
+        ResultTestHelpers.AssertResult(actual);
     }
 
     [Fact]
@@ -269,29 +263,20 @@ public class ResultFactoryTests
         Result result1 = Result.Fail(error1);
         Result<string> result2 = Result.Fail<string>(error2);
         Result<int> result3 = Result.Fail<int>(error3);
-        List<ResultLike> results = new List<ResultLike>
-            {
-                result1,
-                result2,
-                result3
-            };
+        List<ResultLike> results =
+        [
+            result1,
+            result2,
+            result3
+        ];
 
         // Act
         Result actual = Result.Collect(results);
 
         // Assert
-        actual.IsSuccess.Should().BeFalse();
-        actual.IsFailure.Should().BeTrue();
+        ResultTestHelpers.AssertResult(actual, false);
         actual.Errors.Should().HaveCount(3);
-        actual.Errors[0].Message.Should().Be("Error 1");
-        actual.Errors[0].Code.Should().Be("ERR001");
-        actual.Errors[0].Path.Should().Be("Path1");
-        actual.Errors[1].Message.Should().Be("Error 2");
-        actual.Errors[1].Code.Should().Be("ERR002");
-        actual.Errors[1].Path.Should().Be("Path2");
-        actual.Errors[2].Message.Should().Be("Error 3");
-        actual.Errors[2].Code.Should().Be("ERR003");
-        actual.Errors[2].Path.Should().Be("Path3");
+        actual.Errors.Should().ContainInOrder(error1, error2, error3);
     }
 
     [Fact]
@@ -301,21 +286,15 @@ public class ResultFactoryTests
         Error error1 = new("Error 1", "ERR001", "Path1");
         Error error2 = new("Error 2", "ERR002", "Path2");
         Result result = Result.Fail(error1, error2);
-        List<ResultLike> results = new List<ResultLike> { result };
+        List<ResultLike> results = [result];
 
         // Act
         Result actual = Result.Collect(results);
 
         // Assert
-        actual.IsSuccess.Should().BeFalse();
-        actual.IsFailure.Should().BeTrue();
+        ResultTestHelpers.AssertResult(actual, false);
         actual.Errors.Should().HaveCount(2);
-        actual.Errors[0].Message.Should().Be("Error 1");
-        actual.Errors[0].Code.Should().Be("ERR001");
-        actual.Errors[0].Path.Should().Be("Path1");
-        actual.Errors[1].Message.Should().Be("Error 2");
-        actual.Errors[1].Code.Should().Be("ERR002");
-        actual.Errors[1].Path.Should().Be("Path2");
+        actual.Errors.Should().ContainInOrder(error1, error2);
     }
 
     [Fact]
@@ -338,15 +317,9 @@ public class ResultFactoryTests
         Result actual = Result.Collect(results);
 
         // Assert
-        actual.IsSuccess.Should().BeFalse();
-        actual.IsFailure.Should().BeTrue();
+        ResultTestHelpers.AssertResult(actual, false);
         actual.Errors.Should().HaveCount(2);
-        actual.Errors[0].Message.Should().Be("Error 1");
-        actual.Errors[0].Code.Should().Be("ERR001");
-        actual.Errors[0].Path.Should().Be("Path1");
-        actual.Errors[1].Message.Should().Be("Error 2");
-        actual.Errors[1].Code.Should().Be("ERR002");
-        actual.Errors[1].Path.Should().Be("Path2");
+        actual.Errors.Should().ContainInOrder(error1, error2);
     }
 
     [Fact]
@@ -356,51 +329,19 @@ public class ResultFactoryTests
         Error error = new("Error 1", "ERR001", "Path1");
         Func<ResultBase> successFactory = () => Result.Ok();
         Func<ResultBase> failureFactory = () => Result.Fail(error);
-        List<ResultLike> results = new List<ResultLike>
-            {
-                successFactory,
-                failureFactory
-            };
+        List<ResultLike> results =
+        [
+            successFactory,
+            failureFactory
+        ];
 
         // Act
         Result actual = Result.Collect(results);
 
         // Assert
-        actual.IsSuccess.Should().BeFalse();
-        actual.IsFailure.Should().BeTrue();
+        ResultTestHelpers.AssertResult(actual, false);
         actual.Errors.Should().HaveCount(1);
-        actual.Errors[0].Message.Should().Be("Error 1");
-        actual.Errors[0].Code.Should().Be("ERR001");
-        actual.Errors[0].Path.Should().Be("Path1");
-    }
-
-    #endregion
-
-    #region Helpers
-
-    private static void AssertArgumentException<T>(Action act)
-        where T : ArgumentException
-    {
-        act.Should().Throw<T>()
-            .Which.Should().Match<T>(e =>
-                !string.IsNullOrWhiteSpace(e.ParamName)
-                && !string.IsNullOrWhiteSpace(e.Message));
-    }
-
-    private static void AssertResult(ResultBase result, bool isSuccess = true)
-    {
-        if (isSuccess)
-        {
-            result.IsSuccess.Should().BeTrue();
-            result.IsFailure.Should().BeFalse();
-            result.Errors.Should().BeEmpty();
-        }
-        else
-        {
-            result.IsSuccess.Should().BeFalse();
-            result.IsFailure.Should().BeTrue();
-            result.Errors.Should().NotBeEmpty();
-        }
+        actual.Errors.Should().ContainInOrder(error);
     }
 
     #endregion
