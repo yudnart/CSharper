@@ -76,11 +76,12 @@ public abstract class ResultBase
         }
 
         StringBuilder sb = new();
-        sb.AppendLine("Failure:");
+        sb.Append("Failure:");
 
         foreach (Error error in Errors)
         {
-            sb.AppendLine($"- {error}");
+            sb.AppendLine();
+            sb.Append($"- {error}");
         }
 
         return sb.ToString();

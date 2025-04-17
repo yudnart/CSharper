@@ -1,7 +1,7 @@
 # CSharper
 
 [![NuGet Version](https://img.shields.io/nuget/vpre/dht.csharper?label=nuget&style=flat-square&color=blue)](https://www.nuget.org/packages/dht.csharper)
-[![NuGet Downloads](https://img.shields.io/nuget/dt/dht.csharper?label=downloads&style=flat-square&color=blue)](https://www.nuget.org/packages/dht.csharper)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/dht.csharper?label=downloads&style=flat-square&color=blue)](https://www.nuget.org/stats/packages/dht.csharper?groupby=Version)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 > :heart: [Give feedback](https://github.com/yudnart/CSharper/issues)
