@@ -111,7 +111,7 @@ internal sealed class LoggingBehavior : IBehavior
     private void LogFailure(IRequest request, Error[] errors)
     {
         errors ??= [];
-        _logger.LogError(_requestFailedWithErrors,
+        _logger.LogWarning(_requestFailedWithErrors,
             request.GetType().Name,
             string.Join<Error>(Environment.NewLine, errors));
     }
@@ -134,7 +134,7 @@ internal sealed class LoggingBehavior : IBehavior
             requestJson = JsonSerializer.Serialize(request, request.GetType(), _serializerOptions);
             if (requestJson.Length > _maxRequestJsonLength)
             {
-#if NET8_0_OR_GREATER
+#if NET6_0_OR_GREATER
                 requestJson = requestJson[.._maxRequestJsonLength];
 #else
                 requestJson = requestJson.Substring(0, _maxRequestJsonLength);

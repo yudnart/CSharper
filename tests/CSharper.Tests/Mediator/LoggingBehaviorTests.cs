@@ -1,8 +1,7 @@
 ﻿using CSharper.AppContext;
 using CSharper.Results;
 using CSharper.Tests.Mediator;
-using CSharper.Tests.TestHelpers;
-using CSharper.Tests.TestUtilties;
+using CSharper.Tests.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -189,7 +188,7 @@ public sealed class LoggingBehaviorTests
 
         LogEntry failureLog = logEntries[logEntries.Count - 1];
         failureLog.Should().NotBeNull();
-        failureLog!.Level.Should().Be(LogLevel.Error);
+        failureLog!.Level.Should().Be(LogLevel.Warning);
     }
 
     /// <summary>

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace CSharper.Tests.TestHelpers;
+namespace CSharper.Tests.TestUtilities;
 
 /// <summary>
 /// A memory-based logger that captures log entries and scope state for testing.

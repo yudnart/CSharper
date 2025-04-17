@@ -1,7 +1,7 @@
 ﻿using CSharper.AppContext;
 using Moq;
 
-namespace CSharper.Tests.TestUtilties;
+namespace CSharper.Tests.TestUtilities;
 
 /// <summary>
 /// A test implementation of <see cref="IAppContext"/> for use in unit tests.
