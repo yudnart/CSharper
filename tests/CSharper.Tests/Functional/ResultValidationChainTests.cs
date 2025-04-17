@@ -6,7 +6,7 @@ using FluentAssertions;
 
 namespace CSharper.Tests.Functional;
 
-public class ResultValidationChainTests
+public sealed class ResultValidationChainTests
 {
     [Fact]
     public void Constructor_WithNullResult_ThrowsArgumentNullException()
@@ -15,7 +15,7 @@ public class ResultValidationChainTests
 
         Action act = () => new ResultValidationChain<string>(initialResult);
 
-        AssertUtility.AssertArgumentException(act);
+        AssertHelper.AssertArgumentException(act);
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public class ResultValidationChainTests
 
         Action act = () => chain.And(predicate, error);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class ResultValidationChainTests
 
         Action act = () => chain.And(predicate, error);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]

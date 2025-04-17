@@ -16,7 +16,7 @@ internal sealed class TestRequest<T> : IRequest<T>
     public int Value { get; set; }
 }
 
-public class UnserializableTestRequest : IRequest
+internal sealed class UnserializableTestRequest : IRequest
 {
     public string Id { get; set; } = string.Empty;
     public object CircularReference => this;

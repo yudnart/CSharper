@@ -166,8 +166,7 @@ public static class ResultValidationChainExtensions
         asyncBuilder.ThrowIfNull(nameof(asyncBuilder));
         predicate.ThrowIfNull(nameof(predicate));
         error.ThrowIfNull(nameof(error));
-        ResultValidationChain<T> builder = await asyncBuilder;
-        return builder.And(predicate, error);
+        return (await asyncBuilder).And(predicate, error);
     }
 
     /// <summary>
@@ -182,8 +181,7 @@ public static class ResultValidationChainExtensions
     {
         asyncBuilder.ThrowIfNull(nameof(asyncBuilder));
         next.ThrowIfNull(nameof(next));
-        ResultValidationChain<T> builder = await asyncBuilder;
-        return builder.Bind(next);
+        return (await asyncBuilder).Bind(next);
     }
 
     /// <summary>
@@ -199,8 +197,7 @@ public static class ResultValidationChainExtensions
     {
         asyncBuilder.ThrowIfNull(nameof(asyncBuilder));
         next.ThrowIfNull(nameof(next));
-        ResultValidationChain<T> builder = await asyncBuilder;
-        return builder.Bind(next);
+        return (await asyncBuilder).Bind(next);
     }
 
     /// <summary>

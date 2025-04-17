@@ -6,7 +6,7 @@ using FluentAssertions;
 
 namespace CSharper.Tests.Functional;
 
-public class ResultExtensionsTests
+public sealed class ResultExtensionsTests
 {
     [Fact]
     public void Bind_SuccessResult_CallsNextAndReturnsResult()
@@ -67,7 +67,7 @@ public class ResultExtensionsTests
 
         Action act = () => initial.Bind(next);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class ResultExtensionsTests
 
         Action act = () => initial.Bind(next);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public class ResultExtensionsTests
 
         Action act = () => initial.MapError<int>();
 
-        AssertUtility.AssertException<InvalidOperationException>(act);
+        AssertHelper.AssertException<InvalidOperationException>(act);
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public class ResultExtensionsTests
 
         Action act = () => initial.Match(onSuccess!);
 
-        AssertUtility.AssertException<ArgumentNullException>(act);
+        AssertHelper.AssertException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public class ResultExtensionsTests
 
         Action act = () => initial.Match(onSuccess, onFailure);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public class ResultExtensionsTests
 
         Action act = () => initial.Match(onSuccess, onFailure);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -222,7 +222,7 @@ public class ResultExtensionsTests
 
         Action act = () => initial.Recover(onFailure);
 
-        AssertUtility.AssertException<ArgumentNullException>(act);
+        AssertHelper.AssertException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -261,7 +261,7 @@ public class ResultExtensionsTests
 
         Action act = () => initial.Tap(action);
 
-        AssertUtility.AssertException<ArgumentNullException>(act);
+        AssertHelper.AssertException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -300,6 +300,6 @@ public class ResultExtensionsTests
 
         Action act = () => initial.TapError(action);
 
-        AssertUtility.AssertException<ArgumentNullException>(act);
+        AssertHelper.AssertException<ArgumentNullException>(act);
     }
 }

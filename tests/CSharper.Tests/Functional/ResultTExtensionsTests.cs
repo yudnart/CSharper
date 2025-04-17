@@ -6,7 +6,7 @@ using FluentAssertions;
 
 namespace CSharper.Tests.Functional;
 
-public class ResultTExtensionsTests
+public sealed class ResultTExtensionsTests
 {
     [Fact]
     public void Bind_SuccessResult_CallsNextAndReturnsResult()
@@ -40,7 +40,7 @@ public class ResultTExtensionsTests
 
         Action act = () => initial.Bind(next);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public class ResultTExtensionsTests
 
         Action act = () => initial.Bind(next);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -117,7 +117,7 @@ public class ResultTExtensionsTests
 
         Action act = () => initial.Ensure(predicate, error);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class ResultTExtensionsTests
 
         Action act = () => initial.Ensure(predicate, error);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public class ResultTExtensionsTests
 
         Action act = () => initial.Map(map);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public class ResultTExtensionsTests
 
         Action act = () => initial.MapError();
 
-        AssertUtility.AssertException<InvalidOperationException>(act);
+        AssertHelper.AssertException<InvalidOperationException>(act);
     }
 
     [Fact]
@@ -209,7 +209,7 @@ public class ResultTExtensionsTests
 
         Action act = () => initial.MapError<string, int>();
 
-        AssertUtility.AssertException<InvalidOperationException>(act);
+        AssertHelper.AssertException<InvalidOperationException>(act);
     }
 
     [Fact]
@@ -243,7 +243,7 @@ public class ResultTExtensionsTests
 
         Action act = () => initial.Match(onSuccess);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -280,7 +280,7 @@ public class ResultTExtensionsTests
 
         Action act = () => initial.Match(onSuccess, onFailure);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -292,7 +292,7 @@ public class ResultTExtensionsTests
 
         Action act = () => initial.Match(onSuccess, onFailure);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -328,7 +328,7 @@ public class ResultTExtensionsTests
 
         Action act = () => initial.Recover(fallback);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -368,7 +368,7 @@ public class ResultTExtensionsTests
 
         Action act = () => initial.Tap(action);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -408,6 +408,6 @@ public class ResultTExtensionsTests
 
         Action act = () => initial.TapError(action);
 
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 }

@@ -4,7 +4,7 @@ using FluentAssertions;
 
 namespace CSharper.Tests.Results;
 
-public class ResultFactoryTests
+public sealed class ResultFactoryTests
 {
     [Fact]
     public void Ok_Should_Create_SuccessResult()
@@ -115,7 +115,7 @@ public class ResultFactoryTests
         Error nullError = null!;
         // Act & Assert
         Action act = () => Result.Fail(nullError);
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public class ResultFactoryTests
         Error nullError = null!;
         // Act & Assert
         Action act = () => Result.Fail<int>(nullError);
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public class ResultFactoryTests
     {
         // Act & Assert
         Action act = () => Result.Fail(invalidMessage!);
-        AssertUtility.AssertArgumentException<ArgumentException>(act);
+        AssertHelper.AssertArgumentException<ArgumentException>(act);
     }
 
     [Theory]
@@ -202,7 +202,7 @@ public class ResultFactoryTests
         Action act = () => Result.Collect(results);
 
         // Assert
-        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -215,7 +215,7 @@ public class ResultFactoryTests
         Action act = () => Result.Collect(results);
 
         // Assert
-        AssertUtility.AssertArgumentException<ArgumentException>(act);
+        AssertHelper.AssertArgumentException<ArgumentException>(act);
     }
 
     [Fact]

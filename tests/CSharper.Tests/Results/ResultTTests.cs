@@ -3,7 +3,7 @@ using FluentAssertions;
 
 namespace CSharper.Tests.Results;
 
-public class ResultTTests
+public sealed class ResultTTests
 {
     [Theory]
     [InlineData("String value")]

@@ -3,7 +3,7 @@ using FluentAssertions;
 
 namespace CSharper.Tests.Results;
 
-public class ResultTests
+public sealed class ResultTests
 {
     [Fact]
     public void SuccessResult_Should_HaveCorrectState()
