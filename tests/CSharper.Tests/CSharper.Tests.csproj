@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\CSharper\CSharper.csproj" />
     <ProjectReference Include="..\CSharper\CSharper.csproj" />
   </ItemGroup>
 
