@@ -48,14 +48,14 @@ public static class ResultTExtensions
     /// <param name="result">The result to validate.</param>
     /// <param name="predicate">The synchronous predicate to evaluate the value if <paramref name="result"/> is successful.</param>
     /// <param name="error">The error to include if the predicate fails.</param>
-    /// <returns>A <see cref="ResultValidationBuilder{T}"/> for chaining additional validations.</returns>
+    /// <returns>A <see cref="ResultValidationChain{T}"/> for chaining additional validations.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="error"/> is null.</exception>
-    public static ResultValidationBuilder<T> Ensure<T>(this Result<T> result,
+    public static ResultValidationChain<T> Ensure<T>(this Result<T> result,
         Func<T, bool> predicate, Error error)
     {
         predicate.ThrowIfNull(nameof(predicate));
         error.ThrowIfNull(nameof(error));
-        return new ResultValidationBuilder<T>(result).Ensure(predicate, error);
+        return new ResultValidationChain<T>(result).And(predicate, error);
     }
 
     /// <summary>
@@ -82,6 +82,10 @@ public static class ResultTExtensions
     /// <returns>A non-generic <see cref="Result"/> with preserved errors if failed, or a successful result if not failed.</returns>
     public static Result MapError<T>(this Result<T> result)
     {
+        if (result.IsSuccess)
+        {
+            throw new InvalidOperationException("Cannot map errors from a successful Result.");
+        }
         IReadOnlyList<Error> errors = result.Errors;
         return Result.Fail(errors[0], [.. errors.Skip(1)]);
     }
@@ -95,6 +99,10 @@ public static class ResultTExtensions
     /// <returns>A typed <see cref="Result{U}"/> with preserved errors if failed, or a successful result if not failed.</returns>
     public static Result<U> MapError<T, U>(this Result<T> result)
     {
+        if (result.IsSuccess)
+        {
+            throw new InvalidOperationException("Cannot map errors from a successful Result.");
+        }
         IReadOnlyList<Error> errors = result.Errors;
         return Result.Fail<U>(errors[0], [.. errors.Skip(1)]);
     }

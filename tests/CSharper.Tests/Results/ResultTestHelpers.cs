@@ -20,4 +20,10 @@ internal static class ResultTestHelpers
             result.Errors.Should().NotBeEmpty();
         }
     }
+
+    public static void AssertResult<T>(Result<T> result, T value)
+    {
+        AssertResult(result);
+        result.Value.Should().Be(value);
+    }
 }

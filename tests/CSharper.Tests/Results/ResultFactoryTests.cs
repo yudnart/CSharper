@@ -115,7 +115,7 @@ public class ResultFactoryTests
         Error nullError = null!;
         // Act & Assert
         Action act = () => Result.Fail(nullError);
-        AssertHelpers.AssertArgumentException<ArgumentNullException>(act);
+        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public class ResultFactoryTests
         Error nullError = null!;
         // Act & Assert
         Action act = () => Result.Fail<int>(nullError);
-        AssertHelpers.AssertArgumentException<ArgumentNullException>(act);
+        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public class ResultFactoryTests
     {
         // Act & Assert
         Action act = () => Result.Fail(invalidMessage!);
-        AssertHelpers.AssertArgumentException<ArgumentException>(act);
+        AssertUtility.AssertArgumentException<ArgumentException>(act);
     }
 
     [Theory]
@@ -202,7 +202,7 @@ public class ResultFactoryTests
         Action act = () => Result.Collect(results);
 
         // Assert
-        AssertHelpers.AssertArgumentException<ArgumentNullException>(act);
+        AssertUtility.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -215,7 +215,7 @@ public class ResultFactoryTests
         Action act = () => Result.Collect(results);
 
         // Assert
-        AssertHelpers.AssertArgumentException<ArgumentException>(act);
+        AssertUtility.AssertArgumentException<ArgumentException>(act);
     }
 
     [Fact]

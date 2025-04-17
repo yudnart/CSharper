@@ -40,13 +40,18 @@ public static class ResultExtensions
     }
 
     /// <summary>
-    /// Maps a <see cref="Result"/> to a typed result, preserving errors if the result is a failure.
+    /// Maps a failed <see cref="Result"/> to a typed failed result, preserving errors.
     /// </summary>
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <param name="result">The result to map.</param>
-    /// <returns>A typed <see cref="Result{T}"/> with preserved errors if failed, or an empty successful result.</returns>
+    /// <returns>A typed <see cref="Result{T}"/> with preserved errors if failed.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if <paramref name="result"/> is successful.</exception>
     public static Result<T> MapError<T>(this Result result)
     {
+        if (result.IsSuccess)
+        {
+            throw new InvalidOperationException("Cannot map errors from a successful Result.");
+        }
         IReadOnlyList<Error> errors = result.Errors;
         return Result.Fail<T>(errors[0], [.. errors.Skip(1)]);
     }

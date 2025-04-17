@@ -27,8 +27,10 @@ using CSharper.Functional;
 Chain synchronous operations on `Result<T>`:
 
 ```csharp
-Result<string> ValidateInput(string input) => string.IsNullOrEmpty(input) ? Result.Fail<string>("Input is empty", code: "EMPTY", path: "input") : Result.Ok(input);
-Result<int> ParseNumber(string input) => int.TryParse(input, out var number) ? Result.Ok(number) : Result.Fail<int>("Invalid number", code: "INVALID_NUM", path: "input");
+Result<string> ValidateInput(string input) => string.IsNullOrEmpty(input) 
+    ? Result.Fail<string>("Input is empty", code: "EMPTY", path: "input") : Result.Ok(input);
+Result<int> ParseNumber(string input) => int.TryParse(input, out var number) 
+    ? Result.Ok(number) : Result.Fail<int>("Invalid number", code: "INVALID_NUM", path: "input");
 
 Result<int> result = ValidateInput("42")
     .Bind(ParseNumber);
@@ -57,8 +59,8 @@ Validate a `Result<T>` with chained predicates:
 Result<string> input = Result.Ok("test");
 Result<string> result = input
     .Ensure(s => s.Length > 3, new Error("Input too short", code: "SHORT", path: "input"))
-    .Ensure(s => s.All(char.IsLetter), new Error("Input must be letters", code: "INVALID", path: "input"))
-    .Build();
+        .And(s => s.All(char.IsLetter), new Error("Input must be letters", code: "INVALID", path: "input"))
+    .Collect(); // Evaluates predicates and collects errors
 
 Console.WriteLine(result.IsSuccess ? $"Valid: {result.Value}" : $"Error: {result.Errors[0]}");
 // Output: Error: Path: input - Input too short (SHORT)
@@ -122,8 +124,9 @@ Combine methods for a realistic workflow:
 async Task<Result<int>> ProcessInputAsync(string input)
 {
     return await ValidateInputAsync(input)
+        .Validate()
         .Ensure(async s => await Task.FromResult(s.Length > 3), new Error("Input too short", code: "SHORT", path: "input"))
-        .Build()
+            .And(async s => await Task.FromResult(s.Length < 5), new Error("Input too long", code: "LONG", path: "input"))
         .Bind(ParseNumberAsync)
         .Map(n => n * 2)
         .Tap(n => Console.WriteLine($"Doubled: {n}"))
@@ -142,7 +145,8 @@ Console.WriteLine(final.IsSuccess ? $"Result: {final.Value}" : $"Error: {final.E
 
 - **Bind Operations**:
   - Chains `Result` or `Result<T>` to synchronous or asynchronous operations, executing the next step only if successful.
-  - Supports non-typed to typed (`Result` to `Result<T>`), typed to non-typed (`Result<T>` to `Result`), and typed to typed (`Result<T>` to `Result<U>`) transitions.
+  - Supports non-typed to typed (`Result` to `Result<T>`), typed to non-typed (`Result<T>` to `Result`), and typed to typed 
+  (`Result<T>` to `Result<U>`) transitions.
   - Asynchronous variants for `Task<Result>` and `Task<Result<T>>`.
 - **Mapping and Transformation**:
   - `Map` transforms `Result<T>` values synchronously or asynchronously to a `Result<U>`.
@@ -151,6 +155,8 @@ Console.WriteLine(final.IsSuccess ? $"Result: {final.Value}" : $"Error: {final.E
 - **Validation**:
   - `Ensure` validates `Result<T>` with synchronous or asynchronous predicates, returning a builder for chained validations.
   - Asynchronous `Ensure` for `Task<Result<T>>` with synchronous or asynchronous predicates.
+  - `Collect` evaluates all predicates and returns a `Result<T>` with all errors if any predicates fail.
+  - `Bind` allows chaining validated results to further compose tasks.
 - **Matching**:
   - `Match` executes success or failure handlers for `Result` or `Result<T>`, returning a value.
   - Supports synchronous and asynchronous handlers for `Task<Result>` and `Task<Result<T>>`.
@@ -171,7 +177,8 @@ Console.WriteLine(final.IsSuccess ? $"Result: {final.Value}" : $"Error: {final.E
 - Use `Recover` to handle errors gracefully, providing fallbacks or logging before continuing.
 - Apply `Tap` and `TapError` for side-effects like logging or notifications without altering the `Result`.
 - Use asynchronous methods for I/O-bound operations, ensuring non-blocking workflows.
-- Combine with `CSharper.Results` to create robust workflows, using `Error.Code` for programmatic handling and `Error.Path` for context (e.g., field validation).
+- Combine with `CSharper.Results` to create robust workflows, using `Error.Code` for programmatic handling and `Error.Path`
+for context (e.g., field validation).
 - Display `Error.ToString()` for user-friendly error messages, including `Path` and `Code` when available.
 - Chain methods to build declarative pipelines, improving readability and maintainability.
 
