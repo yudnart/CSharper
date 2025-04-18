@@ -1,7 +1,7 @@
 # CSharper
 
-[![NuGet Version](https://img.shields.io/nuget/vpre/dht.csharper?label=nuget&style=flat-square&color=blue)](https://www.nuget.org/packages/dht.csharper){target="_blank"}
-[![NuGet Downloads](https://img.shields.io/nuget/dt/dht.csharper?label=downloads&style=flat-square&color=teal)](https://www.nuget.org/stats/packages/dht.csharper?groupby=Version){target="_blank"}
+[![NuGet Version](https://img.shields.io/nuget/vpre/dht.csharper?label=nuget&style=flat-square&color=blue)](https://www.nuget.org/packages/dht.csharper)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/dht.csharper?label=downloads&style=flat-square&color=teal)](https://www.nuget.org/stats/packages/dht.csharper?groupby=Version)
 [![NuGet Version](https://img.shields.io/github/actions/workflow/status/yudnart/CSharper/publish-nuget.yml?style=flat-square&color=green)](https://github.com/yudnart/CSharper/actions/workflows/publish-nuget.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 
@@ -28,7 +28,7 @@ To use CSharper, install the `dht.csharper` package:
    ```powershell
    Install-Package dht.csharper
    ```
-3. Or, add it via your IDE’s package manager (e.g., Visual Studio, Rider).
+3. Or, add it via your IDEâ€™s package manager (e.g., Visual Studio, Rider).
 
 ## Features
 
@@ -43,13 +43,13 @@ validation or logging, enabling decoupled request handling across application la
 
 CSharper draws inspiration from several established projects in the .NET and functional programming communities:
 - [**MediatR**](https://github.com/jbogard/MediatR): A widely-used .NET library for in-process messaging and mediator patterns, inspiring 
-CSharper’s Mediator component for decoupled request handling.
+CSharperâ€™s Mediator component for decoupled request handling.
 - [**CSharpFunctionalExtensions**](https://github.com/vkhorikov/CSharpFunctionalExtensions): A functional programming library for C#, influencing
-CSharper’s Functional extensions with monadic operations and result handling.
-- [**FluentResults**](https://github.com/altmann/FluentResults): A result-handling library that shaped CSharper’s Results module, emphasizing 
+CSharperâ€™s Functional extensions with monadic operations and result handling.
+- [**FluentResults**](https://github.com/altmann/FluentResults): A result-handling library that shaped CSharperâ€™s Results module, emphasizing 
 typed outcomes and error management.
 
-These projects provided valuable patterns and ideas, adapted to fit CSharper’s goals of simplicity and integration in .NET applications.
+These projects provided valuable patterns and ideas, adapted to fit CSharperâ€™s goals of simplicity and integration in .NET applications.
 
 ## Contributing
 
