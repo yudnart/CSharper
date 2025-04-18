@@ -1,10 +1,11 @@
 # CSharper
 
-[![NuGet Version](https://img.shields.io/nuget/vpre/dht.csharper?label=nuget&style=flat-square&color=blue)](https://www.nuget.org/packages/dht.csharper)
-[![NuGet Downloads](https://img.shields.io/nuget/dt/dht.csharper?label=downloads&style=flat-square&color=blue)](https://www.nuget.org/stats/packages/dht.csharper?groupby=Version)
-[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+[![NuGet Version](https://img.shields.io/nuget/vpre/dht.csharper?label=nuget&style=flat-square&color=blue)](https://www.nuget.org/packages/dht.csharper){target="_blank"}
+[![NuGet Downloads](https://img.shields.io/nuget/dt/dht.csharper?label=downloads&style=flat-square&color=teal)](https://www.nuget.org/stats/packages/dht.csharper?groupby=Version){target="_blank"}
+[![NuGet Version](https://img.shields.io/github/actions/workflow/status/yudnart/CSharper/publish-nuget.yml?style=flat-square&color=green)](https://github.com/yudnart/CSharper/actions/workflows/publish-nuget.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 
-> :heart: [Give feedback](https://github.com/yudnart/CSharper/issues)
+> :heart: [Request features or give feedback](https://github.com/yudnart/CSharper/issues)
 
 CSharper provides utilities for .NET development, distributed as the `dht.csharper` NuGet package, targeting .NET Standard 2.0 and .NET 8.0. 
 It includes Mediator for decoupled request handling, Results for error management, and Functional extensions for task composition, supporting 
@@ -19,10 +20,15 @@ integrate seamlessly, fitting contexts like web controllers or service layers, a
 ## Installation
 
 To use CSharper, install the `dht.csharper` package:
-
-```bash
-dotnet add package dht.csharper
-```
+1. Run the following command in your project directory
+   ```bash
+   dotnet add package dht.csharper
+   ```
+2. Alternatively, use the Package Manager Console in Visual Studio:
+   ```powershell
+   Install-Package dht.csharper
+   ```
+3. Or, add it via your IDE’s package manager (e.g., Visual Studio, Rider).
 
 ## Features
 

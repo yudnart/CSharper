@@ -1,0 +1,114 @@
+name: Run Unit Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to test (e.g., main, feature/branch-name)'
+        required: false
+      log-mode:
+        description: 'Test logging mode: detailed, minimal, or failed-only'
+        required: false
+        default: 'failed-only'
+  workflow_call:
+    inputs:
+      branch:
+        description: 'Branch to test (e.g., main, feature/branch-name)'
+        required: false
+        type: string
+      log-mode:
+        description: 'Test logging mode: detailed, minimal, or failed-only'
+        required: false
+        default: 'failed-only'
+        type: string
+
+jobs:
+  main:
+    runs-on: windows-latest  # Required for net48
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || github.event.inputs.branch || github.ref_name }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+          # .NET Framework 4.8 SDK is pre-installed on windows-latest
+
+      - name: Try download build artifacts
+        id: download_artifacts
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts-${{ github.run_id }}
+          path: .
+
+      - name: Restore dependencies
+        if: steps.download_artifacts.outcome != 'success'
+        run: dotnet restore
+        shell: pwsh
+
+      - name: Build
+        if: steps.download_artifacts.outcome != 'success'
+        run: dotnet build --configuration Release --no-restore
+        shell: pwsh
+
+      - name: Run unit tests
+        run: |
+          $TEST_PROJECTS = Get-ChildItem -Path tests -Filter "*.csproj" -Recurse
+          if (-not $TEST_PROJECTS) {
+            Write-Error "No test projects found in tests directory"
+            exit 1
+          }
+          $LOG_MODE = "${{ inputs.log-mode || github.event.inputs.log-mode || 'failed-only' }}"
+          foreach ($PROJ in $TEST_PROJECTS) {
+            Write-Host "Running tests for $PROJ with log mode $LOG_MODE"
+            $TRX_FILE = "test-output-$($PROJ.BaseName).trx"
+            if ($LOG_MODE -eq "failed-only") {
+              # Run tests quietly, output to TRX for failed tests
+              dotnet test $PROJ --configuration Release --no-build --verbosity quiet --framework net48 --logger "trx;LogFileName=$TRX_FILE"
+              $EXIT_CODE_NET48 = $LASTEXITCODE
+              dotnet test $PROJ --configuration Release --no-build --verbosity quiet --framework net8.0 --logger "trx;LogFileName=$TRX_FILE"
+              $EXIT_CODE_NET80 = $LASTEXITCODE
+              if ($EXIT_CODE_NET48 -ne 0 -or $EXIT_CODE_NET80 -ne 0) {
+                # Parse TRX for failed tests
+                $FAILED_TESTS = Select-Xml -Path $TRX_FILE -XPath "//TestRun/Results/UnitTestResult[@outcome='Failed']" | ForEach-Object {
+                  $testId = $_.Node.testId
+                  $testName = (Select-Xml -Path $TRX_FILE -XPath "//TestRun/TestDefinitions/UnitTest[@id='$testId']/TestMethod/@name").Node.Value
+                  $message = $_.Node.Output.ErrorInfo.Message
+                  "$testName : $message"
+                }
+                if ($FAILED_TESTS) {
+                  Write-Host "Failed tests for $PROJ (net48, net8.0):"
+                  $FAILED_TESTS | ForEach-Object { Write-Host $_ }
+                } else {
+                  Write-Host "No failed tests for $PROJ (net48, net8.0)"
+                }
+                exit 1
+              } else {
+                Write-Host "No failed tests for $PROJ (net48, net8.0)"
+              }
+            } elseif ($LOG_MODE -eq "minimal") {
+              # Run tests with minimal verbosity for summary
+              dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net48
+              $EXIT_CODE_NET48 = $LASTEXITCODE
+              dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net8.0
+              $EXIT_CODE_NET80 = $LASTEXITCODE
+              if ($EXIT_CODE_NET48 -ne 0 -or $EXIT_CODE_NET80 -ne 0) { exit 1 }
+            } else {
+              # Detailed mode
+              dotnet test $PROJ --configuration Release --no-build --verbosity normal --framework net48 --logger "console;verbosity=detailed"
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              dotnet test $PROJ --configuration Release --no-build --verbosity normal --framework net8.0 --logger "console;verbosity=detailed"
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+          }
+        shell: pwsh
