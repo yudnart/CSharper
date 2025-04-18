@@ -18,7 +18,7 @@ on:
 
 jobs:
   build-and-publish:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest  # Required for net48 tests
 
     steps:
       - name: Checkout repository
@@ -29,6 +29,7 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
+          # .NET Framework 4.8 SDK is pre-installed on windows-latest
 
       - name: Restore dependencies
         run: dotnet restore
@@ -38,100 +39,102 @@ jobs:
 
       - name: Run unit tests
         run: |
-          TEST_PROJECTS=$(find tests -name "*.csproj")
-          if [ -z "$TEST_PROJECTS" ]; then
-            echo "No test projects found in tests directory"
+          $TEST_PROJECTS = Get-ChildItem -Path tests -Filter "*.csproj" -Recurse
+          if (-not $TEST_PROJECTS) {
+            Write-Error "No test projects found in tests directory"
             exit 1
-          fi
-          for PROJ in $TEST_PROJECTS; do
-            echo "Running tests for $PROJ"
-            if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-              dotnet test $PROJ --configuration Release --no-build --verbosity detailed
-            else
-              dotnet test $PROJ --configuration Release --no-build --verbosity normal
-            fi
-          done
+          }
+          foreach ($PROJ in $TEST_PROJECTS) {
+            Write-Host "Running tests for $PROJ"
+            $VERBOSITY = if ("${{ github.event.inputs.dry_run }}" -eq "true") { "detailed" } else { "normal" }
+            dotnet test $PROJ --configuration Release --no-build --verbosity $VERBOSITY --framework net48
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            dotnet test $PROJ --configuration Release --no-build --verbosity $VERBOSITY --framework net8.0
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+        shell: pwsh  # PowerShell for better Windows scripting
 
       - name: Extract version
         id: extract_version
         run: |
-          set +e
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-            if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-              echo "Event name: ${{ github.event_name }}"
-              echo "Extracted VERSION: $VERSION"
-            fi
-          else
-            TAG="${{ github.ref_name }}"
-            VERSION=$(echo "$TAG" | sed 's/^v//')
-          fi
-          if [ -z "$VERSION" ]; then
-            echo "Error: VERSION is empty"
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $VERSION = "${{ github.event.inputs.version }}"
+            if ("${{ github.event.inputs.dry_run }}" -eq "true") {
+              Write-Host "Event name: ${{ github.event_name }}"
+              Write-Host "Extracted VERSION: $VERSION"
+            }
+          } else {
+            $TAG = "${{ github.ref_name }}"
+            $VERSION = $TAG -replace '^v', ''
+          }
+          if (-not $VERSION) {
+            Write-Error "Error: VERSION is empty"
             exit 1
-          fi
-          if echo "$VERSION" | grep -q -E '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            IS_STABLE=1
-          else
-            IS_STABLE=0
-          fi
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            echo "IS_STABLE: $IS_STABLE"
-          fi
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "IS_STABLE=$IS_STABLE" >> $GITHUB_OUTPUT
-          set -e
-        shell: bash
+          }
+          if ($VERSION -match '^[0-9]+\.[0-9]+\.[0-9]+$') {
+            $IS_STABLE = 1
+          } else {
+            $IS_STABLE = 0
+          }
+          if ("${{ github.event.inputs.dry_run }}" -eq "true") {
+            Write-Host "IS_STABLE: $IS_STABLE"
+          }
+          "VERSION=$VERSION" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
+          "IS_STABLE=$IS_STABLE" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
+        shell: pwsh  # PowerShell for consistency
 
       - name: Pack NuGet package
         run: |
-          dotnet pack --configuration Release --no-build \
-            -p:PackageVersion=${{ steps.extract_version.outputs.VERSION }} \
+          dotnet pack --configuration Release --no-build `
+            -p:PackageVersion=${{ steps.extract_version.outputs.VERSION }} `
             -o ./nupkg
+        shell: pwsh
 
       - name: Publish to NuGet (Dry Run)
         if: github.event.inputs.dry_run == 'true'
         run: |
-          echo "Dry run: Would publish NuGet package(s) from ./nupkg:"
-          ls -l ./nupkg/*.nupkg
-          echo "Would run: dotnet nuget push ./nupkg/*.nupkg --api-key [REDACTED] --source https://api.nuget.org/v3/index.json"
+          Write-Host "Dry run: Would publish NuGet package(s) from ./nupkg:"
+          Get-ChildItem -Path ./nupkg -Filter "*.nupkg"
+          Write-Host "Would run: dotnet nuget push ./nupkg/*.nupkg --api-key [REDACTED] --source https://api.nuget.org/v3/index.json"
+        shell: pwsh
 
       - name: Publish to NuGet
         if: github.event.inputs.dry_run != 'true'
         run: |
-          dotnet nuget push ./nupkg/*.nupkg \
-            --api-key ${{ secrets.NUGET_API_KEY }} \
+          dotnet nuget push ./nupkg/*.nupkg `
+            --api-key ${{ secrets.NUGET_API_KEY }} `
             --source https://api.nuget.org/v3/index.json
+        shell: pwsh
 
       - name: Unlist all prerelease packages (Dry Run)
         if: steps.extract_version.outputs.IS_STABLE == '1' && github.event.inputs.dry_run == 'true'
         run: |
-          PACKAGE_ID="Your.Package.Name"
-          echo "Dry run: Querying prerelease versions for $PACKAGE_ID"
-          PRERELEASE_VERSIONS=$(curl -s "https://api.nuget.org/v3/registration5-semver1/$PACKAGE_ID/index.json" | \
-            jq -r '.items[].items[] | select(.catalogEntry.version | contains("-")) | .catalogEntry.version' || echo "")
-          if [ -z "$PRERELEASE_VERSIONS" ]; then
-            echo "Dry run: No prerelease versions found for $PACKAGE_ID"
-          else
-            echo "Dry run: Would unlist the following prerelease versions for $PACKAGE_ID:"
-            for VERSION in $PRERELEASE_VERSIONS; do
-              echo "- $VERSION"
-              echo "Would run: dotnet nuget delete $PACKAGE_ID $VERSION --api-key [REDACTED] --source https://api.nuget.org/v3/index.json --non-interactive"
-            done
-          fi
+          $PACKAGE_ID = "Your.Package.Name"
+          Write-Host "Dry run: Querying prerelease versions for $PACKAGE_ID"
+          $PRERELEASE_VERSIONS = (Invoke-WebRequest -Uri "https://api.nuget.org/v3/registration5-semver1/$PACKAGE_ID/index.json" -UseBasicParsing | ConvertFrom-Json).items.items | Where-Object { $_.catalogEntry.version -like '*-*' } | ForEach-Object { $_.catalogEntry.version }
+          if (-not $PRERELEASE_VERSIONS) {
+            Write-Host "Dry run: No prerelease versions found for $PACKAGE_ID"
+          } else {
+            Write-Host "Dry run: Would unlist the following prerelease versions for $PACKAGE_ID:"
+            foreach ($VERSION in $PRERELEASE_VERSIONS) {
+              Write-Host "- $VERSION"
+              Write-Host "Would run: dotnet nuget delete $PACKAGE_ID $VERSION --api-key [REDACTED] --source https://api.nuget.org/v3/index.json --non-interactive"
+            }
+          }
+        shell: pwsh
 
       - name: Unlist all prerelease packages
         if: steps.extract_version.outputs.IS_STABLE == '1' && github.event.inputs.dry_run != 'true'
         run: |
-          PACKAGE_ID="Your.Package.Name"
-          PRERELEASE_VERSIONS=$(curl -s "https://api.nuget.org/v3/registration5-semver1/$PACKAGE_ID/index.json" | \
-            jq -r '.items[].items[] | select(.catalogEntry.version | contains("-")) | .catalogEntry.version')
-          for VERSION in $PRERELEASE_VERSIONS; do
-            echo "Unlisting prerelease package $PACKAGE_ID version $VERSION"
-            dotnet nuget delete $PACKAGE_ID $VERSION \
-              --api-key ${{ secrets.NUGET_API_KEY }} \
-              --source https://api.nuget.org/v3/index.json \
+          $PACKAGE_ID = "Your.Package.Name"
+          $PRERELEASE_VERSIONS = (Invoke-WebRequest -Uri "https://api.nuget.org/v3/registration5-semver1/$PACKAGE_ID/index.json" -UseBasicParsing | ConvertFrom-Json).items.items | Where-Object { $_.catalogEntry.version -like '*-*' } | ForEach-Object { $_.catalogEntry.version }
+          foreach ($VERSION in $PRERELEASE_VERSIONS) {
+            Write-Host "Unlisting prerelease package $PACKAGE_ID version $VERSION"
+            dotnet nuget delete $PACKAGE_ID $VERSION `
+              --api-key ${{ secrets.NUGET_API_KEY }} `
+              --source https://api.nuget.org/v3/index.json `
               --non-interactive
-          done
+          }
+        shell: pwsh
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
