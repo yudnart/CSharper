@@ -36,12 +36,49 @@ jobs:
         with:
           ref: ${{ inputs.branch || github.event.inputs.branch || github.ref_name }}
 
-      - name: Setup .NET
+      - name: Check installed SDKs
+        id: check_sdks
+        run: |
+          # Check .NET Framework 4.8 SDK for net48 tests
+          $net48Installed = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" -ErrorAction SilentlyContinue).Version -ge "4.8"
+          if (-not $net48Installed) {
+            Write-Host "NET Framework 4.8 SDK not found"
+            "net48_installed=false" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "NET Framework 4.8 SDK found"
+            "net48_installed=true" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
+          }
+
+          # Check .NET 8 SDK for net8.0 tests (any 8.0.x version)
+          $dotnet8Installed = (dotnet --list-sdks | Select-String '^8\.0\.\d+') -ne $null
+          if (-not $dotnet8Installed) {
+            Write-Host "NET 8.0 SDK not found"
+            "dotnet8_installed=false" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "NET 8.0 SDK found"
+            "dotnet8_installed=true" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
+          }
+        shell: pwsh
+
+      - name: Install .NET Framework 4.8 SDK
+        if: steps.check_sdks.outputs.net48_installed != 'true'
+        run: |
+          Write-Host "Installing .NET Framework 4.8 SDK..."
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2088631" -OutFile "NDP48-DevPack-ENU.exe"
+          Start-Process -FilePath "NDP48-DevPack-ENU.exe" -ArgumentList "/q /norestart" -Wait
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to install .NET Framework 4.8 SDK with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
+          Write-Host ".NET Framework 4.8 SDK installed successfully"
+        shell: pwsh
+
+      - name: Setup .NET 8 SDK
+        if: steps.check_sdks.outputs.dotnet8_installed != 'true'
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
             8.0.x
-          # .NET Framework 4.8 SDK is pre-installed on windows-latest
 
       - name: Try download build artifacts
         id: download_artifacts
@@ -71,43 +108,28 @@ jobs:
           $LOG_MODE = "${{ inputs.log-mode || github.event.inputs.log-mode || 'failed-only' }}"
           foreach ($PROJ in $TEST_PROJECTS) {
             Write-Host "Running tests for $PROJ with log mode $LOG_MODE"
-            $TRX_FILE = "test-output-$($PROJ.BaseName).trx"
             if ($LOG_MODE -eq "failed-only") {
-              # Run tests quietly, output to TRX for failed tests
-              dotnet test $PROJ --configuration Release --no-build --verbosity quiet --framework net48 --logger "trx;LogFileName=$TRX_FILE"
-              $EXIT_CODE_NET48 = $LASTEXITCODE
-              dotnet test $PROJ --configuration Release --no-build --verbosity quiet --framework net8.0 --logger "trx;LogFileName=$TRX_FILE"
-              $EXIT_CODE_NET80 = $LASTEXITCODE
-              if ($EXIT_CODE_NET48 -ne 0 -or $EXIT_CODE_NET80 -ne 0) {
-                # Parse TRX for failed tests
-                $FAILED_TESTS = Select-Xml -Path $TRX_FILE -XPath "//TestRun/Results/UnitTestResult[@outcome='Failed']" | ForEach-Object {
-                  $testId = $_.Node.testId
-                  $testName = (Select-Xml -Path $TRX_FILE -XPath "//TestRun/TestDefinitions/UnitTest[@id='$testId']/TestMethod/@name").Node.Value
-                  $message = $_.Node.Output.ErrorInfo.Message
-                  "$testName : $message"
-                }
+              $OUTPUT_FILE = "test-output-$($PROJ.BaseName).txt"
+              dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --settings tests/parallel.runsettings > $OUTPUT_FILE
+              $EXIT_CODE = $LASTEXITCODE
+              if ($EXIT_CODE -ne 0) {
+                $FAILED_TESTS = Select-String -Path $OUTPUT_FILE -Pattern "Failed\s+.*" | ForEach-Object { $_.Line }
                 if ($FAILED_TESTS) {
                   Write-Host "Failed tests for $PROJ (net48, net8.0):"
                   $FAILED_TESTS | ForEach-Object { Write-Host $_ }
                 } else {
-                  Write-Host "No failed tests for $PROJ (net48, net8.0)"
+                  Write-Host "No failed tests for $PROJ (net48, net8.0), but exit code $EXIT_CODE indicates failure"
+                  Get-Content $OUTPUT_FILE
                 }
                 exit 1
               } else {
                 Write-Host "No failed tests for $PROJ (net48, net8.0)"
               }
             } elseif ($LOG_MODE -eq "minimal") {
-              # Run tests with minimal verbosity for summary
-              dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net48
-              $EXIT_CODE_NET48 = $LASTEXITCODE
-              dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net8.0
-              $EXIT_CODE_NET80 = $LASTEXITCODE
-              if ($EXIT_CODE_NET48 -ne 0 -or $EXIT_CODE_NET80 -ne 0) { exit 1 }
-            } else {
-              # Detailed mode
-              dotnet test $PROJ --configuration Release --no-build --verbosity normal --framework net48 --logger "console;verbosity=detailed"
+              dotnet test $PROJ --configuration Release --no-build --verbosity minimal --settings tests/parallel.runsettings
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-              dotnet test $PROJ --configuration Release --no-build --verbosity normal --framework net8.0 --logger "console;verbosity=detailed"
+            } else {
+              dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --settings tests/parallel.runsettings
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
           }
