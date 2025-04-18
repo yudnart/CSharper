@@ -11,6 +11,10 @@ on:
         description: 'Run in dry-run mode (log actions without publishing/unlisting)'
         required: false
         default: 'false'
+      version:
+        description: 'Version to use for manual run (e.g., 1.0.0 or 1.0.0-beta1)'
+        required: false
+        default: '1.0.0'
 
 jobs:
   build-and-publish:
@@ -32,11 +36,15 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
-      - name: Extract version from tag
+      - name: Extract version
         id: extract_version
         run: |
-          TAG=${{ github.ref_name }}
-          VERSION=$(echo $TAG | sed 's/^v//') # Remove 'v' prefix
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION=${{ github.event.inputs.version }}
+          else
+            TAG=${{ github.ref_name }}
+            VERSION=$(echo $TAG | sed 's/^v//') # Remove 'v' prefix
+          fi
           # Check if it's a stable release (no prerelease suffix)
           IS_STABLE=$(echo $VERSION | grep -c -E '^[0-9]+\.[0-9]+\.[0-9]+$')
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
@@ -65,13 +73,10 @@ jobs:
       - name: Unlist all prerelease packages (Dry Run)
         if: steps.extract_version.outputs.IS_STABLE == '1' && github.event.inputs.dry_run == 'true'
         run: |
-          # Replace with your actual NuGet package ID
           PACKAGE_ID="Your.Package.Name"
-          
-          # Query NuGet for all prerelease versions of the package
+          echo "Dry run: Querying prerelease versions for $PACKAGE_ID"
           PRERELEASE_VERSIONS=$(curl -s "https://api.nuget.org/v3/registration5-semver1/$PACKAGE_ID/index.json" | \
             jq -r '.items[].items[] | select(.catalogEntry.version | contains("-")) | .catalogEntry.version' || echo "")
-          
           if [ -z "$PRERELEASE_VERSIONS" ]; then
             echo "Dry run: No prerelease versions found for $PACKAGE_ID"
           else
@@ -85,14 +90,9 @@ jobs:
       - name: Unlist all prerelease packages
         if: steps.extract_version.outputs.IS_STABLE == '1' && github.event.inputs.dry_run != 'true'
         run: |
-          # Replace with your actual NuGet package ID
           PACKAGE_ID="Your.Package.Name"
-          
-          # Query NuGet for all prerelease versions of the package
           PRERELEASE_VERSIONS=$(curl -s "https://api.nuget.org/v3/registration5-semver1/$PACKAGE_ID/index.json" | \
             jq -r '.items[].items[] | select(.catalogEntry.version | contains("-")) | .catalogEntry.version')
-          
-          # Loop through prerelease versions and unlist them
           for VERSION in $PRERELEASE_VERSIONS; do
             echo "Unlisting prerelease package $PACKAGE_ID version $VERSION"
             dotnet nuget delete $PACKAGE_ID $VERSION \
