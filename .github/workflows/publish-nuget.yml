@@ -11,48 +11,43 @@ on:
         description: 'Run in dry-run mode (log actions without publishing/unlisting)'
         required: false
         default: 'false'
+      branch:
+        description: 'Branch to test (e.g., main, feature/branch-name)'
+        required: false
       version:
         description: 'Version to use for manual run (e.g., 1.0.0 or 1.0.0-beta1)'
         required: false
         default: '1.0.0'
 
 jobs:
-  build-and-publish:
-    runs-on: windows-latest  # Required for net48 tests
+  test:
+    uses: ./.github/workflows/run-unit-tests.yml
+    with:
+      branch: ${{ github.event.inputs.branch || github.ref_name }}
+      log-mode: 'failed-only'
 
+  publish:
+    runs-on: windows-latest  # Consistent with test job
+    needs: test  # Depends on test job passing
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref_name }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
             8.0.x
-          # .NET Framework 4.8 SDK is pre-installed on windows-latest
 
       - name: Restore dependencies
         run: dotnet restore
+        shell: pwsh
 
       - name: Build
         run: dotnet build --configuration Release --no-restore
-
-      - name: Run unit tests
-        run: |
-          $TEST_PROJECTS = Get-ChildItem -Path tests -Filter "*.csproj" -Recurse
-          if (-not $TEST_PROJECTS) {
-            Write-Error "No test projects found in tests directory"
-            exit 1
-          }
-          foreach ($PROJ in $TEST_PROJECTS) {
-            Write-Host "Running tests for $PROJ"
-            $VERBOSITY = if ("${{ github.event.inputs.dry_run }}" -eq "true") { "detailed" } else { "normal" }
-            dotnet test $PROJ --configuration Release --no-build --verbosity $VERBOSITY --framework net48
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            dotnet test $PROJ --configuration Release --no-build --verbosity $VERBOSITY --framework net8.0
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          }
-        shell: pwsh  # PowerShell for better Windows scripting
+        shell: pwsh
 
       - name: Extract version
         id: extract_version
@@ -81,7 +76,7 @@ jobs:
           }
           "VERSION=$VERSION" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
           "IS_STABLE=$IS_STABLE" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
-        shell: pwsh  # PowerShell for consistency
+        shell: pwsh
 
       - name: Pack NuGet package
         run: |
