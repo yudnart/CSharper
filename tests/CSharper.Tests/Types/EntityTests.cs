@@ -2,9 +2,6 @@
 using CSharper.Types;
 using FluentAssertions;
 using Moq;
-using System.Collections.Generic;
-using System.Linq;
-using Xunit;
 
 namespace CSharper.Tests.Types;
 
@@ -214,21 +211,4 @@ public sealed class EntityTests
         // Assert
         result.Should().BeTrue();
     }
-
-    #region Test Helpers
-
-    private sealed class TestEntity : Entity<string>
-    {
-        public TestEntity(string id)
-        {
-            Id = id;
-        }
-
-        public void QueueTestEvent(DomainEvent domainEvent)
-        {
-            QueueDomainEvent(domainEvent);
-        }
-    }
-
-    #endregion
 }

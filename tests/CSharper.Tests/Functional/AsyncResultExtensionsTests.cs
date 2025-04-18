@@ -18,7 +18,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Bind(next);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
     }
 
     [Fact]
@@ -30,8 +30,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Bind(next);
 
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
     }
 
     [Fact]
@@ -54,7 +53,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result<int> result = await initial.Bind(next);
 
-        ResultTestHelpers.AssertResult(result, value);
+        ResultTestHelpers.AssertSuccessResult(result, value);
     }
 
     [Fact]
@@ -66,8 +65,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result<int> result = await initial.Bind(next);
 
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
     }
 
     [Fact]
@@ -89,7 +87,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Bind(next);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
     }
 
     [Fact]
@@ -101,8 +99,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Bind(next);
 
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
     }
 
     [Fact]
@@ -125,7 +122,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result<int> result = await initial.Bind(next);
 
-        ResultTestHelpers.AssertResult(result, value);
+        ResultTestHelpers.AssertSuccessResult(result, value);
     }
 
     [Fact]
@@ -137,8 +134,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result<int> result = await initial.Bind(next);
 
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
     }
 
     [Fact]
@@ -160,7 +156,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Bind(next);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
     }
 
     [Fact]
@@ -172,8 +168,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Bind(next);
 
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
     }
 
     [Fact]
@@ -196,7 +191,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result<int> result = await initial.Bind(next);
 
-        ResultTestHelpers.AssertResult(result, value);
+        ResultTestHelpers.AssertSuccessResult(result, value);
     }
 
     [Fact]
@@ -208,8 +203,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result<int> result = await initial.Bind(next);
 
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
     }
 
     [Fact]
@@ -235,8 +229,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result<int> result = await initial.MapError<int>();
 
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
     }
 
     [Fact]
@@ -515,7 +508,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Recover(onFailure);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         wasCalled.Should().BeTrue();
     }
 
@@ -528,7 +521,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Recover(onFailure);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         wasCalled.Should().BeFalse();
     }
 
@@ -552,7 +545,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Recover(onFailure);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         wasCalled.Should().BeTrue();
     }
 
@@ -565,7 +558,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Recover(onFailure);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         wasCalled.Should().BeFalse();
     }
 
@@ -589,7 +582,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Recover(onFailure);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         wasCalled.Should().BeTrue();
     }
 
@@ -602,7 +595,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Recover(onFailure);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         wasCalled.Should().BeFalse();
     }
 
@@ -630,7 +623,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Tap(action);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         wasCalled.Should().BeTrue();
     }
 
@@ -644,8 +637,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Tap(action);
 
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
         wasCalled.Should().BeFalse();
     }
 
@@ -669,7 +661,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Tap(action);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         wasCalled.Should().BeTrue();
     }
 
@@ -683,8 +675,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Tap(action);
 
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
         wasCalled.Should().BeFalse();
     }
 
@@ -708,7 +699,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Tap(action);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         wasCalled.Should().BeTrue();
     }
 
@@ -722,8 +713,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.Tap(action);
 
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
         wasCalled.Should().BeFalse();
     }
 
@@ -752,8 +742,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.TapError(action);
 
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
         wasCalled.Should().BeTrue();
     }
 
@@ -766,7 +755,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.TapError(action);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         wasCalled.Should().BeFalse();
     }
 
@@ -791,8 +780,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.TapError(action);
 
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
         wasCalled.Should().BeTrue();
     }
 
@@ -805,7 +793,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.TapError(action);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         wasCalled.Should().BeFalse();
     }
 
@@ -830,8 +818,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.TapError(action);
 
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
         wasCalled.Should().BeTrue();
     }
 
@@ -844,7 +831,7 @@ public sealed class AsyncResultExtensionsTests
 
         Result result = await initial.TapError(action);
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         wasCalled.Should().BeFalse();
     }
 

@@ -54,7 +54,7 @@ public sealed class ResultValidationChainTests
 
         Result<string> result = chain.Collect();
 
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         result.Value.Should().Be("test");
     }
 
@@ -70,10 +70,7 @@ public sealed class ResultValidationChainTests
 
         Result<string> result = chain.Collect();
 
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().HaveCount(2);
-        result.Errors[0].Should().Be(error1);
-        result.Errors[1].Should().Be(error2);
+        ResultTestHelpers.AssertFailureResult(result, error1, error2);
     }
 
     [Fact]
@@ -87,9 +84,7 @@ public sealed class ResultValidationChainTests
 
         Result<string> result = chain.Collect();
 
-        result.IsSuccess.Should().BeFalse();
-        result.Errors.Should().HaveCount(1);
-        result.Errors[0].Should().Be(error1);
+        ResultTestHelpers.AssertFailureResult(result, error1);
     }
 
     [Fact]

@@ -12,18 +12,18 @@ public sealed class ResultTTests
     [InlineData(42L)]
     [InlineData(true)]
     [InlineData(false)]
-    public void SuccessResult_Should_HaveCorrectValue_AndState(object value)
+    public void ResultT_SuccessWithValue_HasCorrectStateAndValue(object value)
     {
         // Act
         Result<object> result = Result.Ok(value);
 
         // Assert
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         result.Value.Should().Be(value);
     }
 
     [Fact]
-    public void SuccessResult_WithNullValue_Should_HaveNullValue_AndCorrectState()
+    public void ResultT_SuccessWithNullValue_HasCorrectStateAndNullValue()
     {
         // Arrange
         string nullString = null!;
@@ -32,12 +32,12 @@ public sealed class ResultTTests
         Result<string> result = Result.Ok(nullString);
 
         // Assert
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         result.Value.Should().Be(nullString);
     }
 
     [Fact]
-    public void FailureResult_WithSingleError_Should_HaveCorrectErrors_AndThrowOnValueAccess()
+    public void ResultT_FailureWithSingleError_HasCorrectErrorsAndThrowsOnValueAccess()
     {
         // Arrange
         Error error = new("Something went wrong", "ERR001", "User.Name");
@@ -47,15 +47,11 @@ public sealed class ResultTTests
         Action act = () => _ = result.Value;
 
         // Assert
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().HaveCount(1);
-        result.Errors[0].Should().Be(error);
-        act.Should().Throw<InvalidOperationException>()
-           .WithMessage("Cannot access the value of a failed result.");
+        ResultTestHelpers.AssertFailureResult(result, error);
     }
 
     [Fact]
-    public void FailureResult_WithMultipleErrors_Should_HaveCorrectErrors_AndThrowOnValueAccess()
+    public void ResultT_FailureWithMultipleErrors_HasCorrectErrorsAndThrowsOnValueAccess()
     {
         // Arrange
         Error mainError = new("Primary error", "ERR002", "System");
@@ -66,11 +62,6 @@ public sealed class ResultTTests
         Result<int> result = Result.Fail<int>(mainError, detailError1, detailError2);
 
         // Assert
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().HaveCount(3);
-        result.Errors.Should().ContainInOrder(mainError, detailError1, detailError2);
-        Action act = () => _ = result.Value;
-        act.Should().Throw<InvalidOperationException>()
-           .WithMessage("Cannot access the value of a failed result.");
+        ResultTestHelpers.AssertFailureResult(result, mainError, detailError1, detailError2);
     }
 }

@@ -6,17 +6,17 @@ namespace CSharper.Tests.Results;
 public sealed class ResultTests
 {
     [Fact]
-    public void SuccessResult_Should_HaveCorrectState()
+    public void Result_Success_HasCorrectState()
     {
         // Act
         Result result = Result.Ok();
 
         // Assert
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
     }
 
     [Fact]
-    public void SuccessResult_ReferencesStaticValue()
+    public void Result_Success_ReferencesStaticValue()
     {
         // Act
         Result result1 = Result.Ok();
@@ -27,7 +27,7 @@ public sealed class ResultTests
     }
 
     [Fact]
-    public void FailureResult_WithSingleError_Should_HaveCorrectState()
+    public void Result_FailureWithSingleError_HasCorrectState()
     {
         // Arrange
         Error error = new("Something went wrong.", "ERR001", "User.Name");
@@ -36,13 +36,11 @@ public sealed class ResultTests
         Result result = Result.Fail(error);
 
         // Assert
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().HaveCount(1);
-        result.Errors[0].Should().Be(error);
+        ResultTestHelpers.AssertFailureResult(result, error);
     }
 
     [Fact]
-    public void FailureResult_WithMultipleErrors_Should_HaveCorrectState()
+    public void Result_FailureWithMultipleErrors_HasCorrectState()
     {
         // Arrange
         Error mainError = new("Primary error", "ERR002", "System");
@@ -53,8 +51,6 @@ public sealed class ResultTests
         Result result = Result.Fail(mainError, detailError1, detailError2);
 
         // Assert
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().HaveCount(3);
-        result.Errors.Should().ContainInOrder(mainError, detailError1, detailError2);
+        ResultTestHelpers.AssertFailureResult(result, mainError, detailError1, detailError2);
     }
 }

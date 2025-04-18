@@ -7,13 +7,13 @@ namespace CSharper.Tests.Results;
 public sealed class ResultFactoryTests
 {
     [Fact]
-    public void Ok_Should_Create_SuccessResult()
+    public void Ok_Default_CreatesSuccessResult()
     {
         // Act
         Result result = Result.Ok();
 
         // Assert
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
     }
 
     [Theory]
@@ -23,18 +23,18 @@ public sealed class ResultFactoryTests
     [InlineData(42L)]
     [InlineData(true)]
     [InlineData(false)]
-    public void OkT_Should_Create_SuccessResult_WithValue(object value)
+    public void OkT_WithValue_CreatesSuccessResultWithValue(object value)
     {
         // Act
         Result<object> result = Result.Ok(value);
 
         // Assert
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         result.Value.Should().Be(value);
     }
 
     [Fact]
-    public void OkT_WithNullValue_Should_Create_SuccessResult_WithNullValue()
+    public void OkT_NullValue_CreatesSuccessResultWithNullValue()
     {
         // Arrange
         string nullString = null!;
@@ -43,12 +43,12 @@ public sealed class ResultFactoryTests
         Result<string> result = Result.Ok(nullString);
 
         // Assert
-        ResultTestHelpers.AssertResult(result);
+        ResultTestHelpers.AssertSuccessResult(result);
         result.Value.Should().BeNull();
     }
 
     [Fact]
-    public void Fail_WithSingleError_Should_Create_FailureResult_WithOneError()
+    public void Fail_SingleError_CreatesFailureWithOneError()
     {
         // Arrange
         Error error = new("Something went wrong", "ERR001", "User.Name");
@@ -57,12 +57,11 @@ public sealed class ResultFactoryTests
         Result result = Result.Fail(error);
 
         // Assert
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
     }
 
     [Fact]
-    public void FailT_WithSingleError_Should_Create_FailureResult_WithOneError()
+    public void FailT_SingleError_CreatesFailureWithOneError()
     {
         // Arrange
         Error error = new("Something went wrong", "ERR001", "User.Name");
@@ -71,12 +70,11 @@ public sealed class ResultFactoryTests
         Result<string> result = Result.Fail<string>(error);
 
         // Assert
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().ContainSingle(e => e == error);
+        ResultTestHelpers.AssertFailureResult(result, error);
     }
 
     [Fact]
-    public void Fail_WithMultipleErrors_Should_Create_FailureResult_WithAllErrors()
+    public void Fail_MultipleErrors_CreatesFailureWithAllErrors()
     {
         // Arrange
         Error mainError = new("Primary error", "ERR002", "System");
@@ -87,13 +85,11 @@ public sealed class ResultFactoryTests
         Result result = Result.Fail(mainError, detailError1, detailError2);
 
         // Assert
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().HaveCount(3);
-        result.Errors.Should().ContainInOrder(mainError, detailError1, detailError2);
+        ResultTestHelpers.AssertFailureResult(result, mainError, detailError1, detailError2);
     }
 
     [Fact]
-    public void FailT_WithMultipleErrors_Should_Create_FailureResult_WithAllErrors()
+    public void FailT_MultipleErrors_CreatesFailureWithAllErrors()
     {
         // Arrange
         Error mainError = new("Primary error", "ERR002", "System");
@@ -104,31 +100,33 @@ public sealed class ResultFactoryTests
         Result<int> result = Result.Fail<int>(mainError, detailError1, detailError2);
 
         // Assert
-        ResultTestHelpers.AssertResult(result, false);
-        result.Errors.Should().HaveCount(3);
-        result.Errors.Should().ContainInOrder(mainError, detailError1, detailError2);
+        ResultTestHelpers.AssertFailureResult(result, mainError, detailError1, detailError2);
     }
 
     [Fact]
-    public void Fail_WithNullCausedByError_Should_ThrowArgumentNullException()
+    public void Fail_NullCausedByError_ThrowsArgumentNullException()
     {
+        // Arrange
         Error nullError = null!;
+
         // Act & Assert
         Action act = () => Result.Fail(nullError);
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
-    public void FailT_WithNullCausedByError_Should_ThrowArgumentNullException()
+    public void FailT_NullCausedByError_ThrowsArgumentNullException()
     {
+        // Arrange
         Error nullError = null!;
+
         // Act & Assert
         Action act = () => Result.Fail<int>(nullError);
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
-    public void Fail_WithMessageCodePath_Should_Create_FailureResult_WithError()
+    public void Fail_MessageCodePath_CreatesFailureWithError()
     {
         // Arrange
         string message = "Invalid data";
@@ -139,7 +137,7 @@ public sealed class ResultFactoryTests
         Result result = Result.Fail(message, code, path);
 
         // Assert
-        ResultTestHelpers.AssertResult(result, false);
+        ResultTestHelpers.AssertFailureResult(result);
         result.Errors.Should().HaveCount(1);
         result.Errors[0].Message.Should().Be(message);
         result.Errors[0].Code.Should().Be(code);
@@ -147,7 +145,7 @@ public sealed class ResultFactoryTests
     }
 
     [Fact]
-    public void FailT_WithMessageCodePath_Should_Create_FailureResult_WithError()
+    public void FailT_MessageCodePath_CreatesFailureWithError()
     {
         // Arrange
         string message = "Invalid data";
@@ -158,7 +156,7 @@ public sealed class ResultFactoryTests
         Result<double> result = Result.Fail<double>(message, code, path);
 
         // Assert
-        ResultTestHelpers.AssertResult(result, false);
+        ResultTestHelpers.AssertFailureResult(result);
         result.Errors.Should().HaveCount(1);
         result.Errors[0].Message.Should().Be(message);
         result.Errors[0].Code.Should().Be(code);
@@ -169,7 +167,7 @@ public sealed class ResultFactoryTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Fail_WithInvalidMessage_Should_ThrowArgumentException(string? invalidMessage)
+    public void Fail_InvalidMessage_ThrowsArgumentException(string? invalidMessage)
     {
         // Act & Assert
         Action act = () => Result.Fail(invalidMessage!);
@@ -180,20 +178,17 @@ public sealed class ResultFactoryTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void FailT_WithInvalidMessage_Should_ThrowArgumentException(string? invalidMessage)
+    public void FailT_InvalidMessage_ThrowsArgumentException(string? invalidMessage)
     {
         // Act & Assert
         Action act = () => Result.Fail<string>(invalidMessage!);
-        act.Should().Throw<ArgumentException>()
-            .Which.Should().Match<ArgumentException>(e =>
-                !string.IsNullOrWhiteSpace(e.ParamName)
-                && !string.IsNullOrWhiteSpace(e.Message));
+        AssertHelper.AssertArgumentException<ArgumentException>(act);
     }
 
     #region Collect
 
     [Fact]
-    public void Collect_WithNullResults_Should_ThrowArgumentNullException()
+    public void Collect_NullResults_ThrowsArgumentNullException()
     {
         // Arrange
         IEnumerable<ResultLike> results = null!;
@@ -206,7 +201,7 @@ public sealed class ResultFactoryTests
     }
 
     [Fact]
-    public void Collect_WithEmptyResults_Should_ThrowArgumentException()
+    public void Collect_EmptyResults_ThrowsArgumentException()
     {
         // Arrange
         IEnumerable<ResultLike> results = new List<ResultLike>();
@@ -219,7 +214,7 @@ public sealed class ResultFactoryTests
     }
 
     [Fact]
-    public void Collect_WithAllSuccessfulResults_Should_ReturnSuccess()
+    public void Collect_AllSuccessfulResults_ReturnsSuccess()
     {
         // Arrange
         Result result1 = Result.Ok();
@@ -236,11 +231,11 @@ public sealed class ResultFactoryTests
         Result actual = Result.Collect(results);
 
         // Assert
-        ResultTestHelpers.AssertResult(actual);
+        ResultTestHelpers.AssertSuccessResult(actual);
     }
 
     [Fact]
-    public void Collect_WithSingleSuccessfulResult_Should_ReturnSuccess()
+    public void Collect_SingleSuccessfulResult_ReturnsSuccess()
     {
         // Arrange
         Result result = Result.Ok();
@@ -250,11 +245,11 @@ public sealed class ResultFactoryTests
         Result actual = Result.Collect(results);
 
         // Assert
-        ResultTestHelpers.AssertResult(actual);
+        ResultTestHelpers.AssertSuccessResult(actual);
     }
 
     [Fact]
-    public void Collect_WithAllFailedResults_Should_ReturnFailureWithAllErrors()
+    public void Collect_AllFailedResults_ReturnsFailureWithAllErrors()
     {
         // Arrange
         Error error1 = new("Error 1", "ERR001", "Path1");
@@ -274,13 +269,12 @@ public sealed class ResultFactoryTests
         Result actual = Result.Collect(results);
 
         // Assert
-        ResultTestHelpers.AssertResult(actual, false);
-        actual.Errors.Should().HaveCount(3);
-        actual.Errors.Should().ContainInOrder(error1, error2, error3);
+        ResultTestHelpers.AssertFailureResult(actual,
+            error1, error2, error3);
     }
 
     [Fact]
-    public void Collect_WithSingleFailedResult_Should_ReturnFailureWithErrors()
+    public void Collect_SingleFailedResult_ReturnsFailureWithErrors()
     {
         // Arrange
         Error error1 = new("Error 1", "ERR001", "Path1");
@@ -292,13 +286,13 @@ public sealed class ResultFactoryTests
         Result actual = Result.Collect(results);
 
         // Assert
-        ResultTestHelpers.AssertResult(actual, false);
+        ResultTestHelpers.AssertFailureResult(result);
         actual.Errors.Should().HaveCount(2);
         actual.Errors.Should().ContainInOrder(error1, error2);
     }
 
     [Fact]
-    public void Collect_WithMixedResults_Should_ReturnFailureWithAllErrors()
+    public void Collect_MixedResults_ReturnsFailureWithAllErrors()
     {
         // Arrange
         Error error1 = new("Error 1", "ERR001", "Path1");
@@ -306,24 +300,22 @@ public sealed class ResultFactoryTests
         Result result1 = Result.Ok();
         Result<string> result2 = Result.Fail<string>(error1);
         Result<int> result3 = Result.Fail<int>(error2);
-        List<ResultLike> results = new List<ResultLike>
-            {
-                result1,
-                result2,
-                result3
-            };
+        List<ResultLike> results =
+        [
+            result1,
+            result2,
+            result3
+        ];
 
         // Act
         Result actual = Result.Collect(results);
 
         // Assert
-        ResultTestHelpers.AssertResult(actual, false);
-        actual.Errors.Should().HaveCount(2);
-        actual.Errors.Should().ContainInOrder(error1, error2);
+        ResultTestHelpers.AssertFailureResult(actual, error1, error2);
     }
 
     [Fact]
-    public void Collect_WithFactoryResults_Should_ResolveFactoriesAndReturnCorrectResult()
+    public void Collect_FactoryResults_ResolvesFactoriesAndReturnsCorrectResult()
     {
         // Arrange
         Error error = new("Error 1", "ERR001", "Path1");
@@ -339,9 +331,7 @@ public sealed class ResultFactoryTests
         Result actual = Result.Collect(results);
 
         // Assert
-        ResultTestHelpers.AssertResult(actual, false);
-        actual.Errors.Should().HaveCount(1);
-        actual.Errors.Should().ContainInOrder(error);
+        ResultTestHelpers.AssertFailureResult(actual, error);
     }
 
     #endregion
