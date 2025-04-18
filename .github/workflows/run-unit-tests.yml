@@ -10,7 +10,6 @@ on:
       branch:
         description: 'Branch to test (e.g., main, feature/branch-name)'
         required: false
-        default: ${{ github.ref_name }}
 
 jobs:
   test:
