@@ -17,7 +17,7 @@ on:
       dry_run:
         description: 'Run in dry-run mode (log actions without publishing/unlisting)'
         required: false
-        default: 'true'
+        default: 'false'
 
 jobs:
   build:
@@ -45,7 +45,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifacts
+          name: build-artifacts-${{ github.run_id }}
           path: |
             **/bin/Release/
             **/obj/Release/
@@ -58,7 +58,7 @@ jobs:
       branch: ${{ github.event.inputs.branch || github.ref_name }}
       log-mode: 'failed-only'
 
-  publish-to-nuget:
+  deploy:
     runs-on: windows-latest
     needs: [build, run-unit-tests]
     steps:
@@ -85,6 +85,12 @@ jobs:
           Write-Host "Extracted Package ID: $PACKAGE_ID"
           "PACKAGE_ID=$PACKAGE_ID" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
         shell: pwsh
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts-${{ github.run_id }}
+          path: .
 
       - name: Extract version
         id: extract_version
@@ -114,12 +120,6 @@ jobs:
           "VERSION=$VERSION" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
           "IS_STABLE=$IS_STABLE" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
         shell: pwsh
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-          path: .
 
       - name: Pack NuGet package
         run: |

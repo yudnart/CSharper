@@ -48,7 +48,7 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
-          name: build-artifacts
+          name: build-artifacts-${{ github.run_id }}
           path: .
 
       - name: Restore dependencies
