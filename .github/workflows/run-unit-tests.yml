@@ -5,15 +5,6 @@ on:
     branches:
       - main
       - develop
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Branch to test (e.g., main, feature/branch-name)'
-        required: false
-      log-mode:
-        description: 'Test logging mode: detailed, minimal, or failed-only'
-        required: false
-        default: 'failed-only'
   workflow_call:
     inputs:
       branch:
@@ -25,6 +16,15 @@ on:
         required: false
         default: 'failed-only'
         type: string
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to test (e.g., main, feature/branch-name)'
+        required: false
+      log-mode:
+        description: 'Test logging mode: detailed, minimal, or failed-only'
+        required: false
+        default: 'failed-only'
 
 jobs:
   main:
@@ -98,6 +98,18 @@ jobs:
         run: dotnet build --configuration Release --no-restore
         shell: pwsh
 
+      - name: Check for parallel.runsettings
+        id: check_parallel_settings
+        run: |
+          if (Test-Path "tests/parallel.runsettings") {
+            Write-Host "parallel.runsettings found, enabling parallel test execution"
+            "use_parallel=true" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "Hey, you can run your test in parallel if you include the setting file at tests/parallel.runsettings"
+            "use_parallel=false" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
+          }
+        shell: pwsh
+
       - name: Run unit tests
         run: |
           $TEST_PROJECTS = Get-ChildItem -Path tests -Filter "*.csproj" -Recurse
@@ -106,13 +118,24 @@ jobs:
             exit 1
           }
           $LOG_MODE = "${{ inputs.log-mode || github.event.inputs.log-mode || 'failed-only' }}"
+          $USE_PARALLEL = "${{ steps.check_parallel_settings.outputs.use_parallel }}"
           foreach ($PROJ in $TEST_PROJECTS) {
             Write-Host "Running tests for $PROJ with log mode $LOG_MODE"
             if ($LOG_MODE -eq "failed-only") {
               $OUTPUT_FILE = "test-output-$($PROJ.BaseName).txt"
-              dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --settings tests/parallel.runsettings > $OUTPUT_FILE
+              if ($USE_PARALLEL -eq "true") {
+                # Parallel execution
+                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --settings tests/parallel.runsettings > $OUTPUT_FILE
+              } else {
+                # Sequential execution
+                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --framework net48 > $OUTPUT_FILE
+                $EXIT_CODE_NET48 = $LASTEXITCODE
+                if ($EXIT_CODE_NET48 -eq 0) {
+                  dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --framework net8.0 >> $OUTPUT_FILE
+                }
+              }
               $EXIT_CODE = $LASTEXITCODE
-              if ($EXIT_CODE -ne 0) {
+              if ($EXIT_CODE -ne 0 -or $EXIT_CODE_NET48 -ne 0) {
                 $FAILED_TESTS = Select-String -Path $OUTPUT_FILE -Pattern "Failed\s+.*" | ForEach-Object { $_.Line }
                 if ($FAILED_TESTS) {
                   Write-Host "Failed tests for $PROJ (net48, net8.0):"
@@ -126,10 +149,24 @@ jobs:
                 Write-Host "No failed tests for $PROJ (net48, net8.0)"
               }
             } elseif ($LOG_MODE -eq "minimal") {
-              dotnet test $PROJ --configuration Release --no-build --verbosity minimal --settings tests/parallel.runsettings
+              if ($USE_PARALLEL -eq "true") {
+                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --settings tests/parallel.runsettings
+              } else {
+                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net48
+                if ($LASTEXITCODE -eq 0) {
+                  dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net8.0
+                }
+              }
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             } else {
-              dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --settings tests/parallel.runsettings
+              if ($USE_PARALLEL -eq "true") {
+                dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --settings tests/parallel.runsettings
+              } else {
+                dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --framework net48
+                if ($LASTEXITCODE -eq 0) {
+                  dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --framework net8.0
+                }
+              }
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
           }
