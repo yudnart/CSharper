@@ -17,7 +17,7 @@ on:
       dry_run:
         description: 'Run in dry-run mode (log actions without publishing/unlisting)'
         required: false
-        default: 'false'
+        default: 'true'
 
 jobs:
   build:
