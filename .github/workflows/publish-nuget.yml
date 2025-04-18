@@ -173,17 +173,22 @@ jobs:
         if: github.event.inputs.dry_run != 'true'
         run: |
           Write-Host "Publishing NuGet package(s) from ./nupkg:"
+          Write-Host "Current directory: $PWD"
           Get-ChildItem -Path ./nupkg -Filter "*.nupkg"
           if (-not (Test-Path ./nupkg/*.nupkg)) {
             Write-Error "No .nupkg files found in ./nupkg before dotnet nuget push"
             exit 1
           }
-          dotnet nuget push ./nupkg/*.nupkg `
-            --api-key ${{ secrets.NUGET_API_KEY }} `
-            --source https://api.nuget.org/v3/index.json
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "dotnet nuget push failed with exit code $LASTEXITCODE"
-            exit $LASTEXITCODE
+          $nupkgFiles = Get-ChildItem -Path ./nupkg -Filter "*.nupkg"
+          foreach ($file in $nupkgFiles) {
+            Write-Host "Pushing $file"
+            dotnet nuget push $file.FullName `
+              --api-key ${{ secrets.NUGET_API_KEY }} `
+              --source https://api.nuget.org/v3/index.json
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "dotnet nuget push failed for $file with exit code $LASTEXITCODE"
+              exit $LASTEXITCODE
+            }
           }
         shell: pwsh
 
