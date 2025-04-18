@@ -3,7 +3,7 @@ name: Publish to NuGet
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'           # Matches stable releases, e.g., v1.0.0
+      - 'v[0-9]+.[0-9]+.[0-9]+'          # Matches stable releases, e.g., v1.0.0
       - 'v[0-9]+.[0-9]+.[0-9]+-*'        # Matches prereleases, e.g., v1.0.0-beta1
   workflow_dispatch:
     inputs:
@@ -27,8 +27,8 @@ jobs:
       log-mode: 'failed-only'
 
   publish:
-    runs-on: windows-latest  # Consistent with test job
-    needs: test  # Depends on test job passing
+    runs-on: windows-latest # Consistent with test job
+    needs: test # Depends on test job passing
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

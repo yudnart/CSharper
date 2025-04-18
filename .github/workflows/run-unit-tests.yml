@@ -5,6 +5,17 @@ on:
     branches:
       - main
       - develop  # Add other branches if needed
+  workflow_call:
+    inputs:
+      branch:
+        description: 'Branch to test (e.g., main, feature/branch-name)'
+        required: false
+        type: string
+      log-mode:
+        description: 'Test logging mode: detailed, minimal, or failed-only'
+        required: false
+        default: 'failed-only'
+        type: string
   workflow_dispatch:
     inputs:
       branch:
