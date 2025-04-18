@@ -1,7 +1,7 @@
 name: Run Unit Tests
 
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - main
       - develop
@@ -31,10 +31,18 @@ jobs:
     runs-on: windows-latest  # Required for net48
 
     steps:
-      - name: Checkout repository
+      - name: Checkout base branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch || github.event.inputs.branch || github.ref_name }}
+          ref: ${{ inputs.branch || github.event.inputs.branch || github.event.base_ref || github.ref_name }}
+
+      - name: Fetch and merge PR branch (for pull_request_target)
+        if: github.event_name == 'pull_request_target'
+        run: |
+          git fetch origin ${{ github.event.pull_request.head.sha }}
+          git merge --no-ff ${{ github.event.pull_request.head.sha }} -m "Merging PR branch for testing"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check installed SDKs
         id: check_sdks
