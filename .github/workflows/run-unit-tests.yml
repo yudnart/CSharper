@@ -4,7 +4,16 @@ on:
   pull_request:
     branches:
       - main
-      - develop  # Add other branches if needed
+      - develop
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to test (e.g., main, feature/branch-name)'
+        required: false
+      log-mode:
+        description: 'Test logging mode: detailed, minimal, or failed-only'
+        required: false
+        default: 'failed-only'
   workflow_call:
     inputs:
       branch:
@@ -16,18 +25,9 @@ on:
         required: false
         default: 'failed-only'
         type: string
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Branch to test (e.g., main, feature/branch-name)'
-        required: false
-      log-mode:
-        description: 'Test logging mode: detailed, minimal, or failed-only'
-        required: false
-        default: 'failed-only'
 
 jobs:
-  test:
+  main:
     runs-on: windows-latest  # Required for net48
 
     steps:
@@ -71,34 +71,43 @@ jobs:
           $LOG_MODE = "${{ inputs.log-mode || github.event.inputs.log-mode || 'failed-only' }}"
           foreach ($PROJ in $TEST_PROJECTS) {
             Write-Host "Running tests for $PROJ with log mode $LOG_MODE"
+            $TRX_FILE = "test-output-$($PROJ.BaseName).trx"
             if ($LOG_MODE -eq "failed-only") {
-              # Run tests with detailed output, capture to file, and filter for failed tests
-              $OUTPUT_FILE = "test-output-$($PROJ.BaseName).txt"
-              dotnet test $PROJ --configuration Release --no-build --verbosity normal --framework net48 --logger "console;verbosity=detailed" | Tee-Object -FilePath $OUTPUT_FILE
+              # Run tests quietly, output to TRX for failed tests
+              dotnet test $PROJ --configuration Release --no-build --verbosity quiet --framework net48 --logger "trx;LogFileName=$TRX_FILE"
               $EXIT_CODE_NET48 = $LASTEXITCODE
-              $FAILED_TESTS_NET48 = Select-String -Path $OUTPUT_FILE -Pattern "Failed\s+.*" | ForEach-Object { $_.Line }
-              if ($FAILED_TESTS_NET48) {
-                Write-Host "Failed tests for $PROJ (net48):"
-                $FAILED_TESTS_NET48 | ForEach-Object { Write-Host $_ }
-              } else {
-                Write-Host "No failed tests for $PROJ (net48)"
-              }
-              dotnet test $PROJ --configuration Release --no-build --verbosity normal --framework net8.0 --logger "console;verbosity=detailed" | Tee-Object -FilePath $OUTPUT_FILE
+              dotnet test $PROJ --configuration Release --no-build --verbosity quiet --framework net8.0 --logger "trx;LogFileName=$TRX_FILE"
               $EXIT_CODE_NET80 = $LASTEXITCODE
-              $FAILED_TESTS_NET80 = Select-String -Path $OUTPUT_FILE -Pattern "Failed\s+.*" | ForEach-Object { $_.Line }
-              if ($FAILED_TESTS_NET80) {
-                Write-Host "Failed tests for $PROJ (net8.0):"
-                $FAILED_TESTS_NET80 | ForEach-Object { Write-Host $_ }
+              if ($EXIT_CODE_NET48 -ne 0 -or $EXIT_CODE_NET80 -ne 0) {
+                # Parse TRX for failed tests
+                $FAILED_TESTS = Select-Xml -Path $TRX_FILE -XPath "//TestRun/Results/UnitTestResult[@outcome='Failed']" | ForEach-Object {
+                  $testId = $_.Node.testId
+                  $testName = (Select-Xml -Path $TRX_FILE -XPath "//TestRun/TestDefinitions/UnitTest[@id='$testId']/TestMethod/@name").Node.Value
+                  $message = $_.Node.Output.ErrorInfo.Message
+                  "$testName : $message"
+                }
+                if ($FAILED_TESTS) {
+                  Write-Host "Failed tests for $PROJ (net48, net8.0):"
+                  $FAILED_TESTS | ForEach-Object { Write-Host $_ }
+                } else {
+                  Write-Host "No failed tests for $PROJ (net48, net8.0)"
+                }
+                exit 1
               } else {
-                Write-Host "No failed tests for $PROJ (net8.0)"
+                Write-Host "No failed tests for $PROJ (net48, net8.0)"
               }
+            } elseif ($LOG_MODE -eq "minimal") {
+              # Run tests with minimal verbosity for summary
+              dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net48
+              $EXIT_CODE_NET48 = $LASTEXITCODE
+              dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net8.0
+              $EXIT_CODE_NET80 = $LASTEXITCODE
               if ($EXIT_CODE_NET48 -ne 0 -or $EXIT_CODE_NET80 -ne 0) { exit 1 }
             } else {
-              # Run tests with specified verbosity
-              $VERBOSITY = if ($LOG_MODE -eq "detailed") { "detailed" } else { "minimal" }
-              dotnet test $PROJ --configuration Release --no-build --verbosity $VERBOSITY --framework net48
+              # Detailed mode
+              dotnet test $PROJ --configuration Release --no-build --verbosity normal --framework net48 --logger "console;verbosity=detailed"
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-              dotnet test $PROJ --configuration Release --no-build --verbosity $VERBOSITY --framework net8.0
+              dotnet test $PROJ --configuration Release --no-build --verbosity normal --framework net8.0 --logger "console;verbosity=detailed"
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
           }
