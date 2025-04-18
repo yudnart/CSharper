@@ -19,7 +19,7 @@ internal static class QueueExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="queue"/> is null.</exception>
     /// <remarks>
     /// This method provides compatibility for .NET Standard 2.0, where the native
-    /// <see cref="Queue{T}.TryDequeue"/> method is unavailable. In .NET 8.0 and later,
+    /// <see cref="T:Queue{T}.TryDequeue"/> method is unavailable. In .NET 8.0 and later,
     /// it delegates to the native method for optimal performance. Used internally,
     /// for example, in event processing. This method is not thread-safe; synchronize
     /// access for concurrent scenarios.

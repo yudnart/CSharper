@@ -3,11 +3,12 @@
 namespace CSharper.Results;
 
 /// <summary>
-/// Represents a generic result of an operation, indicating success with a value or failure with associated errors.
+/// Represents a generic result of an operation, indicating success with a value or failure 
+/// with associated errors.
 /// </summary>
 /// <typeparam name="TValue">The type of the value returned by a successful result.</typeparam>
 /// <remarks>
-/// This class inherits from <see cref="ResultBase"/> to provide a type-safe way to represent operations with a return value.
+/// Represent operations with a return value.
 /// Use <see cref="Result"/> for operations without a return value.
 /// </remarks>
 public sealed class Result<TValue> : ResultBase

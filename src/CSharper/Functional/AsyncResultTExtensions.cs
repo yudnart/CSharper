@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 namespace CSharper.Functional;
 
 /// <summary>
-/// Provides extension methods for handling asynchronous <see cref="Result{T}"/> and <see cref="Task{T}"/>
+/// Provides extension methods for handling asynchronous <see cref="Result{T}"/> 
+/// and <see cref="T:Task{T}"/> where T is <see cref="Result{T}"/>
 /// operations in a functional programming style.
 /// </summary>
 public static class AsyncResultTExtensions
@@ -116,9 +117,9 @@ public static class AsyncResultTExtensions
     /// <param name="result">The result to validate.</param>
     /// <param name="predicate">The asynchronous predicate to evaluate the value if <paramref name="result"/> is successful.</param>
     /// <param name="error">The error to use if the predicate fails.</param>
-    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidationBuilder{T}"/> for further processing.</returns>
+    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidationChain{T}"/> for further processing.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="error"/> is null.</exception>
-    public static async Task<ResultValidationBuilder<T>> Ensure<T>(this Result<T> result,
+    public static async Task<ResultValidationChain<T>> Ensure<T>(this Result<T> result,
         Func<T, Task<bool>> predicate, Error error)
     {
         predicate.ThrowIfNull(nameof(predicate));
@@ -129,7 +130,7 @@ public static class AsyncResultTExtensions
             bool predicateResult = await predicate(result.Value);
             return result.Ensure(_ => predicateResult, error);
         }
-        return new ResultValidationBuilder<T>(result);
+        return new ResultValidationChain<T>(result);
     }
 
     /// <summary>
@@ -139,9 +140,9 @@ public static class AsyncResultTExtensions
     /// <param name="asyncResult">The asynchronous result to validate.</param>
     /// <param name="predicate">The synchronous predicate to evaluate the value if the result is successful.</param>
     /// <param name="error">The error to use if the predicate fails.</param>
-    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidationBuilder{T}"/> for further processing.</returns>
+    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidationChain{T}"/> for further processing.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="error"/> is null.</exception>
-    public static async Task<ResultValidationBuilder<T>> Ensure<T>(this Task<Result<T>> asyncResult,
+    public static async Task<ResultValidationChain<T>> Ensure<T>(this Task<Result<T>> asyncResult,
         Func<T, bool> predicate, Error error)
     {
         predicate.ThrowIfNull(nameof(predicate));
@@ -156,9 +157,9 @@ public static class AsyncResultTExtensions
     /// <param name="asyncResult">The asynchronous result to validate.</param>
     /// <param name="predicate">The asynchronous predicate to evaluate the value if the result is successful.</param>
     /// <param name="error">The error to use if the predicate fails.</param>
-    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidationBuilder{T}"/> for further processing.</returns>
+    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidationChain{T}"/> for further processing.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="error"/> is null.</exception>
-    public static async Task<ResultValidationBuilder<T>> Ensure<T>(this Task<Result<T>> asyncResult,
+    public static async Task<ResultValidationChain<T>> Ensure<T>(this Task<Result<T>> asyncResult,
         Func<T, Task<bool>> predicate, Error error)
     {
         predicate.ThrowIfNull(nameof(predicate));

@@ -21,4 +21,17 @@ public static class MediatorModule
         services.AddScoped<IMediator, SimpleMediator>();
         return services;
     }
+
+    /// <summary>
+    /// Register logging behavior as part of the Mediator pipeline..
+    /// </summary>
+    /// <param name="services">The <see cref="IServiceCollection"/> to add the logging behavior to.</param>
+    /// <returns>The same <see cref="IServiceCollection"/> instance for chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="services"/> is null.</exception>
+    public static IServiceCollection AddLoggingBehavior(this IServiceCollection services)
+    {
+        services.ThrowIfNull(nameof(services));
+        services.AddScoped<IBehavior, LoggingBehavior>();
+        return services;
+    }
 }
