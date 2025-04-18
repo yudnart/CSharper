@@ -39,16 +39,30 @@ jobs:
       - name: Extract version
         id: extract_version
         run: |
+          set +e # Disable immediate exit on error
+          echo "Event name: ${{ github.event_name }}"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION=${{ github.event.inputs.version }}
+            VERSION="${{ github.event.inputs.version }}"
           else
-            TAG=${{ github.ref_name }}
-            VERSION=$(echo $TAG | sed 's/^v//') # Remove 'v' prefix
+            TAG="${{ github.ref_name }}"
+            VERSION=$(echo "$TAG" | sed 's/^v//') # Remove 'v' prefix
+          fi
+          echo "Extracted VERSION: $VERSION"
+          if [ -z "$VERSION" ]; then
+            echo "Error: VERSION is empty"
+            exit 1
           fi
           # Check if it's a stable release (no prerelease suffix)
-          IS_STABLE=$(echo $VERSION | grep -c -E '^[0-9]+\.[0-9]+\.[0-9]+$')
+          if echo "$VERSION" | grep -q -E '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            IS_STABLE=1
+          else
+            IS_STABLE=0
+          fi
+          echo "IS_STABLE: $IS_STABLE"
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "IS_STABLE=$IS_STABLE" >> $GITHUB_OUTPUT
+          set -e # Re-enable exit on error
+        shell: bash
 
       - name: Pack NuGet package
         run: |
