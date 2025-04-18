@@ -10,6 +10,10 @@ on:
       branch:
         description: 'Branch to test (e.g., main, feature/branch-name)'
         required: false
+      log-mode:
+        description: 'Test logging mode: detailed, minimal, or failed-only'
+        required: false
+        default: 'failed-only'
 
 jobs:
   test:
@@ -43,11 +47,38 @@ jobs:
             Write-Error "No test projects found in tests directory"
             exit 1
           }
+          $LOG_MODE = if ("${{ github.event_name }}" -eq "workflow_dispatch" -and "${{ github.event.inputs.log-mode }}") { "${{ github.event.inputs.log-mode }}" } else { "failed-only" }
           foreach ($PROJ in $TEST_PROJECTS) {
-            Write-Host "Running tests for $PROJ"
-            dotnet test $PROJ --configuration Release --no-build --verbosity normal --framework net48
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            dotnet test $PROJ --configuration Release --no-build --verbosity normal --framework net8.0
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            Write-Host "Running tests for $PROJ with log mode $LOG_MODE"
+            if ($LOG_MODE -eq "failed-only") {
+              # Run tests with detailed output, capture to file, and filter for failed tests
+              $OUTPUT_FILE = "test-output-$($PROJ.BaseName).txt"
+              dotnet test $PROJ --configuration Release --no-build --verbosity normal --framework net48 --logger "console;verbosity=detailed" | Tee-Object -FilePath $OUTPUT_FILE
+              $EXIT_CODE_NET48 = $LASTEXITCODE
+              $FAILED_TESTS_NET48 = Select-String -Path $OUTPUT_FILE -Pattern "Failed\s+.*" | ForEach-Object { $_.Line }
+              if ($FAILED_TESTS_NET48) {
+                Write-Host "Failed tests for $PROJ (net48):"
+                $FAILED_TESTS_NET48 | ForEach-Object { Write-Host $_ }
+              } else {
+                Write-Host "No failed tests for $PROJ (net48)"
+              }
+              dotnet test $PROJ --configuration Release --no-build --verbosity normal --framework net8.0 --logger "console;verbosity=detailed" | Tee-Object -FilePath $OUTPUT_FILE
+              $EXIT_CODE_NET80 = $LASTEXITCODE
+              $FAILED_TESTS_NET80 = Select-String -Path $OUTPUT_FILE -Pattern "Failed\s+.*" | ForEach-Object { $_.Line }
+              if ($FAILED_TESTS_NET80) {
+                Write-Host "Failed tests for $PROJ (net8.0):"
+                $FAILED_TESTS_NET80 | ForEach-Object { Write-Host $_ }
+              } else {
+                Write-Host "No failed tests for $PROJ (net8.0)"
+              }
+              if ($EXIT_CODE_NET48 -ne 0 -or $EXIT_CODE_NET80 -ne 0) { exit 1 }
+            } else {
+              # Run tests with specified verbosity
+              $VERBOSITY = if ($LOG_MODE -eq "detailed") { "detailed" } else { "minimal" }
+              dotnet test $PROJ --configuration Release --no-build --verbosity $VERBOSITY --framework net48
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              dotnet test $PROJ --configuration Release --no-build --verbosity $VERBOSITY --framework net8.0
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
           }
         shell: pwsh
