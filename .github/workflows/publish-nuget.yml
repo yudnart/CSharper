@@ -36,10 +36,26 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
+      - name: Run unit tests
+        run: |
+          TEST_PROJECTS=$(find tests -name "*.csproj")
+          if [ -z "$TEST_PROJECTS" ]; then
+            echo "No test projects found in tests directory"
+            exit 1
+          fi
+          for PROJ in $TEST_PROJECTS; do
+            echo "Running tests for $PROJ"
+            if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+              dotnet test $PROJ --configuration Release --no-build --verbosity detailed
+            else
+              dotnet test $PROJ --configuration Release --no-build --verbosity normal
+            fi
+          done
+
       - name: Extract version
         id: extract_version
         run: |
-          set +e # Disable immediate exit on error
+          set +e
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.version }}"
             if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
@@ -48,13 +64,12 @@ jobs:
             fi
           else
             TAG="${{ github.ref_name }}"
-            VERSION=$(echo "$TAG" | sed 's/^v//') # Remove 'v' prefix
+            VERSION=$(echo "$TAG" | sed 's/^v//')
           fi
           if [ -z "$VERSION" ]; then
             echo "Error: VERSION is empty"
             exit 1
           fi
-          # Check if it's a stable release (no prerelease suffix)
           if echo "$VERSION" | grep -q -E '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             IS_STABLE=1
           else
@@ -65,7 +80,7 @@ jobs:
           fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "IS_STABLE=$IS_STABLE" >> $GITHUB_OUTPUT
-          set -e # Re-enable exit on error
+          set -e
         shell: bash
 
       - name: Pack NuGet package

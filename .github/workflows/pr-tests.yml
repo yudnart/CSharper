@@ -1,0 +1,39 @@
+name: Pull Request Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop  # Add other branches if needed, e.g., release branches
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run unit tests
+        run: |
+          TEST_PROJECTS=$(find tests -name "*.csproj")
+          if [ -z "$TEST_PROJECTS" ]; then
+            echo "No test projects found in tests directory"
+            exit 1
+          fi
+          for PROJ in $TEST_PROJECTS; do
+            echo "Running tests for $PROJ"
+            dotnet test $PROJ --configuration Release --no-build --verbosity normal
+          done
