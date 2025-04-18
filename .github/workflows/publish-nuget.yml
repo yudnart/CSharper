@@ -1,0 +1,70 @@
+name: Publish to NuGet
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'           # Matches stable releases, e.g., v1.0.0
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'        # Matches prereleases, e.g., v1.0.0-beta1, v1.0.0-alpha2
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Extract version from tag
+        id: extract_version
+        run: |
+          TAG=${{ github.ref_name }}
+          VERSION=$(echo $TAG | sed 's/^v//') # Remove 'v' prefix
+          # Check if it's a stable release (no prerelease suffix)
+          IS_STABLE=$(echo $VERSION | grep -c -E '^[0-9]+\.[0-9]+\.[0-9]+$')
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "IS_STABLE=$IS_STABLE" >> $GITHUB_OUTPUT
+
+      - name: Pack NuGet package
+        run: |
+          dotnet pack --configuration Release --no-build \
+            -p:PackageVersion=${{ steps.extract_version.outputs.VERSION }} \
+            -o ./nupkg
+
+      - name: Publish to NuGet
+        run: |
+          dotnet nuget push ./nupkg/*.nupkg \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json
+
+      - name: Unlist all prerelease packages
+        if: steps.extract_version.outputs.IS_STABLE == '1' # Only run for stable releases
+        run: |
+          # Replace with your actual NuGet package ID
+          PACKAGE_ID="Your.Package.Name"
+          
+          # Query NuGet for all prerelease versions of the package
+          PRERELEASE_VERSIONS=$(curl -s "https://api.nuget.org/v3/registration5-semver1/$PACKAGE_ID/index.json" | \
+            jq -r '.items[].items[] | select(.catalogEntry.version | contains("-")) | .catalogEntry.version')
+          
+          # Loop through prerelease versions and unlist them
+          for VERSION in $PRERELEASE_VERSIONS; do
+            echo "Unlisting prerelease package $PACKAGE_ID version $VERSION"
+            dotnet nuget delete $PACKAGE_ID $VERSION \
+              --api-key ${{ secrets.NUGET_API_KEY }} \
+              --source https://api.nuget.org/v3/index.json \
+              --non-interactive
+          done
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
