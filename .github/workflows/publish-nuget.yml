@@ -3,14 +3,10 @@ name: Publish to NuGet
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'          # Matches stable releases, e.g., v1.0.0
+      - 'v[0-9]+.[0-9]+.[0-9]+'           # Matches stable releases, e.g., v1.0.0
       - 'v[0-9]+.[0-9]+.[0-9]+-*'        # Matches prereleases, e.g., v1.0.0-beta1
   workflow_dispatch:
     inputs:
-      dry_run:
-        description: 'Run in dry-run mode (log actions without publishing/unlisting)'
-        required: false
-        default: 'false'
       branch:
         description: 'Branch to test (e.g., main, feature/branch-name)'
         required: false
@@ -18,17 +14,14 @@ on:
         description: 'Version to use for manual run (e.g., 1.0.0 or 1.0.0-beta1)'
         required: false
         default: '1.0.0'
+      dry_run:
+        description: 'Run in dry-run mode (log actions without publishing/unlisting)'
+        required: false
+        default: 'true'
 
 jobs:
-  test:
-    uses: ./.github/workflows/run-unit-tests.yml
-    with:
-      branch: ${{ github.event.inputs.branch || github.ref_name }}
-      log-mode: 'failed-only'
-
-  publish:
-    runs-on: windows-latest # Consistent with test job
-    needs: test # Depends on test job passing
+  build:
+    runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -47,6 +40,50 @@ jobs:
 
       - name: Build
         run: dotnet build --configuration Release --no-restore
+        shell: pwsh
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            **/bin/Release/
+            **/obj/Release/
+          retention-days: 1
+
+  run-unit-tests:
+    needs: build
+    uses: ./.github/workflows/run-unit-tests.yml
+    with:
+      branch: ${{ github.event.inputs.branch || github.ref_name }}
+      log-mode: 'failed-only'
+
+  publish-to-nuget:
+    runs-on: windows-latest
+    needs: [build, run-unit-tests]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref_name }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+
+      - name: Extract Package ID
+        id: extract_package_id
+        run: |
+          $CSPROJ_PATH = "src/CSharper/CSharper.csproj"  # Update to your .csproj path
+          $PACKAGE_ID = Select-Xml -Path $CSPROJ_PATH -XPath "//PropertyGroup/PackageId" | ForEach-Object { $_.Node.InnerText }
+          if (-not $PACKAGE_ID) {
+            Write-Error "PackageId not found in $CSPROJ_PATH"
+            exit 1
+          }
+          Write-Host "Extracted Package ID: $PACKAGE_ID"
+          "PACKAGE_ID=$PACKAGE_ID" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
         shell: pwsh
 
       - name: Extract version
@@ -78,6 +115,12 @@ jobs:
           "IS_STABLE=$IS_STABLE" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
         shell: pwsh
 
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: .
+
       - name: Pack NuGet package
         run: |
           dotnet pack --configuration Release --no-build `
@@ -104,13 +147,13 @@ jobs:
       - name: Unlist all prerelease packages (Dry Run)
         if: steps.extract_version.outputs.IS_STABLE == '1' && github.event.inputs.dry_run == 'true'
         run: |
-          $PACKAGE_ID = "Your.Package.Name"
-          Write-Host "Dry run: Querying prerelease versions for $PACKAGE_ID"
+          $PACKAGE_ID = "${{ steps.extract_package_id.outputs.PACKAGE_ID }}"
+          Write-Host "Dry run: Querying prerelease versions for ${PACKAGE_ID}"
           $PRERELEASE_VERSIONS = (Invoke-WebRequest -Uri "https://api.nuget.org/v3/registration5-semver1/$PACKAGE_ID/index.json" -UseBasicParsing | ConvertFrom-Json).items.items | Where-Object { $_.catalogEntry.version -like '*-*' } | ForEach-Object { $_.catalogEntry.version }
           if (-not $PRERELEASE_VERSIONS) {
-            Write-Host "Dry run: No prerelease versions found for $PACKAGE_ID"
+            Write-Host "Dry run: No prerelease versions found for ${PACKAGE_ID}"
           } else {
-            Write-Host "Dry run: Would unlist the following prerelease versions for $PACKAGE_ID:"
+            Write-Host "Dry run: Would unlist the following prerelease versions for ${PACKAGE_ID}:"
             foreach ($VERSION in $PRERELEASE_VERSIONS) {
               Write-Host "- $VERSION"
               Write-Host "Would run: dotnet nuget delete $PACKAGE_ID $VERSION --api-key [REDACTED] --source https://api.nuget.org/v3/index.json --non-interactive"
@@ -121,10 +164,11 @@ jobs:
       - name: Unlist all prerelease packages
         if: steps.extract_version.outputs.IS_STABLE == '1' && github.event.inputs.dry_run != 'true'
         run: |
-          $PACKAGE_ID = "Your.Package.Name"
+          $PACKAGE_ID = "${{ steps.extract_package_id.outputs.PACKAGE_ID }}"
+          Write-Host "Unlisting prerelease packages for ${PACKAGE_ID}"
           $PRERELEASE_VERSIONS = (Invoke-WebRequest -Uri "https://api.nuget.org/v3/registration5-semver1/$PACKAGE_ID/index.json" -UseBasicParsing | ConvertFrom-Json).items.items | Where-Object { $_.catalogEntry.version -like '*-*' } | ForEach-Object { $_.catalogEntry.version }
           foreach ($VERSION in $PRERELEASE_VERSIONS) {
-            Write-Host "Unlisting prerelease package $PACKAGE_ID version $VERSION"
+            Write-Host "Unlisting prerelease package ${PACKAGE_ID} version $VERSION"
             dotnet nuget delete $PACKAGE_ID $VERSION `
               --api-key ${{ secrets.NUGET_API_KEY }} `
               --source https://api.nuget.org/v3/index.json `

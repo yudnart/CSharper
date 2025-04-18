@@ -34,7 +34,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch || github.ref_name }}
+          ref: ${{ inputs.branch || github.event.inputs.branch || github.ref_name }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -43,11 +43,21 @@ jobs:
             8.0.x
           # .NET Framework 4.8 SDK is pre-installed on windows-latest
 
+      - name: Try download build artifacts
+        id: download_artifacts
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: .
+
       - name: Restore dependencies
+        if: steps.download_artifacts.outcome != 'success'
         run: dotnet restore
         shell: pwsh
 
       - name: Build
+        if: steps.download_artifacts.outcome != 'success'
         run: dotnet build --configuration Release --no-restore
         shell: pwsh
 
@@ -58,7 +68,7 @@ jobs:
             Write-Error "No test projects found in tests directory"
             exit 1
           }
-          $LOG_MODE = if ("${{ github.event_name }}" -eq "workflow_dispatch" -and "${{ github.event.inputs.log-mode }}") { "${{ github.event.inputs.log-mode }}" } else { "failed-only" }
+          $LOG_MODE = "${{ inputs.log-mode || github.event.inputs.log-mode || 'failed-only' }}"
           foreach ($PROJ in $TEST_PROJECTS) {
             Write-Host "Running tests for $PROJ with log mode $LOG_MODE"
             if ($LOG_MODE -eq "failed-only") {
