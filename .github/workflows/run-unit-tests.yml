@@ -60,7 +60,7 @@ jobs:
           }
         shell: pwsh
 
-      - name: Install .NET Framework 4.8 SDK
+      - name: Setup .NET Framework 4.8 SDK
         if: steps.check_sdks.outputs.net48_installed != 'true'
         run: |
           Write-Host "Installing .NET Framework 4.8 SDK..."
@@ -105,7 +105,7 @@ jobs:
             Write-Host "parallel.runsettings found, enabling parallel test execution"
             "use_parallel=true" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
           } else {
-            Write-Host "Hey, you can run your test in parallel if you include the setting file at tests/parallel.runsettings"
+            Write-Host "`e[1;34mTo run your tests in parallel, please include the settings file at 'tests/parallel.runsettings'.`e[0m"
             "use_parallel=false" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
           }
         shell: pwsh
