@@ -105,7 +105,7 @@ jobs:
             Write-Host "parallel.runsettings found, enabling parallel test execution"
             "use_parallel=true" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
           } else {
-            Write-Host "`e[1;34m*******To run your tests in parallel, please include the settings file at 'tests/parallel.runsettings'.*******`e[0m"
+            Write-Host "`e[1;34m***[To run your tests in parallel, please include the settings file at 'tests/parallel.runsettings'.]***`e[0m"
             "use_parallel=false" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
           }
         shell: pwsh
