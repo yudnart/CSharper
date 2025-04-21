@@ -12,7 +12,7 @@ internal sealed class TestEntity : Entity<string>
 
     public void QueueTestEvent(DomainEvent domainEvent)
     {
-        QueueDomainEvent(domainEvent);
+        QueueEvent(domainEvent);
     }
 }
 

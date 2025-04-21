@@ -37,70 +37,26 @@ public abstract class Entity<TId>
             || (Id is string idStr && string.IsNullOrWhiteSpace(idStr));
     }
 
-    #region Metadata
-
-    private readonly Dictionary<string, object> _metadata = [];
-
-    /// <summary>
-    /// Attempts to get the metadata associated with the specified key.
-    /// </summary>
-    /// <typeparam name="T">The expected type of the metadata value.</typeparam>
-    /// <param name="key">The key of the metadata.</param>
-    /// <param name="value">The value of the metadata if found.</param>
-    /// <returns><c>true</c> if the metadata is found and is of the expected type; otherwise, <c>false</c>.</returns>
-    public bool TryGetMetadata<T>(string key, out T value)
-    {
-        if (_metadata.TryGetValue(key, out var rawValue) && rawValue is T typedValue)
-        {
-            value = typedValue;
-            return true;
-        }
-        value = default!;
-        return false;
-    }
-
-    /// <summary>
-    /// Sets the metadata for the entity.
-    /// </summary>
-    /// <param name="key">The key of the metadata.</param>
-    /// <param name="value">The value of the metadata.</param>
-    public void SetMetadata(string key, object value)
-    {
-        _metadata[key] = value;
-    }
-
-    /// <summary>
-    /// Unsets the metadata for the entity.
-    /// </summary>
-    /// <param name="key">The key of the metadata to unset.</param>
-    /// <returns><c>true</c> if the metadata was successfully removed; otherwise, <c>false</c>.</returns>
-    public bool UnsetMetadata(string key)
-    {
-        return _metadata.Remove(key);
-    }
-
-    #endregion
-
     #region Events
 
-    private readonly Queue<DomainEvent> _domainEvents = [];
+    private readonly Queue<DomainEvent> _evenStore = [];
 
     /// <summary>
     /// Queues a domain event to be dispatched.
     /// </summary>
     /// <param name="domainEvent">The domain event to be queued.</param>
-    protected void QueueDomainEvent(DomainEvent domainEvent)
+    protected void QueueEvent(DomainEvent domainEvent)
     {
-        _domainEvents.Enqueue(domainEvent);
+        _evenStore.Enqueue(domainEvent);
     }
 
     /// <summary>
     /// Flushes the domain events and returns them as an enumerable.
     /// </summary>
     /// <returns>An enumerable of domain events.</returns>
-    public IEnumerable<DomainEvent> FlushDomainEvents()
+    public IEnumerable<DomainEvent> FlushEvents()
     {
-        while (_domainEvents.TryDequeueCommon(out DomainEvent? result))
+        while (_evenStore.TryDequeueCommon(out DomainEvent? result))
         {
             yield return result!;
         }

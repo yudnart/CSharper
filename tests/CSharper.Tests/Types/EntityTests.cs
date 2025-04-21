@@ -47,66 +47,6 @@ public sealed class EntityTests
     }
 
     [Fact]
-    public void SetMetadata_WhenKeyAndValueProvided_ShouldStoreMetadata()
-    {
-        // Arrange
-        TestEntity entity = new("test-id");
-        string key = "test-key";
-        string value = "test-value";
-
-        // Act
-        entity.SetMetadata(key, value);
-        bool result = entity.TryGetMetadata(key, out string retrievedValue);
-
-        // Assert
-        result.Should().BeTrue();
-        retrievedValue.Should().Be(value);
-    }
-
-    [Fact]
-    public void TryGetMetadata_WhenKeyDoesNotExist_ShouldReturnFalse()
-    {
-        // Arrange
-        TestEntity entity = new("test-id");
-
-        // Act
-        bool result = entity.TryGetMetadata<string>("nonexistent-key", out string value);
-
-        // Assert
-        result.Should().BeFalse();
-        value.Should().BeNull();
-    }
-
-    [Fact]
-    public void UnsetMetadata_WhenKeyExists_ShouldRemoveAndReturnTrue()
-    {
-        // Arrange
-        TestEntity entity = new("test-id");
-        string key = "test-key";
-        entity.SetMetadata(key, "test-value");
-
-        // Act
-        bool result = entity.UnsetMetadata(key);
-
-        // Assert
-        result.Should().BeTrue();
-        entity.TryGetMetadata<string>(key, out _).Should().BeFalse();
-    }
-
-    [Fact]
-    public void UnsetMetadata_WhenKeyDoesNotExist_ShouldReturnFalse()
-    {
-        // Arrange
-        TestEntity entity = new("test-id");
-
-        // Act
-        bool result = entity.UnsetMetadata("nonexistent-key");
-
-        // Assert
-        result.Should().BeFalse();
-    }
-
-    [Fact]
     public void QueueDomainEvent_WhenEventProvided_ShouldAddToQueue()
     {
         // Arrange
@@ -115,7 +55,7 @@ public sealed class EntityTests
 
         // Act
         entity.QueueTestEvent(domainEvent);
-        IEnumerable<DomainEvent> events = entity.FlushDomainEvents();
+        IEnumerable<DomainEvent> events = entity.FlushEvents();
 
         // Assert
         events.Should().ContainSingle().Which.Should().Be(domainEvent);
@@ -132,8 +72,8 @@ public sealed class EntityTests
         entity.QueueTestEvent(event2);
 
         // Act
-        List<DomainEvent> events = entity.FlushDomainEvents().ToList();
-        List<DomainEvent> eventsAfterFlush = entity.FlushDomainEvents().ToList();
+        List<DomainEvent> events = [.. entity.FlushEvents()];
+        List<DomainEvent> eventsAfterFlush = [.. entity.FlushEvents()];
 
         // Assert
         events.Should().HaveCount(2)

@@ -32,6 +32,7 @@ To use CSharper, install the `dht.csharper` package:
 
 ## Features
 
+- [**Types**](docs/CSharper.Types.md): Contains based types for modeling your app domain.
 - [**Results**](docs/CSharper.Results.md): Provides `Result` and `Result<T>` for functional error handling, with `Error` objects detailing 
 issues via `Message`, `Code`, and `Path`.
 - [**Functional Extensions**](docs/CSharper.Functional.md): Enhances `Result` and `Result<T>` with methods like `Bind`, `Map`, and `Ensure`
@@ -42,18 +43,19 @@ validation or logging, enabling decoupled request handling across application la
 ## Inspirations
 
 CSharper draws inspiration from several established projects in the .NET and functional programming communities:
-- [**MediatR**](https://github.com/jbogard/MediatR): A widely-used .NET library for in-process messaging and mediator patterns, inspiring 
-CSharper’s Mediator component for decoupled request handling.
 - [**CSharpFunctionalExtensions**](https://github.com/vkhorikov/CSharpFunctionalExtensions): A functional programming library for C#, influencing
 CSharper’s Functional extensions with monadic operations and result handling.
 - [**FluentResults**](https://github.com/altmann/FluentResults): A result-handling library that shaped CSharper’s Results module, emphasizing 
 typed outcomes and error management.
+- [**MediatR**](https://github.com/jbogard/MediatR): A widely-used .NET library for in-process messaging and mediator patterns, inspiring 
+CSharper’s Mediator component for decoupled request handling.
 
 These projects provided valuable patterns and ideas, adapted to fit CSharper’s goals of simplicity and integration in .NET applications.
 
 ## Contributing
 
-Contributions are welcome! Submit issues or pull requests to the [CSharper repository](https://github.com/yudnart/CSharper). Ensure code follows the existing style and includes tests.
+Contributions are welcome! Submit issues or pull requests to the [CSharper repository](https://github.com/yudnart/CSharper). Ensure code follows 
+the existing style and includes tests.
 
 ## License
 
