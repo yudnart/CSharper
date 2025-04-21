@@ -61,4 +61,5 @@ the existing style and includes tests.
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## [Change Log](CHANGELOG.md)
+## Change Log
+> [Change Log](CHANGELOG.md)
