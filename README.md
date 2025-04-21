@@ -5,11 +5,11 @@
 [![NuGet Version](https://img.shields.io/github/actions/workflow/status/yudnart/CSharper/publish-nuget.yml?style=flat-square&color=green)](https://github.com/yudnart/CSharper/actions/workflows/publish-nuget.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 
-> :heart: [Request features or give feedback](https://github.com/yudnart/CSharper/issues)
-
 CSharper provides utilities for .NET development, distributed as the `dht.csharper` NuGet package, targeting .NET Standard 2.0 and .NET 8.0. 
 It includes Mediator for decoupled request handling, Results for error management, and Functional extensions for task composition, supporting 
 modular and reliable applications.
+
+:heart: [Request features or give feedback](https://github.com/yudnart/CSharper/issues)
 
 ## Overview
 
@@ -60,3 +60,6 @@ the existing style and includes tests.
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Change Log
+> [Change Log](CHANGELOG.md)
