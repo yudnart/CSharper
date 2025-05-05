@@ -32,16 +32,9 @@ public sealed class ValidationError : Error
         params ValidationErrorDetail[] errorDetails)
         : base(message, code, errorDetails)
     {
-        if (string.IsNullOrWhiteSpace(message))
-        {
-            Message = DefaultErrorMessage;
-        }
-
         if (string.IsNullOrWhiteSpace(Code))
         {
             Code = DefaultErrorCode;
         }
-
-        ErrorDetails ??= [];
     }
 }

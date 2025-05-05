@@ -27,7 +27,7 @@ public abstract class ErrorBase
     /// <param name="message">The descriptive message of the error.</param>
     /// <param name="code">The optional error code for identification. Defaults to <c>null</c>.</param>
     /// <exception cref="ArgumentException">Thrown if <paramref name="message"/> is null, empty, or whitespace.</exception>
-    protected ErrorBase(string message, string? code)
+    protected ErrorBase(string message, string? code = null)
     {
         message.ThrowIfNullOrWhitespace(nameof(message));
         Message = message;
@@ -44,13 +44,10 @@ public abstract class ErrorBase
     public override string ToString()
     {
         StringBuilder sb = new(Message);
-
-        // Add Code if present
         if (!string.IsNullOrWhiteSpace(Code))
         {
             sb.Append($", Code={Code}");
         }
-
         return sb.ToString();
     }
 }

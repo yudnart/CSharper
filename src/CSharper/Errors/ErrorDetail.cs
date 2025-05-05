@@ -13,7 +13,7 @@ public class ErrorDetail : ErrorBase
     /// <param name="message">The descriptive message of the error.</param>
     /// <param name="code">The optional error code for identification.</param>
     /// <exception cref="ArgumentException">Thrown if <paramref name="message"/> is null, empty, or whitespace.</exception>
-    public ErrorDetail(string message, string? code) : base(message, code)
+    public ErrorDetail(string message, string? code = null) : base(message, code)
     {
         // Intentionally blank
     }
