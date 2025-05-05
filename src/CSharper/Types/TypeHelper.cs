@@ -23,7 +23,8 @@ public static class TypeHelper
     /// </remarks>
     public static void ConfigureGetUnproxiedTypeDelegate(Func<object, Type> getUnproxiedTypeDelegate)
     {
-        _getUnproxiedTypeDelegate = getUnproxiedTypeDelegate ?? throw new ArgumentNullException(nameof(getUnproxiedTypeDelegate));
+        _getUnproxiedTypeDelegate = getUnproxiedTypeDelegate 
+            ?? throw new ArgumentNullException(nameof(getUnproxiedTypeDelegate));
     }
 
     /// <summary>

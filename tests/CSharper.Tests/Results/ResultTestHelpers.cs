@@ -1,4 +1,5 @@
-﻿using CSharper.Results;
+﻿using CSharper.Errors;
+using CSharper.Results;
 using FluentAssertions;
 
 namespace CSharper.Tests.Results;

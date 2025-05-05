@@ -1,4 +1,5 @@
-﻿using CSharper.Results;
+﻿using CSharper.Errors;
+using CSharper.Results;
 using CSharper.Tests.TestUtilities;
 using FluentAssertions;
 
@@ -51,7 +52,7 @@ public sealed class ResultFactoryTests
     public void Fail_SingleError_CreatesFailureWithOneError()
     {
         // Arrange
-        Error error = new("Something went wrong", "ERR001", "User.Name");
+        Error error = new("Something went wrong", "ERR001");
 
         // Act
         Result result = Result.Fail(error);
@@ -64,7 +65,7 @@ public sealed class ResultFactoryTests
     public void FailT_SingleError_CreatesFailureWithOneError()
     {
         // Arrange
-        Error error = new("Something went wrong", "ERR001", "User.Name");
+        Error error = new("Something went wrong", "ERR001");
 
         // Act
         Result<string> result = Result.Fail<string>(error);
@@ -77,8 +78,8 @@ public sealed class ResultFactoryTests
     public void Fail_MultipleErrors_CreatesFailureWithAllErrors()
     {
         // Arrange
-        Error mainError = new("Primary error", "ERR002", "System");
-        Error detailError1 = new("Detail 1", null, "System.Subsystem");
+        Error mainError = new("Primary error", "ERR002");
+        Error detailError1 = new("Detail 1", null);
         Error detailError2 = new("Detail 2", "ERR003");
 
         // Act
@@ -92,8 +93,8 @@ public sealed class ResultFactoryTests
     public void FailT_MultipleErrors_CreatesFailureWithAllErrors()
     {
         // Arrange
-        Error mainError = new("Primary error", "ERR002", "System");
-        Error detailError1 = new("Detail 1", null, "System.Subsystem");
+        Error mainError = new("Primary error", "ERR002");
+        Error detailError1 = new("Detail 1", null);
         Error detailError2 = new("Detail 2", "ERR003");
 
         // Act
@@ -134,14 +135,13 @@ public sealed class ResultFactoryTests
         string path = "Data.Field";
 
         // Act
-        Result result = Result.Fail(message, code, path);
+        Result result = Result.Fail(message, code);
 
         // Assert
         ResultTestHelpers.AssertFailureResult(result);
         result.Errors.Should().HaveCount(1);
         result.Errors[0].Message.Should().Be(message);
         result.Errors[0].Code.Should().Be(code);
-        result.Errors[0].Path.Should().Be(path);
     }
 
     [Fact]
@@ -153,14 +153,13 @@ public sealed class ResultFactoryTests
         string path = "Data.Field";
 
         // Act
-        Result<double> result = Result.Fail<double>(message, code, path);
+        Result<double> result = Result.Fail<double>(message, code);
 
         // Assert
         ResultTestHelpers.AssertFailureResult(result);
         result.Errors.Should().HaveCount(1);
         result.Errors[0].Message.Should().Be(message);
         result.Errors[0].Code.Should().Be(code);
-        result.Errors[0].Path.Should().Be(path);
     }
 
     [Theory]
@@ -194,7 +193,7 @@ public sealed class ResultFactoryTests
         IEnumerable<ResultLike> results = null!;
 
         // Act
-        Action act = () => Result.Collect(results);
+        Action act = () => Result.Sequence(results);
 
         // Assert
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
@@ -207,7 +206,7 @@ public sealed class ResultFactoryTests
         IEnumerable<ResultLike> results = new List<ResultLike>();
 
         // Act
-        Action act = () => Result.Collect(results);
+        Action act = () => Result.Sequence(results);
 
         // Assert
         AssertHelper.AssertArgumentException<ArgumentException>(act);
@@ -228,7 +227,7 @@ public sealed class ResultFactoryTests
         ];
 
         // Act
-        Result actual = Result.Collect(results);
+        Result actual = Result.Sequence(results);
 
         // Assert
         ResultTestHelpers.AssertSuccessResult(actual);
@@ -242,7 +241,7 @@ public sealed class ResultFactoryTests
         List<ResultLike> results = [result];
 
         // Act
-        Result actual = Result.Collect(results);
+        Result actual = Result.Sequence(results);
 
         // Assert
         ResultTestHelpers.AssertSuccessResult(actual);
@@ -252,9 +251,9 @@ public sealed class ResultFactoryTests
     public void Collect_AllFailedResults_ReturnsFailureWithAllErrors()
     {
         // Arrange
-        Error error1 = new("Error 1", "ERR001", "Path1");
-        Error error2 = new("Error 2", "ERR002", "Path2");
-        Error error3 = new("Error 3", "ERR003", "Path3");
+        Error error1 = new("Error 1", "ERR001");
+        Error error2 = new("Error 2", "ERR002");
+        Error error3 = new("Error 3", "ERR003");
         Result result1 = Result.Fail(error1);
         Result<string> result2 = Result.Fail<string>(error2);
         Result<int> result3 = Result.Fail<int>(error3);
@@ -266,7 +265,7 @@ public sealed class ResultFactoryTests
         ];
 
         // Act
-        Result actual = Result.Collect(results);
+        Result actual = Result.Sequence(results);
 
         // Assert
         ResultTestHelpers.AssertFailureResult(actual,
@@ -277,13 +276,13 @@ public sealed class ResultFactoryTests
     public void Collect_SingleFailedResult_ReturnsFailureWithErrors()
     {
         // Arrange
-        Error error1 = new("Error 1", "ERR001", "Path1");
-        Error error2 = new("Error 2", "ERR002", "Path2");
+        Error error1 = new("Error 1", "ERR001");
+        Error error2 = new("Error 2", "ERR002");
         Result result = Result.Fail(error1, error2);
         List<ResultLike> results = [result];
 
         // Act
-        Result actual = Result.Collect(results);
+        Result actual = Result.Sequence(results);
 
         // Assert
         ResultTestHelpers.AssertFailureResult(result);
@@ -295,8 +294,8 @@ public sealed class ResultFactoryTests
     public void Collect_MixedResults_ReturnsFailureWithAllErrors()
     {
         // Arrange
-        Error error1 = new("Error 1", "ERR001", "Path1");
-        Error error2 = new("Error 2", "ERR002", "Path2");
+        Error error1 = new("Error 1", "ERR001");
+        Error error2 = new("Error 2", "ERR002");
         Result result1 = Result.Ok();
         Result<string> result2 = Result.Fail<string>(error1);
         Result<int> result3 = Result.Fail<int>(error2);
@@ -308,7 +307,7 @@ public sealed class ResultFactoryTests
         ];
 
         // Act
-        Result actual = Result.Collect(results);
+        Result actual = Result.Sequence(results);
 
         // Assert
         ResultTestHelpers.AssertFailureResult(actual, error1, error2);
@@ -318,7 +317,7 @@ public sealed class ResultFactoryTests
     public void Collect_FactoryResults_ResolvesFactoriesAndReturnsCorrectResult()
     {
         // Arrange
-        Error error = new("Error 1", "ERR001", "Path1");
+        Error error = new("Error 1", "ERR001");
         Func<ResultBase> successFactory = () => Result.Ok();
         Func<ResultBase> failureFactory = () => Result.Fail(error);
         List<ResultLike> results =
@@ -328,7 +327,7 @@ public sealed class ResultFactoryTests
         ];
 
         // Act
-        Result actual = Result.Collect(results);
+        Result actual = Result.Sequence(results);
 
         // Assert
         ResultTestHelpers.AssertFailureResult(actual, error);

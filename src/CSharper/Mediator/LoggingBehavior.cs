@@ -1,4 +1,5 @@
 ﻿using CSharper.AppContext;
+using CSharper.Errors;
 using CSharper.Functional;
 using CSharper.Results;
 using Microsoft.Extensions.DependencyInjection;

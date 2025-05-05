@@ -1,4 +1,5 @@
 ﻿using CSharper.AppContext;
+using CSharper.Errors;
 using CSharper.Results;
 using CSharper.Tests.Mediator;
 using CSharper.Tests.TestUtilities;

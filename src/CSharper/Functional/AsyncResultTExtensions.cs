@@ -1,5 +1,7 @@
-﻿using CSharper.Results;
+﻿using CSharper.Errors;
+using CSharper.Results;
 using CSharper.Utilities;
+using CSharper.Validation;
 using System;
 using System.Threading.Tasks;
 
@@ -117,20 +119,22 @@ public static class AsyncResultTExtensions
     /// <param name="result">The result to validate.</param>
     /// <param name="predicate">The asynchronous predicate to evaluate the value if <paramref name="result"/> is successful.</param>
     /// <param name="error">The error to use if the predicate fails.</param>
-    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidationChain{T}"/> for further processing.</returns>
+    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidator{T}"/> for further processing.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="error"/> is null.</exception>
-    public static async Task<ResultValidationChain<T>> Ensure<T>(this Result<T> result,
-        Func<T, Task<bool>> predicate, Error error)
+    public static async Task<ResultValidator<T>> Ensure<T>(this Result<T> result,
+        Func<T, Task<bool>> predicate, string message, string? code = null, string? path = null)
     {
+        result.ThrowIfNull(nameof(result));
         predicate.ThrowIfNull(nameof(predicate));
-        error.ThrowIfNull(nameof(error));
+        message.ThrowIfNullOrWhitespace(nameof(message));
 
         if (result.IsSuccess)
         {
             bool predicateResult = await predicate(result.Value);
-            return result.Ensure(_ => predicateResult, error);
+            return result.Ensure(_ => predicateResult, message, code, path);
         }
-        return new ResultValidationChain<T>(result);
+
+        return new ResultValidator<T>(result, Noop<T>(), message, code, path);
     }
 
     /// <summary>
@@ -140,14 +144,17 @@ public static class AsyncResultTExtensions
     /// <param name="asyncResult">The asynchronous result to validate.</param>
     /// <param name="predicate">The synchronous predicate to evaluate the value if the result is successful.</param>
     /// <param name="error">The error to use if the predicate fails.</param>
-    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidationChain{T}"/> for further processing.</returns>
+    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidator{T}"/> for further processing.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="error"/> is null.</exception>
-    public static async Task<ResultValidationChain<T>> Ensure<T>(this Task<Result<T>> asyncResult,
-        Func<T, bool> predicate, Error error)
+    public static Task<ResultValidator<T>> Ensure<T>(this Task<Result<T>> asyncResult,
+        Func<T, bool> predicate, string message, string? code = null, string? path = null)
     {
+        asyncResult.ThrowIfNull(nameof(asyncResult));
         predicate.ThrowIfNull(nameof(predicate));
-        error.ThrowIfNull(nameof(error));
-        return (await asyncResult).Ensure(predicate, error);
+        message.ThrowIfNullOrWhitespace(nameof(message));
+        return asyncResult
+            .ContinueWith(task => task.Result
+            .Ensure(predicate, message, code, path));
     }
 
     /// <summary>
@@ -157,15 +164,16 @@ public static class AsyncResultTExtensions
     /// <param name="asyncResult">The asynchronous result to validate.</param>
     /// <param name="predicate">The asynchronous predicate to evaluate the value if the result is successful.</param>
     /// <param name="error">The error to use if the predicate fails.</param>
-    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidationChain{T}"/> for further processing.</returns>
+    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidator{T}"/> for further processing.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="error"/> is null.</exception>
-    public static async Task<ResultValidationChain<T>> Ensure<T>(this Task<Result<T>> asyncResult,
-        Func<T, Task<bool>> predicate, Error error)
+    public static async Task<ResultValidator<T>> Ensure<T>(this Task<Result<T>> asyncResult,
+        Func<T, Task<bool>> predicate, string message, string? code = null, string? path = null)
     {
+        asyncResult.ThrowIfNull(nameof(asyncResult));
         predicate.ThrowIfNull(nameof(predicate));
-        error.ThrowIfNull(nameof(error));
+        message.ThrowIfNullOrWhitespace(nameof(message));
         Result<T> result = await asyncResult;
-        return await result.Ensure(predicate, error);
+        return await result.Ensure(predicate, message, code, path);
     }
 
     #endregion
@@ -518,4 +526,6 @@ public static class AsyncResultTExtensions
     }
 
     #endregion
+
+    private static Func<T, bool> Noop<T>() => _ => true;
 }

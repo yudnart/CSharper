@@ -1,5 +1,7 @@
-﻿using CSharper.Results;
+﻿using CSharper.Errors;
+using CSharper.Results;
 using CSharper.Utilities;
+using CSharper.Validation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,20 +44,23 @@ public static class ResultTExtensions
     }
 
     /// <summary>
-    /// Validates a <see cref="Result{T}"/> using a synchronous predicate, returning a builder for further validation.
+    /// Initializes a validation chain with a single rule, to be evaluated only if the current <see cref="Result{T}"/> is successful.
     /// </summary>
-    /// <typeparam name="T">The type of the successful result value.</typeparam>
-    /// <param name="result">The result to validate.</param>
-    /// <param name="predicate">The synchronous predicate to evaluate the value if <paramref name="result"/> is successful.</param>
-    /// <param name="error">The error to include if the predicate fails.</param>
-    /// <returns>A <see cref="ResultValidationChain{T}"/> for chaining additional validations.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="error"/> is null.</exception>
-    public static ResultValidationChain<T> Ensure<T>(this Result<T> result,
-        Func<T, bool> predicate, Error error)
+    /// <typeparam name="T">The type of the value in the result.</typeparam>
+    /// <param name="result">The result to check before validation.</param>
+    /// <param name="predicate">The predicate to evaluate the validation condition.</param>
+    /// <param name="message">The descriptive message of the error if the predicate fails.</param>
+    /// <param name="code">The optional error code for identification. Defaults to <c>null</c>.</param>
+    /// <param name="path">The optional path to the property being validated. Defaults to <c>null</c>.</param>
+    /// <returns>A <see cref="ResultValidator{T}"/> for chaining additional validation rules.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="result"/> or <paramref name="predicate"/> is null.</exception>
+    public static ResultValidator<T> Ensure<T>(this Result<T> result, 
+        Func<T, bool> predicate, string message, string? code = null, string? path = null)
     {
+        result.ThrowIfNull(nameof(result));
         predicate.ThrowIfNull(nameof(predicate));
-        error.ThrowIfNull(nameof(error));
-        return new ResultValidationChain<T>(result).And(predicate, error);
+        message.ThrowIfNullOrWhitespace(nameof(message));
+        return new ResultValidator<T>(result, predicate, message, code, path);
     }
 
     /// <summary>

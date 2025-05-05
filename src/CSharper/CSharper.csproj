@@ -9,6 +9,7 @@
     <Authors>Duy Tran</Authors>
     <Description>A C# library providing common types and services (Mediator, Results, Extensions, etc.) to help developers quickly start building applications.</Description>
     <RepositoryUrl>https://github.com/yudnart/CSharper</RepositoryUrl>
+    <ProjectUrl>https://github.com/yudnart/CSharper</ProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>csharp;mediator;result;functional;app-development</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

@@ -1,7 +1,9 @@
-﻿using CSharper.Functional;
+﻿using CSharper.Errors;
+using CSharper.Functional;
 using CSharper.Results;
 using CSharper.Tests.Results;
 using CSharper.Tests.TestUtilities;
+using CSharper.Validation;
 using FluentAssertions;
 
 namespace CSharper.Tests.Functional;
@@ -91,9 +93,9 @@ public sealed class ResultTExtensionsTests
         Func<string, bool> predicate = s => s.Length > 0;
         Error error = new("Too short", code: "SHORT");
 
-        ResultValidationChain<string> chain = initial.Ensure(predicate, error);
+        ResultValidator<string> chain = initial.Ensure(predicate, "Too short", "SHORT");
 
-        Result<string> result = chain.Collect();
+        Result<string> result = chain.Validate();
         ResultTestHelpers.AssertSuccessResult(result, "test");
     }
 
@@ -105,9 +107,9 @@ public sealed class ResultTExtensionsTests
         Func<string, bool> predicate = s => s.Length > 0;
         Error validationError = new("Too short", code: "SHORT");
 
-        ResultValidationChain<string> chain = initial.Ensure(predicate, validationError);
+        ResultValidator<string> chain = initial.Ensure(predicate, "Too short", "SHORT");
 
-        Result<string> result = chain.Collect();
+        Result<string> result = chain.Validate();
         ResultTestHelpers.AssertFailureResult(result, error);
     }
 
@@ -118,21 +120,21 @@ public sealed class ResultTExtensionsTests
         Func<string, bool> predicate = null!;
         Error error = new("Too short", code: "SHORT");
 
-        Action act = () => initial.Ensure(predicate, error);
+        Action act = () => initial.Ensure(predicate, "Too short", "SHORT");
 
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
 
     [Fact]
-    public void Ensure_NullError_ThrowsArgumentNullException()
+    public void Ensure_NullMessage_ThrowsArgumentNullException()
     {
         Result<string> initial = Result.Ok("test");
         Func<string, bool> predicate = s => s.Length > 0;
-        Error error = null!;
+        string error = null!;
 
         Action act = () => initial.Ensure(predicate, error);
 
-        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
+        AssertHelper.AssertArgumentException<ArgumentException>(act);
     }
 
     #endregion

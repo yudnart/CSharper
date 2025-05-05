@@ -1,4 +1,5 @@
-﻿using CSharper.Utilities;
+﻿using CSharper.Errors;
+using CSharper.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,10 +34,10 @@ public sealed partial class Result
     /// <param name="path">The optional path indicating the error's context. Defaults to <c>null</c>.</param>
     /// <returns>A new <see cref="Result"/> representing a failed operation.</returns>
     /// <exception cref="ArgumentException">Thrown if <paramref name="message"/> is null, empty, or whitespace.</exception>
-    public static Result Fail(string message, string? code = null, string? path = null)
+    public static Result Fail(string message, string? code = null)
     {
         message.ThrowIfNullOrWhitespace(nameof(message));
-        return Fail(new Error(message, code, path));
+        return Fail(new Error(message, code));
     }
 
     #endregion
@@ -73,10 +74,10 @@ public sealed partial class Result
     /// <returns>A new <see cref="Result{TValue}"/> representing a failed operation.</returns>
     /// <exception cref="ArgumentException">Thrown if <paramref name="message"/> is null, empty, or whitespace.</exception>
     public static Result<TValue> Fail<TValue>(
-        string message, string? code = null, string? path = null)
+        string message, string? code = null)
     {
         message.ThrowIfNullOrWhitespace(nameof(message));
-        return Fail<TValue>(new Error(message, code, path));
+        return Fail<TValue>(new Error(message, code));
     }
 
     #endregion
@@ -97,7 +98,7 @@ public sealed partial class Result
     /// The <see cref="ResultLike"/> type allows aggregation of both <see cref="Result"/> and <see cref="Result{T}"/>
     /// instances, extracting their underlying <see cref="ResultBase"/> for evaluation.
     /// </remarks>
-    public static Result Collect(IEnumerable<ResultLike> results)
+    public static Result Sequence(IEnumerable<ResultLike> results)
     {
         results.ThrowIfNull(nameof(results));
 

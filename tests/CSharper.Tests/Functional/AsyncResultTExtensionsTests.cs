@@ -1,7 +1,9 @@
-﻿using CSharper.Functional;
+﻿using CSharper.Errors;
+using CSharper.Functional;
 using CSharper.Results;
 using CSharper.Tests.Results;
 using CSharper.Tests.TestUtilities;
+using CSharper.Validation;
 using FluentAssertions;
 
 namespace CSharper.Tests.Functional;
@@ -226,11 +228,10 @@ public sealed class AsyncResultTExtensionsTests
     {
         Result<string> initial = Result.Ok("test");
         Func<string, Task<bool>> predicate = _ => Task.FromResult(true);
-        Error error = new("Too short", code: "SHORT");
 
-        ResultValidationChain<string> chain = await initial.Ensure(predicate, error);
+        ResultValidator<string> chain = await initial.Ensure(predicate, "Too short", "SHORT");
 
-        Result<string> result = chain.Collect();
+        Result<string> result = chain.Validate();
         ResultTestHelpers.AssertSuccessResult(result, "test");
     }
 
@@ -240,11 +241,10 @@ public sealed class AsyncResultTExtensionsTests
         Error error = new("Error", code: "FAIL");
         Result<string> initial = Result.Fail<string>(error);
         Func<string, Task<bool>> predicate = _ => Task.FromResult(true);
-        Error validationError = new("Too short", code: "SHORT");
 
-        ResultValidationChain<string> chain = await initial.Ensure(predicate, validationError);
+        ResultValidator<string> chain = await initial.Ensure(predicate, "Too short", "SHORT");
 
-        Result<string> result = chain.Collect();
+        Result<string> result = chain.Validate();
         ResultTestHelpers.AssertFailureResult(result, error);
     }
 
@@ -253,9 +253,8 @@ public sealed class AsyncResultTExtensionsTests
     {
         Result<string> initial = Result.Ok("test");
         Func<string, Task<bool>> predicate = null!;
-        Error error = new("Too short", code: "SHORT");
 
-        Func<Task> act = () => initial.Ensure(predicate, error);
+        Func<Task> act = () => initial.Ensure(predicate, "Too short", "SHORT");
 
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
@@ -267,7 +266,7 @@ public sealed class AsyncResultTExtensionsTests
         Func<string, Task<bool>> predicate = _ => Task.FromResult(true);
         Error error = null!;
 
-        Func<Task> act = () => initial.Ensure(predicate, error);
+        Func<Task> act = () => initial.Ensure(predicate, "Too short", "SHORT");
 
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
@@ -277,11 +276,10 @@ public sealed class AsyncResultTExtensionsTests
     {
         Task<Result<string>> initial = Task.FromResult(Result.Ok("test"));
         Func<string, bool> predicate = _ => true;
-        Error error = new("Too short", code: "SHORT");
 
-        ResultValidationChain<string> chain = await initial.Ensure(predicate, error);
+        ResultValidator<string> chain = await initial.Ensure(predicate, "Too short", "SHORT");
 
-        Result<string> result = chain.Collect();
+        Result<string> result = chain.Validate();
         ResultTestHelpers.AssertSuccessResult(result, "test");
     }
 
@@ -291,11 +289,10 @@ public sealed class AsyncResultTExtensionsTests
         Error error = new("Error", code: "FAIL");
         Task<Result<string>> initial = Task.FromResult(Result.Fail<string>(error));
         Func<string, bool> predicate = _ => true;
-        Error validationError = new("Too short", code: "SHORT");
 
-        ResultValidationChain<string> chain = await initial.Ensure(predicate, validationError);
+        ResultValidator<string> chain = await initial.Ensure(predicate, "Too short", "SHORT");
 
-        Result<string> result = chain.Collect();
+        Result<string> result = chain.Validate();
 
         ResultTestHelpers.AssertFailureResult(result, error);
     }
@@ -305,9 +302,8 @@ public sealed class AsyncResultTExtensionsTests
     {
         Task<Result<string>> initial = Task.FromResult(Result.Ok("test"));
         Func<string, bool> predicate = null!;
-        Error error = new("Too short", code: "SHORT");
 
-        Func<Task> act = () => initial.Ensure(predicate, error);
+        Func<Task> act = () => initial.Ensure(predicate, "Too short", "SHORT");
 
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
@@ -319,7 +315,7 @@ public sealed class AsyncResultTExtensionsTests
         Func<string, bool> predicate = _ => true;
         Error error = null!;
 
-        Func<Task> act = () => initial.Ensure(predicate, error);
+        Func<Task> act = () => initial.Ensure(predicate, "Too short", "SHORT");
 
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
@@ -329,11 +325,10 @@ public sealed class AsyncResultTExtensionsTests
     {
         Task<Result<string>> initial = Task.FromResult(Result.Ok("test"));
         Func<string, Task<bool>> predicate = _ => Task.FromResult(true);
-        Error error = new("Too short", code: "SHORT");
 
-        ResultValidationChain<string> chain = await initial.Ensure(predicate, error);
+        ResultValidator<string> chain = await initial.Ensure(predicate, "Too short", "SHORT");
 
-        Result<string> result = chain.Collect();
+        Result<string> result = chain.Validate();
         ResultTestHelpers.AssertSuccessResult(result, "test");
     }
 
@@ -343,11 +338,10 @@ public sealed class AsyncResultTExtensionsTests
         Error error = new("Error", code: "FAIL");
         Task<Result<string>> initial = Task.FromResult(Result.Fail<string>(error));
         Func<string, Task<bool>> predicate = _ => Task.FromResult(true);
-        Error validationError = new("Too short", code: "SHORT");
 
-        ResultValidationChain<string> chain = await initial.Ensure(predicate, validationError);
+        ResultValidator<string> chain = await initial.Ensure(predicate, "Too short", "SHORT");
 
-        Result<string> result = chain.Collect();
+        Result<string> result = chain.Validate();
         ResultTestHelpers.AssertFailureResult(result, error);
     }
 
@@ -358,7 +352,7 @@ public sealed class AsyncResultTExtensionsTests
         Func<string, Task<bool>> predicate = null!;
         Error error = new("Too short", code: "SHORT");
 
-        Func<Task> act = () => initial.Ensure(predicate, error);
+        Func<Task> act = () => initial.Ensure(predicate, "Too short", "SHORT");
 
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }
@@ -368,9 +362,8 @@ public sealed class AsyncResultTExtensionsTests
     {
         Task<Result<string>> initial = Task.FromResult(Result.Ok("test"));
         Func<string, Task<bool>> predicate = _ => Task.FromResult(true);
-        Error error = null!;
 
-        Func<Task> act = () => initial.Ensure(predicate, error);
+        Func<Task> act = () => initial.Ensure(predicate, "Too short", "SHORT");
 
         AssertHelper.AssertArgumentException<ArgumentNullException>(act);
     }

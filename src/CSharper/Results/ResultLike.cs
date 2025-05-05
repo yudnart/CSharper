@@ -3,7 +3,7 @@
 namespace CSharper.Results;
 
 /// <summary>
-/// Wraps a result or result factory for aggregation in methods like <see cref="Result.Collect"/>.
+/// Wraps a result or result factory for aggregation in methods like <see cref="Result.Sequence"/>.
 /// </summary>
 /// <remarks>
 /// This class supports both <see cref="Result"/> and <see cref="Result{T}"/> instances, as well as

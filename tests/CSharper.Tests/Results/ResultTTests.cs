@@ -1,4 +1,5 @@
-﻿using CSharper.Results;
+﻿using CSharper.Errors;
+using CSharper.Results;
 using FluentAssertions;
 
 namespace CSharper.Tests.Results;
@@ -40,7 +41,7 @@ public sealed class ResultTTests
     public void ResultT_FailureWithSingleError_HasCorrectErrorsAndThrowsOnValueAccess()
     {
         // Arrange
-        Error error = new("Something went wrong", "ERR001", "User.Name");
+        Error error = new("Something went wrong", "ERR001");
 
         // Act
         Result<string> result = Result.Fail<string>(error);
@@ -54,8 +55,8 @@ public sealed class ResultTTests
     public void ResultT_FailureWithMultipleErrors_HasCorrectErrorsAndThrowsOnValueAccess()
     {
         // Arrange
-        Error mainError = new("Primary error", "ERR002", "System");
-        Error detailError1 = new("Detail 1", null, "System.Subsystem");
+        Error mainError = new("Primary error", "ERR002");
+        Error detailError1 = new("Detail 1", null);
         Error detailError2 = new("Detail 2", "ERR003");
 
         // Act

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CSharper.Errors;
+using System;
 using System.Collections.Generic;
 using System.Text;
 

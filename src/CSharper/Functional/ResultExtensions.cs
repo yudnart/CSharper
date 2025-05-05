@@ -1,4 +1,5 @@
-﻿using CSharper.Results;
+﻿using CSharper.Errors;
+using CSharper.Results;
 using CSharper.Utilities;
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,7 @@ public static class ResultExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
     public static Result Bind(this Result result, Func<Result> next)
     {
+        result.ThrowIfNull(nameof(result));
         next.ThrowIfNull(nameof(next));
         return result.IsSuccess ? next() : result;
     }
@@ -35,8 +37,28 @@ public static class ResultExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
     public static Result<T> Bind<T>(this Result result, Func<Result<T>> next)
     {
+        result.ThrowIfNull(nameof(result));
         next.ThrowIfNull(nameof(next));
         return result.IsSuccess ? next() : result.MapError<T>();
+    }
+
+    /// <summary>
+    /// Initializes a validation chain with a single rule, to be evaluated only if the current <see cref="Result"/> is successful.
+    /// </summary>
+    /// <param name="result">The result to check before validation.</param>
+    /// <param name="predicate">The predicate to evaluate the validation condition.</param>
+    /// <param name="message">The descriptive message of the error if the predicate fails.</param>
+    /// <param name="code">The optional error code for identification. Defaults to <c>null</c>.</param>
+    /// <param name="path">The optional path to the property being validated. Defaults to <c>null</c>.</param>
+    /// <returns>A <see cref="ResultValidator"/> for chaining additional validation rules.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="result"/> or <paramref name="predicate"/> is null.</exception>
+    public static ResultValidator Ensure(this Result result, 
+        Func<bool> predicate, string message, string? code = null, string? path = null)
+    {
+        result.ThrowIfNull(nameof(result));
+        predicate.ThrowIfNull(nameof(predicate));
+        message.ThrowIfNullOrWhitespace(nameof(message));
+        return new(result, predicate, message, code, path);
     }
 
     /// <summary>
@@ -48,6 +70,7 @@ public static class ResultExtensions
     /// <exception cref="InvalidOperationException">Thrown if <paramref name="result"/> is successful.</exception>
     public static Result<T> MapError<T>(this Result result)
     {
+        result.ThrowIfNull(nameof(result));
         if (result.IsSuccess)
         {
             throw new InvalidOperationException("Cannot map errors from a successful Result.");
@@ -66,6 +89,7 @@ public static class ResultExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> is null.</exception>
     public static T? Match<T>(this Result result, Func<T> onSuccess)
     {
+        result.ThrowIfNull(nameof(result));
         onSuccess.ThrowIfNull(nameof(onSuccess));
         return result.IsSuccess ? onSuccess() : default;
     }
@@ -82,6 +106,7 @@ public static class ResultExtensions
     public static T Match<T>(this Result result,
         Func<T> onSuccess, Func<Error[], T> onFailure)
     {
+        result.ThrowIfNull(nameof(result));
         onSuccess.ThrowIfNull(nameof(onSuccess));
         onFailure.ThrowIfNull(nameof(onFailure));
         return result.IsSuccess ? onSuccess() : onFailure([.. result.Errors]);
@@ -96,6 +121,7 @@ public static class ResultExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onFailure"/> is null.</exception>
     public static Result Recover(this Result result, Action<Error[]> onFailure)
     {
+        result.ThrowIfNull(nameof(result));
         onFailure.ThrowIfNull(nameof(onFailure));
         if (result.IsSuccess)
         {
@@ -114,6 +140,7 @@ public static class ResultExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="action"/> is null.</exception>
     public static Result Tap(this Result result, Action action)
     {
+        result.ThrowIfNull(nameof(result));
         action.ThrowIfNull(nameof(action));
         if (result.IsSuccess)
         {
@@ -131,6 +158,7 @@ public static class ResultExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="action"/> is null.</exception>
     public static Result TapError(this Result result, Action<Error[]> action)
     {
+        result.ThrowIfNull(nameof(result));
         action.ThrowIfNull(nameof(action));
         if (result.IsFailure)
         {

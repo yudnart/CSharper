@@ -1,4 +1,5 @@
-﻿using CSharper.Results;
+﻿using CSharper.Errors;
+using CSharper.Results;
 using CSharper.Utilities;
 using System;
 using System.Threading.Tasks;
@@ -47,10 +48,13 @@ public static class AsyncResultExtensions
     /// <param name="next">The synchronous function to invoke if the result is successful.</param>
     /// <returns>A <see cref="Task{T}"/> containing the result of the chained operation or the original result if failed.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
-    public static async Task<Result> Bind(this Task<Result> asyncResult, Func<Result> next)
+    public static Task<Result> Bind(this Task<Result> asyncResult, Func<Result> next)
     {
         next.ThrowIfNull(nameof(next));
-        return (await asyncResult).Bind(next);
+        return asyncResult.ContinueWith(task =>
+        {
+            return task.Result.Bind(next);
+        });
     }
 
     /// <summary>
@@ -94,6 +98,23 @@ public static class AsyncResultExtensions
         next.ThrowIfNull(nameof(next));
         Result result = await asyncResult;
         return result.IsSuccess ? await next() : result.MapError<T>();
+    }
+
+    #endregion
+
+    #region Ensure
+
+    public static Task<ResultValidator> Ensure(this Task<Result> resultTask,
+        Func<bool> predicate, string message, string? code = null, string? path = null)
+    {
+        resultTask.ThrowIfNull(nameof(resultTask));
+        predicate.ThrowIfNull(nameof(predicate));
+        message.ThrowIfNullOrWhitespace(nameof(message));
+        return resultTask.ContinueWith(task =>
+        {
+            Result result = task.Result;
+            return result.Ensure(predicate, message, code);
+        });
     }
 
     #endregion

@@ -82,7 +82,7 @@ internal sealed class FailingBehavior : IBehavior
 {
     public Task<Result> Handle(IRequest request, BehaviorDelegate next, CancellationToken ct)
     {
-        return Task.FromResult(Result.Fail(new Error("Failed")));
+        return Task.FromResult(Result.Fail("Failed"));
     }
 }
 
