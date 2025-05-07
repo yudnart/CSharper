@@ -1,6 +1,7 @@
 ﻿using CSharper.AppContext;
 using CSharper.Errors;
 using CSharper.Results;
+using CSharper.Tests.Errors;
 using CSharper.Tests.Mediator;
 using CSharper.Tests.TestUtilities;
 using FluentAssertions;
@@ -160,10 +161,9 @@ public sealed class LoggingBehaviorTests
         LoggingBehavior sut = CreateLoggingBehavior();
         TestRequest test = new() { Id = "test-id", Value = 42 };
 
-        Error[] errors = [new Error("Error1"), new Error("Error2")];
         Mock<BehaviorDelegate> next = new();
         next.Setup(n => n(It.IsAny<IRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result.Fail(errors[0], errors[1]));
+            .ReturnsAsync(Result.Fail(ErrorTestData.ErrorWithDetails));
 
         // Act
         await sut.Handle(test, next.Object, CancellationToken.None);

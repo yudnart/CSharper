@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CSharper.Results;
+namespace CSharper.Results.Abstractions;
 
 /// <summary>
 /// Wraps a result or result factory for aggregation in methods like <see cref="Result.Sequence"/>.

@@ -1,56 +1,63 @@
 ﻿using CSharper.Errors;
+using CSharper.Results.Abstractions;
 using System;
 
 namespace CSharper.Results;
 
 /// <summary>
-/// Represents a generic result of an operation, indicating success with a value or failure 
-/// with associated errors.
+/// Represents a result of an operation with a returned <typeparamref name="T"/>,
+/// indicating success with a value or failure with an error.
 /// </summary>
-/// <typeparam name="TValue">The type of the value returned by a successful result.</typeparam>
+/// <typeparam name="T">The type of the value returned by a successful result.</typeparam>
 /// <remarks>
-/// Represent operations with a return value.
 /// Use <see cref="Result"/> for operations without a return value.
 /// </remarks>
-public sealed class Result<TValue> : ResultBase
+public sealed class Result<T> : ResultBase
 {
-    private readonly TValue _value;
+    private readonly T _value;
 
     /// <summary>
     /// Gets the value of a successful result.
     /// </summary>
-    /// <value>The value of the result if <see cref="ResultBase.IsSuccess"/> is <c>true</c>.</value>
+    /// <value>The value of the result if <see cref="ResultBase.IsSuccess"/> is <see langword="true"/>.</value>
     /// <exception cref="InvalidOperationException">Thrown if accessed on a failed result.</exception>
-    public TValue Value => IsSuccess
+    public T Value => IsSuccess
         ? _value
         : throw new InvalidOperationException("Cannot access the value of a failed result.");
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Result{TValue}"/> class as a success result with a value.
+    /// Initializes a new instance of a success <see cref="Result{TValue}"/>.
     /// </summary>
     /// <param name="value">The value of the successful result.</param>
     /// <remarks>
-    /// This constructor is private to encourage use of the <see cref="Ok(TValue)"/> factory method.
+    /// This constructor is private to encourage use of the <see cref="Ok(T)"/> factory method.
     /// </remarks>
-    private Result(TValue value) : base()
+    private Result(T value) : base()
     {
         _value = value;
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Result{TValue}"/> class as a failure result with errors.
+    /// Initializes a new instance of a failure <see cref="Result{TValue}"/> with error.
     /// </summary>
-    /// <param name="causedBy">The primary error causing the failure.</param>
-    /// <param name="details">Additional error details, if any.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="causedBy"/> is null.</exception>
+    /// <param name="error">The error causing the failure.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="error"/> is null.</exception>
     /// <remarks>
-    /// This constructor is private to encourage use of the <see cref="Fail(Error, Error[])"/> factory method.
-    /// The value is set to the default for <typeparamref name="TValue"/>.
+    /// Use <see cref="Result.Fail(Error, Error[])"/> factory method.
     /// </remarks>
-    private Result(Error causedBy, params Error[] details)
-        : base(causedBy, details)
+    private Result(Error error) : base(error)
     {
         _value = default!;
+    }
+
+    /// <returns>
+    /// <c>"{Value}"</c> or <c>"Success: {Value}"</c> for a success result, or a formatted string for a failure result.
+    /// </returns>
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return IsSuccess ?
+            Value?.ToString() ?? "Success: null" : base.ToString();
     }
 
     /// <summary>
@@ -61,18 +68,17 @@ public sealed class Result<TValue> : ResultBase
     /// <remarks>
     /// This method is internal to support factory methods in <see cref="Result"/> while restricting direct instantiation.
     /// </remarks>
-    internal static Result<TValue> Ok(TValue value) => new(value);
+    internal static Result<T> Ok(T value) => new(value);
 
     /// <summary>
     /// Creates a failed <see cref="Result{TValue}"/> instance with the specified errors.
     /// </summary>
-    /// <param name="causedBy">The primary error causing the failure.</param>
+    /// <param name="error">The primary error causing the failure.</param>
     /// <param name="details">Additional error details, if any.</param>
     /// <returns>A new <see cref="Result{TValue}"/> representing a failed operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="causedBy"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="error"/> is null.</exception>
     /// <remarks>
     /// This method is internal to support factory methods in <see cref="Result"/> while restricting direct instantiation.
     /// </remarks>
-    internal static Result<TValue> Fail(Error causedBy, params Error[] details)
-        => new(causedBy, details);
+    internal static Result<T> Fail(Error error) => new(error);
 }

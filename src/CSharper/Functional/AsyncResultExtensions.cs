@@ -1,11 +1,15 @@
 ﻿using CSharper.Errors;
+using CSharper.Functional;
 using CSharper.Results;
+using CSharper.Results.Validation;
 using CSharper.Utilities;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace CSharper.Functional;
 
+[DebuggerStepThrough]
 /// <summary>
 /// Provides extension methods for handling asynchronous <see cref="Result"/> and <see cref="Task{T}"/> operations
 /// in a functional programming style.
@@ -21,10 +25,10 @@ public static class AsyncResultExtensions
     /// <param name="next">The asynchronous function to invoke if <paramref name="result"/> is successful.</param>
     /// <returns>A <see cref="Task{T}"/> containing the result of the chained operation or the original result if failed.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
-    public static async Task<Result> Bind(this Result result, Func<Task<Result>> next)
+    public static Task<Result> Bind(this Result result, Func<Task<Result>> next)
     {
         next.ThrowIfNull(nameof(next));
-        return result.IsSuccess ? await next() : result;
+        return result.IsSuccess ? next() : Task.FromResult(result);
     }
 
     /// <summary>
@@ -35,10 +39,10 @@ public static class AsyncResultExtensions
     /// <param name="next">The asynchronous function to invoke if <paramref name="result"/> is successful.</param>
     /// <returns>A <see cref="Task{T}"/> containing the typed result of the chained operation or a mapped error result.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
-    public static async Task<Result<T>> Bind<T>(this Result result, Func<Task<Result<T>>> next)
+    public static Task<Result<T>> Bind<T>(this Result result, Func<Task<Result<T>>> next)
     {
         next.ThrowIfNull(nameof(next));
-        return result.IsSuccess ? await next() : result.MapError<T>();
+        return result.IsSuccess ? next() : Task.FromResult(result.MapError<T>());
     }
 
     /// <summary>
@@ -51,10 +55,8 @@ public static class AsyncResultExtensions
     public static Task<Result> Bind(this Task<Result> asyncResult, Func<Result> next)
     {
         next.ThrowIfNull(nameof(next));
-        return asyncResult.ContinueWith(task =>
-        {
-            return task.Result.Bind(next);
-        });
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.Bind(next)));
     }
 
     /// <summary>
@@ -65,10 +67,11 @@ public static class AsyncResultExtensions
     /// <param name="next">The synchronous function to invoke if the result is successful.</param>
     /// <returns>A <see cref="Task{T}"/> containing the typed result of the chained operation or a mapped error result.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
-    public static async Task<Result<T>> Bind<T>(this Task<Result> asyncResult, Func<Result<T>> next)
+    public static Task<Result<T>> Bind<T>(this Task<Result> asyncResult, Func<Result<T>> next)
     {
         next.ThrowIfNull(nameof(next));
-        return (await asyncResult).Bind(next);
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.Bind(next)));
     }
 
     /// <summary>
@@ -78,11 +81,12 @@ public static class AsyncResultExtensions
     /// <param name="next">The asynchronous function to invoke if the result is successful.</param>
     /// <returns>A <see cref="Task{T}"/> containing the result of the chained operation or the original result if failed.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
-    public static async Task<Result> Bind(this Task<Result> asyncResult, Func<Task<Result>> next)
+    public static Task<Result> Bind(this Task<Result> asyncResult, Func<Task<Result>> next)
     {
         next.ThrowIfNull(nameof(next));
-        Result result = await asyncResult;
-        return await result.Bind(next);
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.Bind(next)))
+            .Unwrap();
     }
 
     /// <summary>
@@ -93,28 +97,12 @@ public static class AsyncResultExtensions
     /// <param name="next">The asynchronous function to invoke if the result is successful.</param>
     /// <returns>A <see cref="Task{T}"/> containing the typed result of the chained operation or a mapped error result.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
-    public static async Task<Result<T>> Bind<T>(this Task<Result> asyncResult, Func<Task<Result<T>>> next)
+    public static Task<Result<T>> Bind<T>(this Task<Result> asyncResult, Func<Task<Result<T>>> next)
     {
         next.ThrowIfNull(nameof(next));
-        Result result = await asyncResult;
-        return result.IsSuccess ? await next() : result.MapError<T>();
-    }
-
-    #endregion
-
-    #region Ensure
-
-    public static Task<ResultValidator> Ensure(this Task<Result> resultTask,
-        Func<bool> predicate, string message, string? code = null, string? path = null)
-    {
-        resultTask.ThrowIfNull(nameof(resultTask));
-        predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNullOrWhitespace(nameof(message));
-        return resultTask.ContinueWith(task =>
-        {
-            Result result = task.Result;
-            return result.Ensure(predicate, message, code);
-        });
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.Bind(next)))
+            .Unwrap();
     }
 
     #endregion
@@ -127,9 +115,10 @@ public static class AsyncResultExtensions
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <param name="asyncResult">The asynchronous result to map.</param>
     /// <returns>A <see cref="Task{T}"/> containing the typed result with preserved errors if failed, or an empty successful result.</returns>
-    public static async Task<Result<T>> MapError<T>(this Task<Result> asyncResult)
+    public static Task<Result<T>> MapError<T>(this Task<Result> asyncResult)
     {
-        return (await asyncResult).MapError<T>();
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.MapError<T>()));
     }
 
     #endregion
@@ -144,10 +133,15 @@ public static class AsyncResultExtensions
     /// <param name="onSuccess">The asynchronous function to invoke if <paramref name="result"/> is successful.</param>
     /// <returns>A <see cref="Task{T}"/> containing the result of the success handler or <c>default(T)</c> if failed.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> is null.</exception>
-    public static async Task<T?> Match<T>(this Result result, Func<Task<T>> onSuccess)
+    public static Task<T?> Match<T>(this Result result, Func<Task<T>> onSuccess)
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
-        return result.IsSuccess ? await onSuccess() : default;
+        if (result.IsSuccess)
+        {
+            return onSuccess().ContinueWith(task => task
+                .HandleFault().Or(task => task.Result))!;
+        }
+        return Task.FromResult(default(T));
     }
 
     /// <summary>
@@ -160,11 +154,11 @@ public static class AsyncResultExtensions
     /// <returns>A <see cref="Task{T}"/> containing the result of the appropriate handler.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> or <paramref name="onFailure"/> is null.</exception>
     public static Task<T> Match<T>(this Result result,
-        Func<Task<T>> onSuccess, Func<Error[], Task<T>> onFailure)
+        Func<Task<T>> onSuccess, Func<Error, Task<T>> onFailure)
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
         onFailure.ThrowIfNull(nameof(onFailure));
-        return result.IsSuccess ? onSuccess() : onFailure([.. result.Errors]);
+        return result.IsSuccess ? onSuccess() : onFailure(result.Error!);
     }
 
     /// <summary>
@@ -175,10 +169,11 @@ public static class AsyncResultExtensions
     /// <param name="onSuccess">The synchronous function to invoke if the result is successful.</param>
     /// <returns>A <see cref="Task{T}"/> containing the result of the success handler or <c>default(T)</c> if failed.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> is null.</exception>
-    public static async Task<T?> Match<T>(this Task<Result> asyncResult, Func<T> onSuccess)
+    public static Task<T?> Match<T>(this Task<Result> asyncResult, Func<T> onSuccess)
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
-        return (await asyncResult).Match(onSuccess);
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.Match(onSuccess)));
     }
 
     /// <summary>
@@ -190,12 +185,13 @@ public static class AsyncResultExtensions
     /// <param name="onFailure">The synchronous function to invoke with errors if the result is a failure.</param>
     /// <returns>A <see cref="Task{T}"/> containing the result of the appropriate handler.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> or <paramref name="onFailure"/> is null.</exception>
-    public static async Task<T> Match<T>(this Task<Result> asyncResult,
-        Func<T> onSuccess, Func<Error[], T> onFailure)
+    public static Task<T> Match<T>(this Task<Result> asyncResult,
+        Func<T> onSuccess, Func<Error, T> onFailure)
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
         onFailure.ThrowIfNull(nameof(onFailure));
-        return (await asyncResult).Match(onSuccess, onFailure);
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.Match(onSuccess, onFailure)));
     }
 
     /// <summary>
@@ -206,11 +202,12 @@ public static class AsyncResultExtensions
     /// <param name="onSuccess">The asynchronous function to invoke if the result is successful.</param>
     /// <returns>A <see cref="Task{T}"/> containing the result of the success handler or <c>default(T)</c> if failed.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> is null.</exception>
-    public static async Task<T?> Match<T>(this Task<Result> asyncResult, Func<Task<T>> onSuccess)
+    public static Task<T?> Match<T>(this Task<Result> asyncResult, Func<Task<T>> onSuccess)
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
-        Result result = await asyncResult;
-        return await result.Match(onSuccess);
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.Match(onSuccess)))
+            .Unwrap();
     }
 
     /// <summary>
@@ -222,13 +219,14 @@ public static class AsyncResultExtensions
     /// <param name="onFailure">The asynchronous function to invoke with errors if the result is a failure.</param>
     /// <returns>A <see cref="Task{T}"/> containing the result of the appropriate handler.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> or <paramref name="onFailure"/> is null.</exception>
-    public static async Task<T> Match<T>(this Task<Result> asyncResult,
-        Func<Task<T>> onSuccess, Func<Error[], Task<T>> onFailure)
+    public static Task<T> Match<T>(this Task<Result> asyncResult,
+        Func<Task<T>> onSuccess, Func<Error, Task<T>> onFailure)
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
         onFailure.ThrowIfNull(nameof(onFailure));
-        Result result = await asyncResult;
-        return await result.Match(onSuccess, onFailure);
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.Match(onSuccess, onFailure)))
+            .Unwrap();
     }
 
     #endregion
@@ -239,45 +237,45 @@ public static class AsyncResultExtensions
     /// Recovers from a failed <see cref="Result"/> by executing an asynchronous failure handler and returning a successful result.
     /// </summary>
     /// <param name="result">The result to evaluate.</param>
-    /// <param name="onFailure">The asynchronous function to invoke with errors if <paramref name="result"/> is a failure.</param>
+    /// <param name="fallback">The asynchronous function to invoke with errors if <paramref name="result"/> is a failure.</param>
     /// <returns>A <see cref="Task{T}"/> containing the original result if successful, or a successful <see cref="Result"/> after handling failure.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="onFailure"/> is null.</exception>
-    public static async Task<Result> Recover(this Result result, Func<Error[], Task> onFailure)
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="fallback"/> is null.</exception>
+    public static Task<Result> Recover(this Result result, Func<Error, Task> fallback)
     {
-        onFailure.ThrowIfNull(nameof(onFailure));
-        if (result.IsSuccess)
-        {
-            return result;
-        }
-        await onFailure([.. result.Errors]);
-        return Result.Ok();
+        fallback.ThrowIfNull(nameof(fallback));
+        return result.IsSuccess
+            ? Task.FromResult(result)
+            : fallback(result.Error!).ContinueWith(task => task
+                .HandleFault().Or(task => Result.Ok()));
     }
 
     /// <summary>
     /// Recovers from a failed asynchronous <see cref="Result"/> by executing a synchronous failure handler and returning a successful result.
     /// </summary>
     /// <param name="asyncResult">The asynchronous result to evaluate.</param>
-    /// <param name="onFailure">The synchronous action to invoke with errors if the result is a failure.</param>
+    /// <param name="fallback">The synchronous action to invoke with errors if the result is a failure.</param>
     /// <returns>A <see cref="Task{T}"/> containing the original result if successful, or a successful <see cref="Result"/> after handling failure.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="onFailure"/> is null.</exception>
-    public static async Task<Result> Recover(this Task<Result> asyncResult, Action<Error[]> onFailure)
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="fallback"/> is null.</exception>
+    public static Task<Result> Recover(this Task<Result> asyncResult, Action<Error> fallback)
     {
-        onFailure.ThrowIfNull(nameof(onFailure));
-        return (await asyncResult).Recover(onFailure);
+        fallback.ThrowIfNull(nameof(fallback));
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.Recover(fallback)));
     }
 
     /// <summary>
     /// Recovers from a failed asynchronous <see cref="Result"/> by executing an asynchronous failure handler and returning a successful result.
     /// </summary>
     /// <param name="asyncResult">The asynchronous result to evaluate.</param>
-    /// <param name="onFailure">The asynchronous function to invoke with errors if the result is a failure.</param>
+    /// <param name="fallback">The asynchronous function to invoke with errors if the result is a failure.</param>
     /// <returns>A <see cref="Task{T}"/> containing the original result if successful, or a successful <see cref="Result"/> after handling failure.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="onFailure"/> is null.</exception>
-    public static async Task<Result> Recover(this Task<Result> asyncResult, Func<Error[], Task> onFailure)
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="fallback"/> is null.</exception>
+    public static Task<Result> Recover(this Task<Result> asyncResult, Func<Error, Task> fallback)
     {
-        onFailure.ThrowIfNull(nameof(onFailure));
-        Result result = await asyncResult;
-        return await result.Recover(onFailure);
+        fallback.ThrowIfNull(nameof(fallback));
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.Recover(fallback)))
+            .Unwrap();
     }
 
     #endregion
@@ -291,14 +289,13 @@ public static class AsyncResultExtensions
     /// <param name="action">The asynchronous action to perform if <paramref name="result"/> is successful.</param>
     /// <returns>A <see cref="Task{T}"/> containing the original <see cref="Result"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="action"/> is null.</exception>
-    public static async Task<Result> Tap(this Result result, Func<Task> action)
+    public static Task<Result> Tap(this Result result, Func<Task> action)
     {
         action.ThrowIfNull(nameof(action));
-        if (result.IsSuccess)
-        {
-            await action();
-        }
-        return result;
+        return result.IsSuccess
+            ? action().ContinueWith(task => task
+                .HandleFault().Or(task => result))
+            : Task.FromResult(result);
     }
 
     /// <summary>
@@ -308,10 +305,11 @@ public static class AsyncResultExtensions
     /// <param name="action">The synchronous action to perform if the result is successful.</param>
     /// <returns>A <see cref="Task{T}"/> containing the original <see cref="Result"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="action"/> is null.</exception>
-    public static async Task<Result> Tap(this Task<Result> asyncResult, Action action)
+    public static Task<Result> Tap(this Task<Result> asyncResult, Action action)
     {
         action.ThrowIfNull(nameof(action));
-        return (await asyncResult).Tap(action);
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.Tap(action)));
     }
 
     /// <summary>
@@ -321,11 +319,12 @@ public static class AsyncResultExtensions
     /// <param name="action">The asynchronous action to perform if the result is successful.</param>
     /// <returns>A <see cref="Task{T}"/> containing the original <see cref="Result"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="action"/> is null.</exception>
-    public static async Task<Result> Tap(this Task<Result> asyncResult, Func<Task> action)
+    public static Task<Result> Tap(this Task<Result> asyncResult, Func<Task> action)
     {
         action.ThrowIfNull(nameof(action));
-        Result result = await asyncResult;
-        return await result.Tap(action);
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.Tap(action)))
+            .Unwrap();
     }
 
     #endregion
@@ -339,14 +338,13 @@ public static class AsyncResultExtensions
     /// <param name="action">The asynchronous action to perform with errors if <paramref name="result"/> is a failure.</param>
     /// <returns>A <see cref="Task{T}"/> containing the original <see cref="Result"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="action"/> is null.</exception>
-    public static async Task<Result> TapError(this Result result, Func<Error[], Task> action)
+    public static Task<Result> TapError(this Result result, Func<Error, Task> action)
     {
         action.ThrowIfNull(nameof(action));
-        if (result.IsFailure)
-        {
-            await action([.. result.Errors]);
-        }
-        return result;
+        return result.IsFailure
+            ? action(result.Error).ContinueWith(task => task
+                .HandleFault().Or(task => result))
+            : Task.FromResult(result);
     }
 
     /// <summary>
@@ -356,10 +354,11 @@ public static class AsyncResultExtensions
     /// <param name="action">The synchronous action to perform with errors if the result is a failure.</param>
     /// <returns>A <see cref="Task{T}"/> containing the original <see cref="Result"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="action"/> is null.</exception>
-    public static async Task<Result> TapError(this Task<Result> asyncResult, Action<Error[]> action)
+    public static Task<Result> TapError(this Task<Result> asyncResult, Action<Error> action)
     {
         action.ThrowIfNull(nameof(action));
-        return (await asyncResult).TapError(action);
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.TapError(action)));
     }
 
     /// <summary>
@@ -369,11 +368,12 @@ public static class AsyncResultExtensions
     /// <param name="action">The asynchronous action to perform with errors if the result is a failure.</param>
     /// <returns>A <see cref="Task{T}"/> containing the original <see cref="Result"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="action"/> is null.</exception>
-    public static async Task<Result> TapError(this Task<Result> asyncResult, Func<Error[], Task> action)
+    public static Task<Result> TapError(this Task<Result> asyncResult, Func<Error, Task> action)
     {
         action.ThrowIfNull(nameof(action));
-        Result result = await asyncResult;
-        return await result.TapError(action);
+        return asyncResult.ContinueWith(task => task
+            .HandleFault().Or(task => task.Result.TapError(action)))
+            .Unwrap();
     }
 
     #endregion

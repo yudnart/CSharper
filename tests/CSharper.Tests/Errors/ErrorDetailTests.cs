@@ -1,50 +1,59 @@
 ﻿using CSharper.Errors;
+using FluentAssertions;
+using TestData = CSharper.Tests.Errors.ErrorTestData;
+using TestUtility = CSharper.Tests.Errors.ErrorTestUtility;
 
 namespace CSharper.Tests.Errors;
 
+[Trait("Category", "Unit")]
+[Trait("TestOf", nameof(ErrorDetail))]
 public sealed class ErrorDetailTests
 {
     [Theory]
     [MemberData(
-        nameof(ErrorTestData.ErrorBaseValidCtorParams),
-        MemberType = typeof(ErrorTestData)
+        nameof(TestData.ErrorBaseCtorValidTestCases),
+        MemberType = typeof(TestData)
     )]
-    public void Ctor_ValidParams_Succeeds(string message, string? code)
+    public void Ctor_ValidParams_Succeeds(
+        string message, string? code)
     {
+        // Act
         ErrorDetail result = new(message, code);
 
-        Assert.Multiple(() =>
-        {
-            Assert.NotNull(result);
-            Assert.Equal(message, result.Message);
-            Assert.Equal(code, result.Code);
-        });
+        // Assert
+        TestUtility.AssertError(result, message, code);
     }
 
     [Theory]
     [MemberData(
-        nameof(ErrorTestData.NullOrEmptyStringData),
-        MemberType = typeof(ErrorTestData)
+        nameof(TestData.CtorInvalidMessageTestCases),
+        MemberType = typeof(TestData)
     )]
-    public void Ctor_NullOrEmptyMessage_ThrowsArgumentException(string message)
+    public void Ctor_InvalidMessage_ThrowsArgumentException(string? message)
     {
-        Assert.Throws<ArgumentException>(() => new ErrorDetail(message));
+        // Arrange
+        Action act = () => new ErrorDetail(message!);
+
+        // Act & Assert
+        act.Should().Throw<ArgumentException>()
+            .And.ParamName.Should().NotBeNullOrWhiteSpace();
     }
 
     [Theory]
     [MemberData(
-        nameof(ErrorTestData.ErrorBaseToStringTestData),
-        MemberType = typeof(ErrorTestData)
+        nameof(TestData.ErrorBaseToStringTestCases),
+        MemberType = typeof(TestData)
     )]
-    public void ToString_FormatsCorrectly(ErrorBase initial, string expected)
+    public void ToString_FormatsCorrectly(
+        string description, ErrorBase initial, string expected)
     {
+        // Arrange
         ErrorDetail sut = new(initial.Message, initial.Code);
 
+        // Act
         string result = sut.ToString();
 
-        Assert.Multiple(() =>
-        {
-            Assert.Equal(expected, result);
-        });
+        // Assert
+        result.Should().Be(expected, description);
     }
 }

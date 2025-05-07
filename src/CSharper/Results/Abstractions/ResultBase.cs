@@ -1,16 +1,14 @@
 ﻿using CSharper.Errors;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace CSharper.Results;
+namespace CSharper.Results.Abstractions;
 
 /// <summary>
 /// Provides an abstract base class for result types, representing either a success or failure with associated errors.
 /// </summary>
 public abstract class ResultBase
 {
-    private readonly List<Error> _errors = [];
+    private readonly Error? _error = null;
 
     /// <summary>
     /// Gets a value indicating whether the result is successful.
@@ -24,11 +22,9 @@ public abstract class ResultBase
     /// <value><c>true</c> if the result represents a failure; otherwise, <c>false</c>.</value>
     public bool IsFailure => !IsSuccess;
 
-    /// <summary>
-    /// Gets the collection of errors associated with a failure result.
-    /// </summary>
-    /// <value>A read-only list of <see cref="Error"/> objects, empty for success results.</value>
-    public IReadOnlyList<Error> Errors => _errors.AsReadOnly();
+    public Error? Error => IsFailure
+        ? _error
+        : throw new InvalidOperationException("Cannot access error property of a success result.");
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ResultBase"/> class as a success result.
@@ -42,20 +38,12 @@ public abstract class ResultBase
     /// <summary>
     /// Initializes a new instance of the <see cref="ResultBase"/> class as a failure result with errors.
     /// </summary>
-    /// <param name="causedBy">The primary error causing the failure.</param>
-    /// <param name="details">Additional error details, if any.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="causedBy"/> is null.</exception>
-    protected ResultBase(Error causedBy, params Error[] details)
+    /// <param name="error">The primary error causing the failure.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="error"/> is null.</exception>
+    protected ResultBase(Error error)
     {
-        if (causedBy == null)
-        {
-            throw new ArgumentNullException(nameof(causedBy));
-        }
-        details ??= [];
-
+        _error = error ?? throw new ArgumentNullException(nameof(error));
         IsSuccess = false;
-        _errors.AddRange([causedBy, .. details]);
-
         ValidateErrors();
     }
 
@@ -76,16 +64,7 @@ public abstract class ResultBase
             return "Success";
         }
 
-        StringBuilder sb = new();
-        sb.Append("Failure:");
-
-        foreach (Error error in Errors)
-        {
-            sb.AppendLine();
-            sb.Append($"- {error}");
-        }
-
-        return sb.ToString();
+        return $"Error: {Error}";
     }
 
     /// <summary>
@@ -97,13 +76,13 @@ public abstract class ResultBase
     /// </exception>
     private void ValidateErrors()
     {
-        if (IsSuccess && _errors.Count > 0)
+        if (IsSuccess && _error != null)
         {
-            throw new InvalidOperationException("Success results cannot have errors.");
+            throw new InvalidOperationException("Success result cannot have error.");
         }
-        else if (IsFailure && _errors.Count == 0)
+        else if (IsFailure && _error == null)
         {
-            throw new InvalidOperationException("Failure results must have at least one error.");
+            throw new InvalidOperationException("Failure result must have error.");
         }
     }
 }

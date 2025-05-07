@@ -1,5 +1,4 @@
-﻿using CSharper.Utilities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -40,15 +39,14 @@ public class Error : ErrorBase
         foreach (ErrorDetail detail in ErrorDetails)
         {
             sb.AppendLine();
-            string detailMessage = detail.Message;
-            if (detailMessage.StartsWith(IndentMarker))
+
+            string detailMessage = detail.ToString();
+            sb.Append(IndentMarker);
+            if (!detailMessage.StartsWith(IndentMarker))
             {
-                sb.Append($">{detailMessage}");
+                sb.Append(' ');
             }
-            else
-            {
-                sb.Append($"> {detailMessage}");
-            }
+            sb.Append(detailMessage);
         }
         return sb.ToString();
     }

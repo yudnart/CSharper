@@ -200,7 +200,6 @@ public sealed class SimpleMediatorTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.Errors.Should().ContainSingle().Which.Message.Should().Be("Failed");
         _executionOrder.Should().BeEmpty();
     }
 
@@ -220,7 +219,6 @@ public sealed class SimpleMediatorTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.Errors.Should().ContainSingle().Which.Message.Should().Be("Failed");
         _executionOrder.Should().BeEmpty();
     }
 

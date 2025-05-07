@@ -1,13 +1,13 @@
 ﻿using CSharper.Errors;
 using CSharper.Results;
+using CSharper.Results.Validation;
 using CSharper.Utilities;
-using CSharper.Validation;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 
 namespace CSharper.Functional;
 
+[DebuggerStepThrough]
 /// <summary>
 /// Provides extension methods for handling synchronous <see cref="Result{T}"/> operations
 /// in a functional programming style.
@@ -44,39 +44,20 @@ public static class ResultTExtensions
     }
 
     /// <summary>
-    /// Initializes a validation chain with a single rule, to be evaluated only if the current <see cref="Result{T}"/> is successful.
-    /// </summary>
-    /// <typeparam name="T">The type of the value in the result.</typeparam>
-    /// <param name="result">The result to check before validation.</param>
-    /// <param name="predicate">The predicate to evaluate the validation condition.</param>
-    /// <param name="message">The descriptive message of the error if the predicate fails.</param>
-    /// <param name="code">The optional error code for identification. Defaults to <c>null</c>.</param>
-    /// <param name="path">The optional path to the property being validated. Defaults to <c>null</c>.</param>
-    /// <returns>A <see cref="ResultValidator{T}"/> for chaining additional validation rules.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="result"/> or <paramref name="predicate"/> is null.</exception>
-    public static ResultValidator<T> Ensure<T>(this Result<T> result, 
-        Func<T, bool> predicate, string message, string? code = null, string? path = null)
-    {
-        result.ThrowIfNull(nameof(result));
-        predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNullOrWhitespace(nameof(message));
-        return new ResultValidator<T>(result, predicate, message, code, path);
-    }
-
-    /// <summary>
     /// Transforms a <see cref="Result{T}"/> value using a synchronous mapping function if successful.
     /// </summary>
     /// <typeparam name="T">The type of the input result value.</typeparam>
     /// <typeparam name="U">The type of the output result value.</typeparam>
     /// <param name="result">The result to transform.</param>
-    /// <param name="map">The synchronous function to transform the value if <paramref name="result"/> is successful.</param>
+    /// <param name="transform">The synchronous function to transform the value if <paramref name="result"/> is successful.</param>
     /// <returns>A new <see cref="Result{U}"/> with the transformed value, or a mapped error result if failed.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="map"/> is null.</exception>
-    public static Result<U> Map<T, U>(this Result<T> result, Func<T, U> map)
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="transform"/> is null.</exception>
+    public static Result<U> Map<T, U>(this Result<T> result, Func<T, U> transform)
     {
-        map.ThrowIfNull(nameof(map));
+        transform.ThrowIfNull(nameof(transform));
         return result.IsSuccess
-            ? Result.Ok(map(result.Value)) : result.MapError<T, U>();
+            ? Result.Ok(transform(result.Value))
+            : result.MapError<T, U>();
     }
 
     /// <summary>
@@ -89,10 +70,9 @@ public static class ResultTExtensions
     {
         if (result.IsSuccess)
         {
-            throw new InvalidOperationException("Cannot map errors from a successful Result.");
+            throw new InvalidOperationException("Success result cannot map to an failed result.");
         }
-        IReadOnlyList<Error> errors = result.Errors;
-        return Result.Fail(errors[0], [.. errors.Skip(1)]);
+        return Result.Fail(result.Error!);
     }
 
     /// <summary>
@@ -106,10 +86,9 @@ public static class ResultTExtensions
     {
         if (result.IsSuccess)
         {
-            throw new InvalidOperationException("Cannot map errors from a successful Result.");
+            throw new InvalidOperationException("Success result cannot map to an failed result.");
         }
-        IReadOnlyList<Error> errors = result.Errors;
-        return Result.Fail<U>(errors[0], [.. errors.Skip(1)]);
+        return Result.Fail<U>(result.Error!);
     }
 
     /// <summary>
@@ -138,13 +117,13 @@ public static class ResultTExtensions
     /// <returns>The result of the appropriate handler.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> or <paramref name="onFailure"/> is null.</exception>
     public static U Match<T, U>(this Result<T> result,
-        Func<T, U> onSuccess, Func<Error[], U> onFailure)
+        Func<T, U> onSuccess, Func<Error, U> onFailure)
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
         onFailure.ThrowIfNull(nameof(onFailure));
         return result.IsSuccess
             ? onSuccess(result.Value)
-            : onFailure([.. result.Errors]);
+            : onFailure(result.Error!);
     }
 
     /// <summary>
@@ -155,10 +134,10 @@ public static class ResultTExtensions
     /// <param name="fallback">The synchronous function to invoke with errors if <paramref name="result"/> is a failure.</param>
     /// <returns>The original result if successful, or the result of the fallback function if failed.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="fallback"/> is null.</exception>
-    public static Result<T> Recover<T>(this Result<T> result, Func<Error[], Result<T>> fallback)
+    public static Result<T> Recover<T>(this Result<T> result, Func<Error, T> fallback)
     {
         fallback.ThrowIfNull(nameof(fallback));
-        return result.IsSuccess ? result : fallback([.. result.Errors]);
+        return result.IsSuccess ? result : Result.Ok(fallback(result.Error!));
     }
 
     /// <summary>
@@ -187,12 +166,12 @@ public static class ResultTExtensions
     /// <param name="action">The synchronous action to perform with errors if <paramref name="result"/> is a failure.</param>
     /// <returns>The original <see cref="Result{T}"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="action"/> is null.</exception>
-    public static Result<T> TapError<T>(this Result<T> result, Action<Error[]> action)
+    public static Result<T> TapError<T>(this Result<T> result, Action<Error> action)
     {
         action.ThrowIfNull(nameof(action));
         if (result.IsFailure)
         {
-            action([.. result.Errors]);
+            action(result.Error!);
         }
         return result;
     }

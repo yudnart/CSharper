@@ -1,4 +1,5 @@
 ﻿using CSharper.Errors;
+using CSharper.Results.Abstractions;
 using System;
 
 namespace CSharper.Results;
@@ -28,14 +29,13 @@ public sealed partial class Result : ResultBase
     /// <summary>
     /// Initializes a new instance of the <see cref="Result"/> class as a failure result with errors.
     /// </summary>
-    /// <param name="causedBy">The primary error causing the failure.</param>
+    /// <param name="error">The primary error causing the failure.</param>
     /// <param name="details">Additional error details, if any.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="causedBy"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="error"/> is null.</exception>
     /// <remarks>
     /// This constructor is private to encourage use of factory methods like <see cref="Fail(Error, Error[])"/> for creating failure results.
     /// </remarks>
-    private Result(Error causedBy, params Error[] details)
-        : base(causedBy, details)
+    private Result(Error error) : base(error)
     {
         // Intentionally blank
     }

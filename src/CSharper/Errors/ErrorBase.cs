@@ -5,7 +5,7 @@ using System.Text;
 namespace CSharper.Errors;
 
 /// <summary>
-/// Provides a base class for error types with a message and optional code.
+/// Represents an error with a message and optional code.
 /// </summary>
 public abstract class ErrorBase
 {
@@ -13,20 +13,20 @@ public abstract class ErrorBase
     /// Gets the error message describing the issue.
     /// </summary>
     /// <value>The descriptive message of the error.</value>
-    public string Message { get; protected set; }
+    public string Message { get; }
 
     /// <summary>
     /// Gets the optional error code for programmatic identification.
     /// </summary>
-    /// <value>The error code, or <c>null</c> if not specified.</value>
-    public string? Code { get; protected set; }
+    /// <value>The error code, or <see langword="null"/> if not specified.</value>
+    public string? Code { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ErrorBase"/> class with a message and optional code.
     /// </summary>
     /// <param name="message">The descriptive message of the error.</param>
-    /// <param name="code">The optional error code for identification. Defaults to <c>null</c>.</param>
-    /// <exception cref="ArgumentException">Thrown if <paramref name="message"/> is null, empty, or whitespace.</exception>
+    /// <param name="code">The optional error code for identification. Defaults to <see langword="null"/>.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> is null, empty, or whitespace.</exception>
     protected ErrorBase(string message, string? code = null)
     {
         message.ThrowIfNullOrWhitespace(nameof(message));
@@ -34,20 +34,33 @@ public abstract class ErrorBase
         Code = code;
     }
 
+    public override bool Equals(object obj)
+    {
+        if (obj is ErrorBase other)
+        {
+            return Message == other.Message && Code == other.Code;
+        }
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        return (Message, Code).GetHashCode();
+    }
+
     /// <summary>
-    /// Returns a string representation of the error, including the message and code if present.
+    /// Returns a string representation of the error, including the message and optional code.
     /// </summary>
-    /// <returns>A formatted string describing the error.</returns>
-    /// <remarks>
-    /// The format is: <c>{message}[, Code={code}]</c>, where <c>Code</c> is included only if non-empty.
-    /// </remarks>
+    /// <returns>A formatted string in the format: <c>Error: {message}[, Code={code}]</c>.</returns>
     public override string ToString()
     {
         StringBuilder sb = new(Message);
+
         if (!string.IsNullOrWhiteSpace(Code))
         {
             sb.Append($", Code={Code}");
         }
+
         return sb.ToString();
     }
 }
