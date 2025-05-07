@@ -37,10 +37,19 @@ public sealed class ResultValidatorTExtensionsTests
     {
         // Arrange
         ResultValidator<T> sut = new(initial);
-        Action act = () => _ = sut.And(null!, "Validation error");
+
+        Func<T, bool> predicate = null!;
+        Func<T, Task<bool>> asyncPredicate = null!;
+
+        Action act1 = () => _ = sut.And(predicate, "Validation error");
+        Action act2 = () => _ = sut.And(asyncPredicate, "Validation error");
 
         // Act & Assert
-        act.Should().Throw<ArgumentNullException>();
+        Assert.Multiple(() =>
+        {
+            act1.Should().Throw<ArgumentNullException>();
+            act2.Should().Throw<ArgumentNullException>();
+        });
     }
 
     [Theory]

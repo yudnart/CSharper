@@ -39,10 +39,19 @@ public sealed class ResultValidatorExtensionsTests
     {
         // Arrange
         ResultValidator sut = new(initial);
-        Action act = () => _ = sut.And(null!, "Validation error");
+
+        Func<bool> predicate = null!;
+        Func<Task<bool>> asyncPredicate = null!;
+
+        Action act1 = () => _ = sut.And(predicate, "Validation error");
+        Action act2 = () => _ = sut.And(asyncPredicate, "Validation error");
 
         // Act & Assert
-        act.Should().Throw<ArgumentNullException>();
+        Assert.Multiple(() =>
+        {
+            act1.Should().Throw<ArgumentNullException>();
+            act2.Should().Throw<ArgumentNullException>();
+        });
     }
 
     [Theory]
@@ -92,14 +101,23 @@ public sealed class ResultValidatorExtensionsTests
         nameof(FunctionalResultTestData.ResultData),
         MemberType = typeof(FunctionalResultTestData)
     )]
-    public async Task AndAsync_NullPredicate_ThrowsArgumentNullException(Result initial)
+    public void AndAsync_NullPredicate_ThrowsArgumentNullException(Result initial)
     {
         // Arrange
         Task<ResultValidator> sut = Task.FromResult(new ResultValidator(initial));
-        Func<Task> act = () => sut.And(null!, "Validation error");
+
+        Func<bool> predicate = null!;
+        Func<Task<bool>> asyncPredicate = null!;
+
+        Func<Task> act1 = () => sut.And(predicate, "Validation error");
+        Func<Task> act2 = () => sut.And(asyncPredicate, "Validation error");
 
         // Act & Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        Assert.Multiple(async () =>
+        {
+            await act1.Should().ThrowAsync<ArgumentNullException>();
+            await act2.Should().ThrowAsync<ArgumentNullException>();
+        });
     }
 
     [Theory]

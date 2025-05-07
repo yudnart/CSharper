@@ -1,5 +1,6 @@
 ﻿using CSharper.Utilities;
 using System;
+using System.Threading.Tasks;
 
 namespace CSharper.Results.Validation;
 
@@ -13,7 +14,7 @@ public sealed class ValidationRule<T>
     /// Gets the predicate that determines if the validation passes.
     /// </summary>
     /// <value>The function that evaluates to <c>true</c> if the validation passes, otherwise <c>false</c>.</value>
-    public Func<T, bool> Predicate { get; }
+    public Func<T, Task<bool>> Predicate { get; }
 
     /// <summary>
     /// Gets the error message to return if the predicate fails.
@@ -44,8 +45,20 @@ public sealed class ValidationRule<T>
     /// <exception cref="ArgumentException">Thrown if <paramref name="message"/> is null, empty, or whitespace.</exception>
     public ValidationRule(Func<T, bool> predicate, string message, string? code, string? path)
     {
+        predicate.ThrowIfNull(nameof(predicate));
+        message.ThrowIfNullOrWhitespace(nameof(message));
+
+        Predicate = value => Task.FromResult(predicate(value));
+        Message = message;
+        Code = code;
+        Path = path;
+    }
+
+    public ValidationRule(Func<T, Task<bool>> predicate, string message, string? code, string? path)
+    {
         Predicate = predicate ?? throw new ArgumentNullException(nameof(predicate));
         message.ThrowIfNullOrWhitespace(nameof(message));
+
         Message = message;
         Code = code;
         Path = path;

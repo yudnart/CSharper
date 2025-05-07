@@ -237,7 +237,7 @@ public sealed class AsyncResultExtensionsTests
         //     this Task < Result < T >> asyncResult,
         //     Func < T, Task<bool> > predicate,
         //     Error error)
-        results.Add(await initial.Ensure(() => Task.FromResult(true), error.Message));
+        results.Add(initial.Ensure(() => Task.FromResult(true), error.Message));
 
         // Assert
         Assert.Multiple(() =>
@@ -265,7 +265,7 @@ public sealed class AsyncResultExtensionsTests
         List<Func<Task>> acts = [
             () => Task.FromResult(initial).Ensure(asyncPredicate, message),
             () => Task.FromResult(initial).Ensure(predicate, message),
-            () => initial.Ensure(asyncPredicate, message)
+            () => Task.FromResult(initial.Ensure(asyncPredicate, message))
         ];
 
         // Act & Assert
@@ -294,7 +294,7 @@ public sealed class AsyncResultExtensionsTests
         List<Func<Task>> acts = [
             () => Task.FromResult(sut).Ensure(predicate, message, code),
             () => Task.FromResult(sut).Ensure(() => false, message, code),
-            () => sut.Ensure(() => Task.FromResult(true), message, code)
+            () => Task.FromResult(sut.Ensure(() => Task.FromResult(true), message, code))
         ];
 
         // Act & Assert

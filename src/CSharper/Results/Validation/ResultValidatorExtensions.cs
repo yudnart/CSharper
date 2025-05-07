@@ -19,36 +19,6 @@ public static class ResultValidatorExtensions
     /// <summary>
     /// Adds a predicate and associated error to the validation chain of a
     /// <see cref="ResultValidator"/>.</summary>
-    /// <param name="validator">
-    /// The <see cref="ResultValidator"/> containing the validation chain.</param>
-    /// <param name="predicate">The condition to evaluate.</param>
-    /// <param name="message">
-    /// The <see cref="Error"/> message to include if the predicate fails.
-    /// </param>
-    /// <param name="code">
-    /// [Optional] The <see cref="Error"/> code to include if the predicate fails.
-    /// </param>
-    /// <param name="path">
-    /// [Optional] The <see cref="Error"/> path to include if the predicate fails.
-    /// </param>
-    /// <returns>
-    /// The same <see cref="ResultValidator"/> is returned to enable chaining.</returns>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown if validator or predicate is null</exception>
-    /// <exception cref="ArgumentException">
-    /// Thrown if message is null or whitespace.</exception>
-    public static ResultValidator And(this ResultValidator validator,
-        Func<bool> predicate,
-        string message,
-        string? code = null,
-        string? path = null)
-    {
-        return validator.And(predicate, message, code, path);
-    }
-
-    /// <summary>
-    /// Adds a predicate and associated error to the validation chain of a
-    /// <see cref="ResultValidator"/>.</summary>
     /// <param name="asyncValidator">
     /// The async <see cref="ResultValidator"/> containing the validation chain.</param>
     /// <param name="predicate">The condition to evaluate.</param>
@@ -74,8 +44,21 @@ public static class ResultValidatorExtensions
         string? path = null)
     {
         return asyncValidator
-            .ContinueWith(task => task.Result
-                .And(predicate, message, code, path));
+            .ContinueWith(task => task
+                .HandleFault()
+                .Or(task => task.Result.And(predicate, message, code, path)));
+    }
+
+    public static Task<ResultValidator> And(this Task<ResultValidator> asyncValidator,
+        Func<Task<bool>> predicate,
+        string message,
+        string? code = null,
+        string? path = null)
+    {
+        return asyncValidator
+            .ContinueWith(task => task
+                .HandleFault()
+                .Or(task => task.Result.And(predicate, message, code, path)));
     }
 
     #endregion
@@ -94,7 +77,7 @@ public static class ResultValidatorExtensions
             .And(predicate, message, code, path);
     }
 
-    public static Task<ResultValidator> Ensure(this Result result,
+    public static ResultValidator Ensure(this Result result,
         Func<Task<bool>> predicate,
         string message,
         string? code = null,
@@ -102,17 +85,8 @@ public static class ResultValidatorExtensions
     {
         predicate.ThrowIfNull(nameof(predicate));
         message.ThrowIfNullOrWhitespace(nameof(message));
-
-        if (result.IsSuccess)
-        {
-            return predicate().ContinueWith(task => task
-                .HandleFault()
-                .Or(task => result.Ensure(() => task.Result, message, code, path)));
-        }
-
-        // Replace predicate with noop since failed result will
-        // bypass predicate evaluation.
-        return Task.FromResult(result.Ensure(Noop, message, code, path));
+        return new ResultValidator(result)
+            .And(predicate, message, code, path);
     }
 
     public static Task<ResultValidator> Ensure(
@@ -137,11 +111,10 @@ public static class ResultValidatorExtensions
         string? path = null)
     {
         predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNull(nameof(message));
+        message.ThrowIfNullOrWhitespace(nameof(message));
         return asyncResult.ContinueWith(task => task
             .HandleFault()
-            .Or(task => task.Result.Ensure(predicate, message, code, path)))
-            .Unwrap();
+            .Or(task => task.Result.Ensure(predicate, message, code, path)));
     }
 
     #endregion

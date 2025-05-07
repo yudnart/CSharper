@@ -3,6 +3,7 @@ using CSharper.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace CSharper.Results.Validation;
 
@@ -61,6 +62,18 @@ public sealed class ResultValidator<T>
         return this;
     }
 
+    public ResultValidator<T> And(
+        Func<T, Task<bool>> predicate,
+        string message,
+        string? code = null,
+        string? path = null)
+    {
+        predicate.ThrowIfNull(nameof(predicate));
+        message.ThrowIfNull(nameof(message));
+        _rules.Add((new(predicate, message, code, path)));
+        return this;
+    }
+
     /// <summary>
     /// Evaluate all predicates and return the appropriate <see cref="Result{T}"/>.
     /// </summary>
@@ -79,9 +92,17 @@ public sealed class ResultValidator<T>
         }
 
         T value = _initialResult.Value;
-        IEnumerable<ValidationRule<T>> errors = _rules.Where(r => !r.Predicate(value));
+        // Run all predicates concurrently
+        Task<bool>[] tasks = [.. _rules.Select(r => r.Predicate(value))];
+        bool[] results = Task.WhenAll(tasks).GetAwaiter().GetResult();
 
-        if (!errors.Any())
+        // Collect errors based on results
+        ValidationRule<T>[] errors = [.. _rules
+            .Select((rule, index) => new { Rule = rule, Result = results[index] })
+            .Where(x => !x.Result)
+            .Select(x => x.Rule)];
+
+        if (errors.Length == 0)
         {
             return _initialResult;
         }

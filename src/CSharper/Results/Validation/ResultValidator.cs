@@ -3,6 +3,7 @@ using CSharper.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace CSharper.Results.Validation;
 
@@ -53,6 +54,18 @@ public sealed class ResultValidator
         return this;
     }
 
+    public ResultValidator And(
+        Func<Task<bool>> predicate,
+        string message,
+        string? code = null,
+        string? path = null)
+    {
+        predicate.ThrowIfNull(nameof(predicate));
+        message.ThrowIfNullOrWhitespace(nameof(message));
+        _rules.Add((new(predicate, message, code, path)));
+        return this;
+    }
+
     /// <summary>
     /// Evaluate all predicates and return the appropriate <see cref="Result"/>.
     /// </summary>
@@ -70,9 +83,17 @@ public sealed class ResultValidator
             return _initialResult;
         }
 
-        IEnumerable<ValidationRule> errors = _rules.Where(r => !r.Predicate());
+        // Run all predicates concurrently
+        Task<bool>[] tasks = [.. _rules.Select(r => r.Predicate())];
+        bool[] results = Task.WhenAll(tasks).GetAwaiter().GetResult();
 
-        if (!errors.Any())
+        // Collect errors based on results
+        ValidationRule[] errors = [.. _rules
+            .Select((rule, index) => new { Rule = rule, Result = results[index] })
+            .Where(x => !x.Result)
+            .Select(x => x.Rule)];
+
+        if (errors.Length == 0)
         {
             return _initialResult;
         }
@@ -87,9 +108,8 @@ public sealed class ResultValidator
             code = ValidationError.DefaultErrorCode;
         }
 
-        ValidationErrorDetail[] errorDetails = errors
-            .Select(e => new ValidationErrorDetail(e.Message, e.Code, e.Path))
-            .ToArray();
+        ValidationErrorDetail[] errorDetails = [.. errors
+            .Select(e => new ValidationErrorDetail(e.Message, e.Code, e.Path))];
 
         return Result.Fail(new ValidationError(message, code, errorDetails));
     }
