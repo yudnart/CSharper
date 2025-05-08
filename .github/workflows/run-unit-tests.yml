@@ -125,13 +125,13 @@ jobs:
               $OUTPUT_FILE = "test-output-$($PROJ.BaseName).txt"
               if ($USE_PARALLEL -eq "true") {
                 # Parallel execution
-                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --settings tests/parallel.runsettings > $OUTPUT_FILE
+                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --settings tests/parallel.runsettings --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE > $OUTPUT_FILE
               } else {
                 # Sequential execution
-                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --framework net48 > $OUTPUT_FILE
+                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --framework net48 --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE > $OUTPUT_FILE
                 $EXIT_CODE_NET48 = $LASTEXITCODE
                 if ($EXIT_CODE_NET48 -eq 0) {
-                  dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --framework net8.0 >> $OUTPUT_FILE
+                  dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --framework net8.0 --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE >> $OUTPUT_FILE
                 }
               }
               $EXIT_CODE = $LASTEXITCODE
@@ -150,24 +150,32 @@ jobs:
               }
             } elseif ($LOG_MODE -eq "minimal") {
               if ($USE_PARALLEL -eq "true") {
-                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --settings tests/parallel.runsettings
+                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --settings tests/parallel.runsettings --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE
               } else {
-                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net48
+                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net48 --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE
                 if ($LASTEXITCODE -eq 0) {
-                  dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net8.0
+                  dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net8.0 --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE
                 }
               }
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             } else {
               if ($USE_PARALLEL -eq "true") {
-                dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --settings tests/parallel.runsettings
+                dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --settings tests/parallel.runsettings --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE
               } else {
-                dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --framework net48
+                dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --framework net48 --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE
                 if ($LASTEXITCODE -eq 0) {
-                  dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --framework net8.0
+                  dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --framework net8.0 --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE
                 }
               }
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
           }
         shell: pwsh
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/*.opencover.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
