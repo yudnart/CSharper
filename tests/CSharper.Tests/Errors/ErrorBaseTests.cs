@@ -41,6 +41,53 @@ public sealed class ErrorBaseTests
 
     [Theory]
     [MemberData(
+        nameof(TestData.ErrorBaseCtorValidTestCases),
+        MemberType = typeof(TestData)
+    )]
+    public void Equals_MessageAndCodeAreEqual_ReturnsTrue(
+        string message, string? code)
+    {
+        // Act
+        TestError sut = new(message, code);
+        TestError error = new(message, code);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            sut.Should().BeEquivalentTo(error);
+            sut.GetHashCode().Should().Be(error.GetHashCode());
+        });
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(TestData.ErrorBaseCtorValidTestCases),
+        MemberType = typeof(TestData)
+    )]
+    public void Equals_MessageAndCodeAreNotEqual_ReturnsFalse(
+        string message, string? code)
+    {
+        // Act
+        TestError sut = new(message, code);
+        TestError[] errors = [
+            new($"{message}Test", code),
+            new(message, $"{code}Test"),
+            new($"{message}Test", $"{code}Test"),
+        ];
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            foreach (TestError error in errors)
+            {
+                sut.Should().NotBeEquivalentTo(error);
+                sut.GetHashCode().Should().NotBe(error.GetHashCode());
+            }
+        });
+    }
+
+    [Theory]
+    [MemberData(
         nameof(TestData.ErrorBaseToStringTestCases),
         MemberType = typeof(TestData)
     )]

@@ -133,7 +133,7 @@ public sealed partial class Result
                 // Add Error as an ErrorDetail (no indentation)
                 errorDetails.Add(new(error.Message, error.Code));
                 // Add Error's ErrorDetails with indented Message
-                foreach (ErrorDetail detail in error.ErrorDetails ?? [])
+                foreach (ErrorDetail detail in error.ErrorDetails)
                 {
                     errorDetails.Add(new($"> {detail.Message}", detail.Code));
                 }

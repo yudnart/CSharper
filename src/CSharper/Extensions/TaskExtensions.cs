@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 
-namespace CSharper.Utilities;
+namespace CSharper.Extensions;
 
 public static class TaskExtensions
 {

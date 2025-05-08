@@ -98,18 +98,8 @@ public sealed class ResultValidator
             return _initialResult;
         }
 
-        if (string.IsNullOrWhiteSpace(message))
-        {
-            message = ValidationError.DefaultErrorMessage;
-        }
-
-        if (string.IsNullOrWhiteSpace(code))
-        {
-            code = ValidationError.DefaultErrorCode;
-        }
-
         ValidationErrorDetail[] errorDetails = [.. errors
-            .Select(e => new ValidationErrorDetail(e.Message, e.Code, e.Path))];
+            .Select(e => new ValidationErrorDetail(e.ErrorMessage, e.ErrorCode, e.Path))];
 
         return Result.Fail(new ValidationError(message, code, errorDetails));
     }

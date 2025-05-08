@@ -61,6 +61,7 @@ public static class ResultTestData
             Result.Fail<string>(ErrorTestData.Error),
             MapErrorToExpectedString(ErrorTestData.Error)
         ];
+        yield return ["Null value", Result.Ok<string?>(null), "Success: null"];
     }
 
     private static string MapErrorToExpectedString(Error error)

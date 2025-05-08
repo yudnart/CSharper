@@ -1,4 +1,5 @@
-﻿using CSharper.Functional;
+﻿using CSharper.Extensions;
+using CSharper.Functional;
 using CSharper.Results.Validation;
 using CSharper.Utilities;
 using System;

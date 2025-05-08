@@ -61,6 +61,34 @@ public sealed class ResultLikeTests
         sut.Value.Should().Be(expected);
     }
 
+    [Fact]
+    public void ImplicitOperator_NullResultBase_ThrowsArgumentNullException()
+    {
+        // Arrange
+        ResultBase initial = null!;
+        Action act = () =>
+        {
+            ResultLike test = initial;
+        };
+
+        // Act & Assert
+        act.Should().ThrowExactly<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void ImplicitOperator_NullFactory_ThrowsArgumentNullException()
+    {
+        // Arrange
+        Func<ResultBase> initial = null!;
+        Action act = () =>
+        {
+            ResultLike test = initial;
+        };
+
+        // Act & Assert
+        act.Should().ThrowExactly<ArgumentNullException>();
+    }
+
     public static TheoryData<ResultBase> ResultBaseData()
     {
         Result test1 = Result.Ok();

@@ -107,16 +107,6 @@ public sealed class ResultValidator<T>
             return _initialResult;
         }
 
-        if (string.IsNullOrWhiteSpace(message))
-        {
-            message = ValidationError.DefaultErrorMessage;
-        }
-
-        if (string.IsNullOrWhiteSpace(code))
-        {
-            code = ValidationError.DefaultErrorCode;
-        }
-
         ValidationErrorDetail[] errorDetails = errors
             .Select(e => new ValidationErrorDetail(e.Message, e.Code, e.Path))
             .ToArray();

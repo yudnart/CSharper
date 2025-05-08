@@ -1,4 +1,5 @@
-﻿using CSharper.Functional;
+﻿using CSharper.Extensions;
+using CSharper.Functional;
 using CSharper.Results.Validation;
 using CSharper.Utilities;
 using System;
@@ -12,8 +13,6 @@ namespace CSharper.Results.Validation;
 /// </summary>
 public static class ResultValidatorExtensions
 {
-    private static bool Noop() => true;
-
     #region And
 
     /// <summary>
