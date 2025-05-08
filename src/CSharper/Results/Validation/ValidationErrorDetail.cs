@@ -1,7 +1,7 @@
 ﻿using CSharper.Errors;
 using System.Text;
 
-namespace BECU.Libraries.Results.Validation;
+namespace CSharper.Results.Validation;
 
 /// <summary>
 /// Represents an error detail with message and optional code/path.

@@ -1,8 +1,8 @@
 ﻿using CSharper.AppContext;
 using CSharper.Errors;
+using CSharper.Extensions;
 using CSharper.Functional;
 using CSharper.Results;
-using CSharper.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;

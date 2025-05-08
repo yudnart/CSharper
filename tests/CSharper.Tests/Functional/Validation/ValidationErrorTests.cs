@@ -1,10 +1,9 @@
-﻿using BECU.Libraries.Results.Validation;
-using CSharper.Results.Validation;
+﻿using CSharper.Results.Validation;
 using CSharper.Tests.Errors;
 using FluentAssertions;
 using TestUtility = CSharper.Tests.Errors.ErrorTestUtility;
 
-namespace BECU.Libraries.Results.Tests.Validation;
+namespace CSharper.Tests.Functional.Validation;
 
 [Trait("Category", "Unit")]
 [Trait("TestOf", nameof(ValidationError))]

@@ -18,28 +18,34 @@ internal sealed class TestEntity : Entity<string>
 
 internal sealed class TestAuditableEntity : AuditableEntity<string>
 {
-    public TestAuditableEntity(string id)
+    public TestAuditableEntity(
+        string id, 
+        DateTimeOffset createdAt, 
+        string createdBy, 
+        DateTimeOffset? lastModifiedAt = null, 
+        string? lastModifiedBy = null)
     {
         Id = id;
-    }
-
-    public void SetCreatedAt(DateTimeOffset createdAt)
-    {
         CreatedAt = createdAt;
-    }
-
-    public void SetCreatedBy(string createdBy)
-    {
         CreatedBy = createdBy;
-    }
-
-    public void SetLastModifiedAt(DateTimeOffset? lastModifiedAt)
-    {
         LastModifiedAt = lastModifiedAt;
+        LastModifiedBy = lastModifiedBy;
     }
 
-    public void SetLastModifiedBy(string? lastModifiedBy)
+    /// <summary>
+    /// Helper to test protected setters
+    /// </summary>
+    public void SetProperties(
+        string id,
+        DateTimeOffset createdAt,
+        string createdBy,
+        DateTimeOffset? lastModifiedAt = null,
+        string? lastModifiedBy = null)
     {
+        Id = id;
+        CreatedAt = createdAt;
+        CreatedBy = createdBy;
+        LastModifiedAt = lastModifiedAt;
         LastModifiedBy = lastModifiedBy;
     }
 }

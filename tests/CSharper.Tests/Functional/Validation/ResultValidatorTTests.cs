@@ -1,13 +1,14 @@
 ﻿using CSharper.Errors;
-using CSharper.Functional;
 using CSharper.Results;
 using CSharper.Results.Validation;
 using CSharper.Tests.Errors;
 using CSharper.Tests.Results;
 using FluentAssertions;
 
-namespace BECU.Libraries.Results.Tests.Validation;
+namespace CSharper.Tests.Functional.Validation;
 
+[Trait("Category", "Unit")]
+[Trait("TestOf", "ResultValidatorT")]
 public sealed class ResultValidatorTTests
 {
     [Fact]

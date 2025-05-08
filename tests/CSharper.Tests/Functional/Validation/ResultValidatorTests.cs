@@ -1,5 +1,4 @@
 ﻿using CSharper.Errors;
-using CSharper.Functional;
 using CSharper.Results;
 using CSharper.Results.Validation;
 using CSharper.Tests.Results;
@@ -7,6 +6,8 @@ using FluentAssertions;
 
 namespace CSharper.Tests.Functional.Validation;
 
+[Trait("Category", "Unit")]
+[Trait("TestOf", nameof(ResultValidator))]
 public sealed class ResultValidatorTests
 {
     [Fact]

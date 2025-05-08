@@ -1,6 +1,7 @@
 ﻿using System;
 
-namespace CSharper.Utilities;
+namespace CSharper.Extensions;
+
 
 /// <summary>
 /// Provides utility methods for null and whitespace validation.

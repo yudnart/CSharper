@@ -1,4 +1,4 @@
-﻿using CSharper.Utilities;
+﻿using CSharper.Extensions;
 using System;
 using System.Threading.Tasks;
 
@@ -20,13 +20,13 @@ public sealed class ValidationRule<T>
     /// Gets the error message to return if the predicate fails.
     /// </summary>
     /// <value>The descriptive message of the validation error.</value>
-    public string Message { get; }
+    public string ErrorMessage { get; }
 
     /// <summary>
     /// Gets the optional error code for programmatic identification.
     /// </summary>
     /// <value>The error code, or <c>null</c> if not specified.</value>
-    public string? Code { get; }
+    public string? ErrorCode { get; }
 
     /// <summary>
     /// Gets the optional path to the property being validated.
@@ -38,29 +38,37 @@ public sealed class ValidationRule<T>
     /// Initializes a new instance of the <see cref="ValidationRule{T}"/> class.
     /// </summary>
     /// <param name="predicate">The predicate to evaluate the validation condition.</param>
-    /// <param name="message">The descriptive message of the error if the predicate fails.</param>
-    /// <param name="code">The optional error code for identification. Defaults to <c>null</c>.</param>
+    /// <param name="errorMessage">The descriptive message of the error if the predicate fails.</param>
+    /// <param name="errorCode">The optional error code for identification. Defaults to <c>null</c>.</param>
     /// <param name="path">The optional path to the property being validated. Defaults to <c>null</c>.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> is null.</exception>
-    /// <exception cref="ArgumentException">Thrown if <paramref name="message"/> is null, empty, or whitespace.</exception>
-    public ValidationRule(Func<T, bool> predicate, string message, string? code, string? path)
+    /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null, empty, or whitespace.</exception>
+    public ValidationRule(
+        Func<T, bool> predicate, 
+        string errorMessage, 
+        string? errorCode = null, 
+        string? path = null)
     {
         predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNullOrWhitespace(nameof(message));
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
 
         Predicate = value => Task.FromResult(predicate(value));
-        Message = message;
-        Code = code;
+        ErrorMessage = errorMessage;
+        ErrorCode = errorCode;
         Path = path;
     }
 
-    public ValidationRule(Func<T, Task<bool>> predicate, string message, string? code, string? path)
+    public ValidationRule(
+        Func<T, Task<bool>> predicate, 
+        string errorMessage, 
+        string? errorCode = null, 
+        string? path = null)
     {
         Predicate = predicate ?? throw new ArgumentNullException(nameof(predicate));
-        message.ThrowIfNullOrWhitespace(nameof(message));
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
 
-        Message = message;
-        Code = code;
+        ErrorMessage = errorMessage;
+        ErrorCode = errorCode;
         Path = path;
     }
 }

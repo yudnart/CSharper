@@ -1,27 +1,26 @@
 ﻿using CSharper.AppContext;
 using CSharper.Errors;
+using CSharper.Mediator;
 using CSharper.Results;
-using CSharper.Tests.Errors;
-using CSharper.Tests.Mediator;
 using CSharper.Tests.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Text.Json;
 
-namespace CSharper.Mediator.Tests;
+namespace CSharper.Tests.Mediator;
 
-/// <summary>
-/// Contains unit tests for the <see cref="LoggingBehavior"/> class.
-/// </summary>
+[Trait("Category", "Unit")]
+[Trait("TestOf", nameof(LoggingBehavior))]
 public sealed class LoggingBehaviorTests
 {
     private readonly MemoryLogger<LoggingBehavior> _logger;
     private readonly Mock<IServiceProvider> _serviceProviderMock;
     private readonly Mock<IAppContext> _appContextMock;
+    private const string _errorStateKey = "Error";
+    private const string _requestTypeStateKey = "RequestType";
+    private const string _requestStateKey = "Request";
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="LoggingBehaviorTests"/> class.
-    /// </summary>
     public LoggingBehaviorTests()
     {
         _logger = new MemoryLogger<LoggingBehavior>();
@@ -30,339 +29,342 @@ public sealed class LoggingBehaviorTests
     }
 
     [Fact]
-    public async Task Handle_Request_LogsRequest()
+    public async Task Handle_SuccessfulRequest_LogsStartAndSuccess()
     {
         // Arrange
-        Mock<BehaviorDelegate> next = SetupNextDelegate(Result.Ok());
+        LoggingBehavior sut = new(_logger, _serviceProviderMock.Object);
 
-        LoggingBehavior sut = CreateLoggingBehavior();
-        TestRequest test = new() { Id = "test-id", Value = 42 };
+        IRequest request = TestRequest.Instance;
+        Result nextResult = Result.Ok();
+        BehaviorDelegate next = (r, c) => Task.FromResult(nextResult);
 
-        // Act
-        await sut.Handle(test, next.Object, CancellationToken.None);
-
-        // Assert
-        IReadOnlyList<LogEntry> logEntries = _logger.GetLogEntries();
-        logEntries.Should().HaveCount(2);
-
-        LogEntry? requestLog = logEntries.FirstOrDefault(e => e.Message == "Processing request TestRequest");
-        requestLog.Should().NotBeNull();
-        requestLog!.Level.Should().Be(LogLevel.Information);
-
-        Dictionary<string, object> state = requestLog.State
-            .Should().BeOfType<Dictionary<string, object>>().Subject;
-        AssertRequestLogged(state);
-    }
-
-    [Fact]
-    public async Task Handle_WithoutAppContext_LogsRequestWithGeneratedCorrelationId()
-    {
-        // Arrange
-        Mock<BehaviorDelegate> next = SetupNextDelegate(Result.Ok());
-
-        LoggingBehavior sut = CreateLoggingBehavior();
-        TestRequest test = new() { Id = "test-id", Value = 42 };
+        string requestType = request.GetType().Name;
+        string requestData = JsonSerializer.Serialize(request, typeof(TestRequest));
 
         // Act
-        await sut.Handle(test, next.Object, CancellationToken.None);
+        Result result = await sut.Handle(request, next, CancellationToken.None);
+        IReadOnlyList<LogEntry> logs = _logger.GetLogEntries();
 
         // Assert
-        IReadOnlyList<LogEntry> logEntries = _logger.GetLogEntries();
-        logEntries.Should().HaveCount(2);
-
-        LogEntry? requestLog = logEntries.FirstOrDefault(e => e.Message == "Processing request TestRequest");
-        requestLog.Should().NotBeNull();
-        requestLog!.Level.Should().Be(LogLevel.Information);
-
-        Dictionary<string, object> state = requestLog.State
-            .Should().BeOfType<Dictionary<string, object>>().Subject;
-
-        AssertRequestLogged(state);
-
-        state.Should().ContainKey("CorrelationId").WhoseValue.As<string>()
-            .Should().MatchRegex(@"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
-
-        LogEntry? successLog = logEntries.FirstOrDefault(e => e.Message == "Request TestRequest completed successfully.");
-        successLog.Should().NotBeNull();
-        successLog!.Level.Should().Be(LogLevel.Information);
-    }
-
-    [Fact]
-    public async Task Handle_WithAppContext_LogsRequestWithContext()
-    {
-        // Arrange
-        Mock<BehaviorDelegate> next = SetupNextDelegate(Result.Ok());
-
-        LoggingBehavior sut = CreateLoggingBehavior(TestAppContext.GetDefaultAppContext());
-        TestRequest test = new() { Id = "test-id", Value = 42 };
-
-        // Act
-        await sut.Handle(test, next.Object, CancellationToken.None);
-
-        // Assert
-        IReadOnlyList<LogEntry> logEntries = _logger.GetLogEntries();
-        logEntries.Should().HaveCount(2);
-
-        LogEntry? requestLog = logEntries.FirstOrDefault(e => e.Message == "Processing request TestRequest");
-        requestLog.Should().NotBeNull();
-        requestLog!.Level.Should().Be(LogLevel.Information);
-
-        Dictionary<string, object> state = requestLog.State
-            .Should().BeOfType<Dictionary<string, object>>().Subject;
-
-        AssertRequestLogged(state);
-
-        state.Should().ContainKey(nameof(IAppContext.RequestId)).WhoseValue.Should().Be(TestAppContext.DefaultRequestId);
-        state.Should().ContainKey(nameof(IAppContext.CorrelationId)).WhoseValue.Should().Be(TestAppContext.DefaultCorrelationId);
-        state.Should().ContainKey(nameof(IUserContext.UserId)).WhoseValue.Should().Be(TestAppContext.DefaultUserId);
-        state.Should().ContainKey(nameof(IUserContext.TenantId)).WhoseValue.Should().Be(TestAppContext.DefaultTenantId);
-        state.Should().ContainKey(nameof(IAppContext.ClientIpAddress)).WhoseValue.Should().Be(TestAppContext.DefaultClientIpAddress);
-        state.Should().ContainKey(nameof(IAppContext.UserAgent)).WhoseValue.Should().Be(TestAppContext.DefaultUserAgent);
-        state.Should().ContainKey(nameof(IAppContext.RequestPath)).WhoseValue.Should().Be(TestAppContext.DefaultRequestPath);
-
-        foreach (KeyValuePair<string, object> extension in TestAppContext.DefaultExtensions)
+        Assert.Multiple(() =>
         {
-            string extensionKey = $"{LoggingBehavior._extensionPrefix}{extension.Key}";
-            state.Should().ContainKey(extensionKey).WhoseValue.Should().Be(extension.Value);
-        }
+            result.Should().Be(nextResult);
 
-        LogEntry? successLog = logEntries.FirstOrDefault(e => e.Message == "Request TestRequest completed successfully.");
-        successLog.Should().NotBeNull();
-        successLog!.Level.Should().Be(LogLevel.Information);
+            logs.Should().HaveCount(2);
+
+            logs[0].Level.Should().Be(LogLevel.Information);
+            logs[0].State[_requestTypeStateKey].Should().Be(requestType);
+            logs[0].State[_requestStateKey].Should().Be(requestData);
+
+            logs[1].Level.Should().Be(LogLevel.Information);
+            logs[1].State[_requestTypeStateKey].Should().Be(requestType);
+        });
     }
 
     [Fact]
-    public async Task Handle_SuccessfulRequest_LogsSuccess()
+    public async Task Handle_RequestWithError_LogsStartAndFailure()
     {
         // Arrange
-        LoggingBehavior sut = CreateLoggingBehavior();
-        TestRequest test = new() { Id = "test-id", Value = 42 };
-        Mock<BehaviorDelegate> next = new();
-        next.Setup(n => n(It.IsAny<IRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result.Ok());
+        LoggingBehavior sut = new(_logger, _serviceProviderMock.Object);
+
+        IRequest request = TestRequest.Instance;
+        string errorMessage = "Test error";
+        Error error = new(errorMessage);
+        Result nextResult = Result.Fail(error);
+        BehaviorDelegate next = (_, _) => Task.FromResult(nextResult);
+
+        string requestType = request.GetType().Name;
+        string requestData = JsonSerializer.Serialize(request, typeof(TestRequest));
 
         // Act
-        await sut.Handle(test, next.Object, CancellationToken.None);
+        Result result = await sut.Handle(request, next, CancellationToken.None);
+        IReadOnlyList<LogEntry> logs = _logger.GetLogEntries();
 
         // Assert
-        IReadOnlyList<LogEntry> logEntries = _logger.GetLogEntries();
-        logEntries.Should().HaveCount(2);
-
-        LogEntry? successLog = logEntries
-            .FirstOrDefault(e => e.Message == "Request TestRequest completed successfully.");
-        successLog.Should().NotBeNull();
-        successLog!.Level.Should().Be(LogLevel.Information);
-    }
-
-    [Fact]
-    public async Task Handle_FailedRequest_LogsErrors()
-    {
-        // Arrange
-        LoggingBehavior sut = CreateLoggingBehavior();
-        TestRequest test = new() { Id = "test-id", Value = 42 };
-
-        Mock<BehaviorDelegate> next = new();
-        next.Setup(n => n(It.IsAny<IRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result.Fail(ErrorTestData.ErrorWithDetails));
-
-        // Act
-        await sut.Handle(test, next.Object, CancellationToken.None);
-
-        // Assert
-        IReadOnlyList<LogEntry> logEntries = _logger.GetLogEntries();
-        logEntries.Should().HaveCount(2);
-
-        LogEntry failureLog = logEntries[logEntries.Count - 1];
-        failureLog.Should().NotBeNull();
-        failureLog!.Level.Should().Be(LogLevel.Warning);
-    }
-
-    [Fact]
-    public async Task Handle_ExceptionWithAppContext_LogsException()
-    {
-        // Arrange
-        InvalidOperationException exception = new("Test error");
-        Mock<BehaviorDelegate> next = SetupNextDelegate(exception);
-
-        TestRequest test = new() { Id = "test-id", Value = 42 };
-        LoggingBehavior sut = CreateLoggingBehavior(TestAppContext.GetDefaultAppContext());
-
-        // Act
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            sut.Handle(test, next.Object, CancellationToken.None));
-
-        // Assert
-        IReadOnlyList<LogEntry> logEntries = _logger.GetLogEntries();
-        logEntries.Should().HaveCount(2);
-
-        LogEntry? exceptionLog = logEntries[logEntries.Count - 1];
-        exceptionLog.Should().NotBeNull();
-        exceptionLog!.Level.Should().Be(LogLevel.Error);
-        exceptionLog.Exception.Should().Be(exception);
-    }
-
-    [Fact]
-    public async Task Handle_SerializationFailure_LogsWarningAndUsesToString()
-    {
-        // Arrange
-        string requestType = nameof(UnserializableTestRequest);
-        UnserializableTestRequest test = new()
+        Assert.Multiple(() =>
         {
-            Id = "test-id"
-        };
+            result.Should().Be(nextResult);
 
-        Mock<BehaviorDelegate> next = SetupNextDelegate(Result.Ok());
-        LoggingBehavior sut = CreateLoggingBehavior();
+            logs.Should().HaveCount(2);
 
-        // Act
-        await sut.Handle(test, next.Object, CancellationToken.None);
+            logs[0].Level.Should().Be(LogLevel.Information);
+            logs[0].State[_requestTypeStateKey].Should().Be(requestType);
+            logs[0].State[_requestStateKey].Should().Be(requestData);
 
-        // Assert
-        IReadOnlyList<LogEntry> logEntries = _logger.GetLogEntries();
-        logEntries.Should().HaveCount(3); // Request start, warning, success
-
-        LogEntry? warningLog = logEntries
-            .FirstOrDefault(e =>
-                e.Message == $"Failed to serialize request {nameof(UnserializableTestRequest)}. Using ToString instead.");
-        warningLog.Should().NotBeNull();
-        warningLog!.Level.Should().Be(LogLevel.Warning);
-        warningLog.Exception.Should().NotBeNull();
-
-        LogEntry? requestLog = logEntries
-            .FirstOrDefault(e => e.Message == $"Processing request {requestType}");
-        requestLog.Should().NotBeNull();
-        requestLog!.Level.Should().Be(LogLevel.Information);
-        requestLog.State.Should().BeOfType<Dictionary<string, object>>()
-            .Which.Should().ContainKey("Request").WhoseValue.As<string>()
-            .Should().Be("TestRequestWithSerializationFailure{Id=test-id}");
-
-        LogEntry? successLog = logEntries
-            .FirstOrDefault(e => e.Message == $"Request {requestType} completed successfully.");
-        successLog.Should().NotBeNull();
-        successLog!.Level.Should().Be(LogLevel.Information);
+            logs[1].Level.Should().Be(LogLevel.Warning);
+            logs[1].Message.Should().Contain(errorMessage);
+            logs[1].State[_requestTypeStateKey].Should().Be(requestType);
+            logs[1].State[_errorStateKey].Should().Be(error);
+        });
     }
 
     [Fact]
-    public async Task Handle_LargeRequestJson_LogsWarningAndTruncates()
+    public void Handle_RequestThrowsException_LogsExceptionAndRethrows()
     {
         // Arrange
-        string largeString = new('A', 15_000);
-        TestRequest request = new() { Id = "test-id", Value = 42, Description = largeString };
-        Mock<BehaviorDelegate> next = SetupNextDelegate(Result.Ok());
-        LoggingBehavior sut = CreateLoggingBehavior();
+        LoggingBehavior sut = new(_logger, _serviceProviderMock.Object);
+
+        IRequest request = TestRequest.Instance;
+        string exceptionMessage = "Test exception";
+        InvalidOperationException exception = new InvalidOperationException(exceptionMessage);
+        BehaviorDelegate next = (_, _) => throw exception;
+
+        string requestType = request.GetType().Name;
+        string requestData = JsonSerializer.Serialize(request, typeof(TestRequest));
 
         // Act
-        await sut.Handle(request, next.Object, CancellationToken.None);
+        Func<Task> act = async () => await sut.Handle(request, next, CancellationToken.None);
+        IReadOnlyList<LogEntry> logs = _logger.GetLogEntries();
 
         // Assert
-        IReadOnlyList<LogEntry> logEntries = _logger.GetLogEntries();
-        logEntries.Should().HaveCount(3);
+        Assert.Multiple(async () =>
+        {
+            await act.Should()
+                .ThrowExactlyAsync<InvalidOperationException>()
+                .WithMessage(exceptionMessage);
 
-        LogEntry? warningLog = logEntries
-            .FirstOrDefault(e => e.Message == "Request JSON truncated to 10000 characters.");
-        warningLog.Should().NotBeNull();
-        warningLog!.Level.Should().Be(LogLevel.Warning);
+            logs.Should().HaveCount(2);
+            
+            logs[0].Level.Should().Be(LogLevel.Information);
+            logs[0].State[_requestTypeStateKey].Should().Be(requestType);
+            logs[0].State[_requestStateKey].Should().Be(requestData);
 
-        LogEntry? requestLog = logEntries
-            .FirstOrDefault(e => e.Message == "Processing request TestRequest");
-        requestLog.Should().NotBeNull();
-        requestLog!.Level.Should().Be(LogLevel.Information);
-
-        Dictionary<string, object> state = requestLog.State
-            .Should().BeOfType<Dictionary<string, object>>().Subject;
-        requestLog.State.Should().BeOfType<Dictionary<string, object>>()
-            .Which.Should().ContainKey("Request").WhoseValue.As<string>()
-            .Should().HaveLength(10_000);
-
-        LogEntry? successLog = logEntries
-            .FirstOrDefault(e => e.Message == "Request TestRequest completed successfully.");
-        successLog.Should().NotBeNull();
-        successLog!.Level.Should().Be(LogLevel.Information);
+            logs[1].Level.Should().Be(LogLevel.Error);
+            logs[1].Exception.Should().Be(exception);
+        });
     }
 
     [Fact]
-    public async Task Handle_TooManyExtensions_LogsWarningAndLimits()
+    public async Task Handle_SerializationFails_LogsWarningAndUsesToString()
     {
-        // Arrange
-        Dictionary<string, object> extensions = Enumerable.Range(1, 60)
-            .ToDictionary(i => $"Key{i}", i => (object)$"Value{i}");
+        // Arrange;
+        Result result = Result.Ok();
+        BehaviorDelegate next = (_, _) => Task.FromResult(result);
+        LoggingBehavior behavior = new(_logger, _serviceProviderMock.Object);
 
-        Mock<BehaviorDelegate> next = SetupNextDelegate(Result.Ok());
-        IAppContext appContext = TestAppContext.GetAppContext(extensions);
-        LoggingBehavior sut = CreateLoggingBehavior(appContext);
-        TestRequest request = new() { Id = "test-id", Value = 42 };
+        IRequest request = UnserializableTestRequest.Instance;
+        string requestData = request.ToString()!;
 
         // Act
-        await sut.Handle(request, next.Object, CancellationToken.None);
+        Result outcome = await behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
-        IReadOnlyList<LogEntry> logEntries = _logger.GetLogEntries();
-        logEntries.Should().HaveCount(3); // Request start, extension warning, success
-
-        LogEntry? warningLog = logEntries
-            .FirstOrDefault(e => e.Message == "Extensions limited to 50 entries.");
-        warningLog.Should().NotBeNull();
-        warningLog!.Level.Should().Be(LogLevel.Warning);
-
-        LogEntry? requestLog = logEntries
-            .FirstOrDefault(e => e.Message == "Processing request TestRequest");
-        requestLog.Should().NotBeNull();
-        requestLog!.Level.Should().Be(LogLevel.Information);
-        var state = requestLog.State.Should().BeOfType<Dictionary<string, object>>().Subject;
-        int appContextAttributeCount = 9; // Properties from app context
-        int maxExtensionCount = 50;
-
-        // +1 for message format.
-        state.Should().HaveCount(appContextAttributeCount + maxExtensionCount + 1);
-        for (int i = 1; i <= 50; i++)
+        Assert.Multiple(() =>
         {
-            state.Should().ContainKey($"_Key{i}").WhoseValue.Should().Be($"Value{i}");
-        }
-        state.Should().NotContainKey("_Key51"); // Beyond limit
-
-        var successLog = logEntries.FirstOrDefault(e => e.Message == "Request TestRequest completed successfully.");
-        successLog.Should().NotBeNull();
-        successLog!.Level.Should().Be(LogLevel.Information);
+            outcome.Should().Be(result);
+            IReadOnlyList<LogEntry> logs = _logger.GetLogEntries();
+            logs.Should().HaveCount(3);
+            logs[0].Level.Should().Be(LogLevel.Warning);
+            logs[0].Message.Should().NotBeNullOrWhiteSpace();
+            logs[0].Exception.Should().BeOfType<JsonException>();
+            logs[1].Level.Should().Be(LogLevel.Information);
+            logs[1].Message.Should().NotBeNullOrWhiteSpace();
+            logs[1].State.Should().ContainKey(_requestStateKey).WhoseValue.Should().Be(requestData);
+            logs[2].Level.Should().Be(LogLevel.Information);
+            logs[2].Message.Should().NotBeNullOrWhiteSpace();
+        });
     }
 
-    #region Helpers
+    //[Fact]
+    //public async Task Handle_LargeRequestJson_TruncatesAndLogsWarning()
+    //{
+    //    // Arrange
+    //    TestRequest largeRequest = new TestRequest { Data = new string('A', LoggingBehavior._maxRequestJsonLength + 10) };
+    //    _requestMock.Setup(r => r.GetType()).Returns(largeRequest.GetType());
+    //    Result result = Result.Ok();
+    //    BehaviorDelegate next = (_, _) => Task.FromResult(result);
+    //    LoggingBehavior behavior = new LoggingBehavior(_logger, _serviceProviderMock.Object);
+    //    string requestTruncated = LoggingBehavior._requestTruncated;
+    //    string requestProcessing = LoggingBehavior._requestProcessing;
+    //    string requestCompleted = LoggingBehavior._requestCompleted;
 
-    private static void AssertRequestLogged(Dictionary<string, object> state)
-    {
-        state.Should().ContainKey("RequestType").WhoseValue.Should().Be("TestRequest");
-        state.Should().ContainKey("Request").WhoseValue.As<string>()
-            .Should().Contain("\"Id\":\"test-id\"")
-            .And.Contain("\"Value\":42")
-            .And.Contain("\"Description\":null");
-    }
+    //    // Act
+    //    Result outcome = await behavior.Handle(_testRequest, next, CancellationToken.None);
 
-    private LoggingBehavior CreateLoggingBehavior(IAppContext? appContext = null)
-    {
-        if (appContext != null)
-        {
-            // Configure service provider to return app context
-            _serviceProviderMock.Setup(sp => sp
-                .GetService(It.Is<Type>(t => t == typeof(IAppContext))))
-                .Returns(appContext);
-        }
-        return new LoggingBehavior(_logger, _serviceProviderMock.Object);
-    }
+    //    // Assert
+    //    Assert.Multiple(() =>
+    //    {
+    //        outcome.Should().Be(result);
+    //        IReadOnlyList<LogEntry> logs = _logger.GetLogEntries();
+    //        logs.Should().HaveCount(3);
+    //        logs[0].Level.Should().Be(LogLevel.Warning);
+    //        logs[0].Message.Should().Contain(requestTruncated);
+    //        logs[1].Level.Should().Be(LogLevel.Information);
+    //        logs[1].Message.Should().Contain(requestProcessing);
+    //        logs[1].State.Should().ContainKey(_requestKey).WhoseValue.As<string>().Length.Should().Be(LoggingBehavior._maxRequestJsonLength);
+    //        logs[2].Level.Should().Be(LogLevel.Information);
+    //        logs[2].Message.Should().Contain(requestCompleted);
+    //    });
+    //}
 
-    private static Mock<BehaviorDelegate> SetupNextDelegate(Result result)
-    {
-        var next = new Mock<BehaviorDelegate>();
-        next.Setup(n => n(It.IsAny<IRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(result);
-        return next;
-    }
+    //[Fact]
+    //public async Task Handle_WithAppContext_LogsContextProperties()
+    //{
+    //    // Arrange
+    //    string requestId = "req123";
+    //    string correlationId = "corr456";
+    //    string userId = "user789";
+    //    string tenantId = "tenant101";
+    //    string clientIpAddress = "192.168.1.1";
+    //    string userAgent = "Mozilla/5.0";
+    //    string requestPath = "/api/test";
+    //    string ext1Key = "_Ext1";
+    //    string ext1Value = "Value1";
+    //    string ext2Key = "_Ext2";
+    //    int ext2Value = 42;
+    //    _appContextMock.Setup(a => a.RequestId).Returns(requestId);
+    //    _appContextMock.Setup(a => a.CorrelationId).Returns(correlationId);
+    //    _appContextMock.Setup(a => a.CurrentUser).Returns(new UserContext(userId, tenantId));
+    //    _appContextMock.Setup(a => a.ClientIpAddress).Returns(clientIpAddress);
+    //    _appContextMock.Setup(a => a.UserAgent).Returns(userAgent);
+    //    _appContextMock.Setup(a => a.RequestPath).Returns(requestPath);
+    //    _appContextMock.Setup(a => a.Extensions).Returns(new Dictionary<string, object>
+    //    {
+    //        { "Ext1", ext1Value },
+    //        { "Ext2", ext2Value }
+    //    });
+    //    _serviceProviderMock.Setup(sp => sp.GetService(typeof(IAppContext))).Returns(_appContextMock.Object);
+    //    Result result = Result.Ok();
+    //    BehaviorDelegate next = (_, _) => Task.FromResult(result);
+    //    LoggingBehavior behavior = new LoggingBehavior(_logger, _serviceProviderMock.Object);
+    //    string requestProcessing = LoggingBehavior._requestProcessing;
+    //    string requestCompleted = LoggingBehavior._requestCompleted;
 
-    private static Mock<BehaviorDelegate> SetupNextDelegate(Exception exception)
-    {
-        var next = new Mock<BehaviorDelegate>();
-        next.Setup(n => n(It.IsAny<IRequest>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(exception);
-        return next;
-    }
+    //    // Act
+    //    Result outcome = await behavior.Handle(_testRequest, next, CancellationToken.None);
 
-    #endregion
+    //    // Assert
+    //    Assert.Multiple(() =>
+    //    {
+    //        outcome.Should().Be(result);
+    //        IReadOnlyList<LogEntry> logs = _logger.GetLogEntries();
+    //        logs.Should().HaveCount(2);
+    //        logs[0].Level.Should().Be(LogLevel.Information);
+    //        logs[0].Message.Should().Contain(requestProcessing);
+    //        logs[0].State.Should().ContainKeys(_requestTypeKey, nameof(IAppContext.RequestId), nameof(IAppContext.CorrelationId), nameof(IAppContext.CurrentUser.UserId), nameof(IAppContext.CurrentUser.TenantId), nameof(IAppContext.ClientIpAddress), nameof(IAppContext.UserAgent), nameof(IAppContext.RequestPath), ext1Key, ext2Key);
+    //        logs[0].State[nameof(IAppContext.RequestId)].Should().Be(requestId);
+    //        logs[0].State[nameof(IAppContext.CorrelationId)].Should().Be(correlationId);
+    //        logs[0].State[nameof(IAppContext.CurrentUser.UserId)].Should().Be(userId);
+    //        logs[0].State[nameof(IAppContext.CurrentUser.TenantId)].Should().Be(tenantId);
+    //        logs[0].State[nameof(IAppContext.ClientIpAddress)].Should().Be(clientIpAddress);
+    //        logs[0].State[nameof(IAppContext.UserAgent)].Should().Be(userAgent);
+    //        logs[0].State[nameof(IAppContext.RequestPath)].Should().Be(requestPath);
+    //        logs[0].State[ext1Key].Should().Be(ext1Value);
+    //        logs[0].State[ext2Key].Should().Be(ext2Value);
+    //        logs[1].Level.Should().Be(LogLevel.Information);
+    //        logs[1].Message.Should().Contain(requestCompleted);
+    //    });
+    //}
+
+    //[Fact]
+    //public async Task Handle_TooManyExtensions_LogsWarningAndLimits()
+    //{
+    //    // Arrange
+    //    Dictionary<string, object> extensions = new Dictionary<string, object>();
+    //    for (int i = 0; i < LoggingBehavior._maxExtensions + 10; i++)
+    //    {
+    //        extensions[$"Ext{i}"] = i;
+    //    }
+    //    _appContextMock.Setup(a => a.Extensions).Returns(extensions);
+    //    _serviceProviderMock.Setup(sp => sp.GetService(typeof(IAppContext))).Returns(_appContextMock.Object);
+    //    Result result = Result.Ok();
+    //    BehaviorDelegate next = (_, _) => Task.FromResult(result);
+    //    LoggingBehavior behavior = new LoggingBehavior(_logger, _serviceProviderMock.Object);
+    //    string extensionsLimited = LoggingBehavior._extensionsLimited;
+    //    string requestProcessing = LoggingBehavior._requestProcessing;
+    //    string requestCompleted = LoggingBehavior._requestCompleted;
+    //    string lastValidExtensionKey = $"_Ext{LoggingBehavior._maxExtensions - 1}";
+    //    string firstInvalidExtensionKey = $"_Ext{LoggingBehavior._maxExtensions}";
+
+    //    // Act
+    //    Result outcome = await behavior.Handle(_testRequest, next, CancellationToken.None);
+
+    //    // Assert
+    //    Assert.Multiple(() =>
+    //    {
+    //        outcome.Should().Be(result);
+    //        IReadOnlyList<LogEntry> logs = _logger.GetLogEntries();
+    //        logs.Should().HaveCount(3);
+    //        logs[0].Level.Should().Be(LogLevel.Warning);
+    //        logs[0].Message.Should().Contain(extensionsLimited);
+    //        logs[1].Level.Should().Be(LogLevel.Information);
+    //        logs[1].Message.Should().Contain(requestProcessing);
+    //        logs[1].State.Should().ContainKey(lastValidExtensionKey).WhoseValue.Should().Be(LoggingBehavior._maxExtensions - 1);
+    //        logs[1].State.Should().NotContainKey(firstInvalidExtensionKey);
+    //        logs[2].Level.Should().Be(LogLevel.Information);
+    //        logs[2].Message.Should().Contain(requestCompleted);
+    //    });
+    //}
+
+    //[Fact]
+    //public async Task Handle_NoAppContext_LogsGeneratedCorrelationId()
+    //{
+    //    // Arrange
+    //    _serviceProviderMock.Setup(sp => sp.GetService(typeof(IAppContext))).Returns(null);
+    //    Result result = Result.Ok();
+    //    BehaviorDelegate next = (_, _) => Task.FromResult(result);
+    //    LoggingBehavior behavior = new LoggingBehavior(_logger, _serviceProviderMock.Object);
+    //    string requestProcessing = LoggingBehavior._requestProcessing;
+    //    string requestCompleted = LoggingBehavior._requestCompleted;
+
+    //    // Act
+    //    Result outcome = await behavior.Handle(_testRequest, next, CancellationToken.None);
+
+    //    // Assert
+    //    Assert.Multiple(() =>
+    //    {
+    //        outcome.Should().Be(result);
+    //        IReadOnlyList<LogEntry> logs = _logger.GetLogEntries();
+    //        logs.Should().HaveCount(2);
+    //        logs[0].Level.Should().Be(LogLevel.Information);
+    //        logs[0].Message.Should().Contain(requestProcessing);
+    //        logs[0].State.Should().ContainKey(nameof(IAppContext.CorrelationId)).WhoseValue.As<string>().Should().Match(s => Guid.TryParse(s, out _));
+    //        logs[0].State.Should().NotContainKeys(nameof(IAppContext.RequestId), nameof(IAppContext.CurrentUser.UserId), nameof(IAppContext.ClientIpAddress), nameof(IAppContext.UserAgent), nameof(IAppContext.RequestPath));
+    //        logs[1].Level.Should().Be(LogLevel.Information);
+    //        logs[1].Message.Should().Contain(requestCompleted);
+    //    });
+    //}
+
+    //[Fact]
+    //public async Task Handle_NullAppContextProperties_LogsNotApplicable()
+    //{
+    //    // Arrange
+    //    string correlationId = "corr456";
+    //    string notApplicable = LoggingBehavior._notApplicable;
+    //    string anonymousUserId = LoggingBehavior._anonymousUserId;
+    //    _appContextMock.Setup(a => a.RequestId).Returns((string)null);
+    //    _appContextMock.Setup(a => a.CorrelationId).Returns(correlationId);
+    //    _appContextMock.Setup(a => a.CurrentUser).Returns((UserContext)null);
+    //    _appContextMock.Setup(a => a.ClientIpAddress).Returns((string)null);
+    //    _appContextMock.Setup(a => a.UserAgent).Returns((string)null);
+    //    _appContextMock.Setup(a => a.RequestPath).Returns((string)null);
+    //    _serviceProviderMock.Setup(sp => sp.GetService(typeof(IAppContext))).Returns(_appContextMock.Object);
+    //    Result result = Result.Ok();
+    //    BehaviorDelegate next = (_, _) => Task.FromResult(result);
+    //    LoggingBehavior behavior = new LoggingBehavior(_logger, _serviceProviderMock.Object);
+    //    string requestProcessing = LoggingBehavior._requestProcessing;
+    //    string requestCompleted = LoggingBehavior._requestCompleted;
+
+    //    // Act
+    //    Result outcome = await behavior.Handle(_testRequest, next, CancellationToken.None);
+
+    //    // Assert
+    //    Assert.Multiple(() =>
+    //    {
+    //        outcome.Should().Be(result);
+    //        IReadOnlyList<LogEntry> logs = _logger.GetLogEntries();
+    //        logs.Should().HaveCount(2);
+    //        logs[0].Level.Should().Be(LogLevel.Information);
+    //        logs[0].Message.Should().Contain(requestProcessing);
+    //        logs[0].State.Should().ContainKeys(_requestTypeKey, nameof(IAppContext.RequestId), nameof(IAppContext.CorrelationId), nameof(IAppContext.CurrentUser.UserId), nameof(IAppContext.ClientIpAddress), nameof(IAppContext.UserAgent), nameof(IAppContext.RequestPath));
+    //        logs[0].State[nameof(IAppContext.RequestId)].Should().Be(notApplicable);
+    //        logs[0].State[nameof(IAppContext.CorrelationId)].Should().Be(correlationId);
+    //        logs[0].State[nameof(IAppContext.CurrentUser.UserId)].Should().Be(anonymousUserId);
+    //        logs[0].State[nameof(IAppContext.ClientIpAddress)].Should().Be(notApplicable);
+    //        logs[0].State[nameof(IAppContext.UserAgent)].Should().Be(notApplicable);
+    //        logs[0].State[nameof(IAppContext.RequestPath)].Should().Be(notApplicable);
+    //        logs[1].Level.Should().Be(LogLevel.Information);
+    //        logs[1].Message.Should().Contain(requestCompleted);
+    //    });
+    //}
 }

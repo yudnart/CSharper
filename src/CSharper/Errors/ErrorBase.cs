@@ -1,4 +1,4 @@
-﻿using CSharper.Utilities;
+﻿using CSharper.Extensions;
 using System;
 using System.Text;
 

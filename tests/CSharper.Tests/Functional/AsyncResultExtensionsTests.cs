@@ -9,6 +9,8 @@ using TestUtility = CSharper.Tests.Results.ResultTestUtility;
 
 namespace CSharper.Tests.Functional;
 
+[Trait("Category", "Unit")]
+[Trait("TestOf", nameof(AsyncResultExtensions))]
 public sealed class AsyncResultExtensionsTests
 {
     [Theory]

@@ -1,7 +1,7 @@
 ﻿using CSharper.Errors;
+using CSharper.Extensions;
 using CSharper.Results;
 using CSharper.Results.Validation;
-using CSharper.Utilities;
 using System;
 using System.Diagnostics;
 

@@ -1,6 +1,6 @@
 ﻿using CSharper.Errors;
+using CSharper.Extensions;
 using CSharper.Results.Abstractions;
-using CSharper.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;

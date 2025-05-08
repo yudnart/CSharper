@@ -5,7 +5,7 @@ using FluentAssertions;
 using TestData = CSharper.Tests.Results.ResultTestData;
 using TestUtility = CSharper.Tests.Results.ResultTestUtility;
 
-namespace BECU.Libraries.Results.Tests;
+namespace CSharper.Tests.Results;
 
 [Trait("Category", "Unit")]
 [Trait("TestOf", "ResultT")]
@@ -56,7 +56,7 @@ public sealed class ResultTTests
         string message, string? code = null)
     {
         // Act
-        Result result = Result.Fail(message, code);
+        Result<string> result = Result.Fail<string>(message, code);
 
         // Assert
         Assert.Multiple(() =>
@@ -76,7 +76,7 @@ public sealed class ResultTTests
         string? message)
     {
         // Arrange
-        Action act = () => Result.Fail(message!);
+        Action act = () => _ = Result.Fail<string>(message!);
 
         // Act & Assert
         act.Should().ThrowExactly<ArgumentException>()

@@ -5,8 +5,10 @@ using FluentAssertions;
 using TestData = CSharper.Tests.Functional.FunctionalResultTestData;
 using TestUtility = CSharper.Tests.Results.ResultTestUtility;
 
-namespace BECU.Libraries.Results.Tests.Functional;
+namespace CSharper.Tests.Functional;
 
+[Trait("Category", "Unit")]
+[Trait("TestOf", nameof(ResultExtensions))]
 public sealed class ResultExtensionsTests
 {
     [Theory]

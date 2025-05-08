@@ -28,9 +28,8 @@ public static class TaskExtensions
         {
             if (_task.IsFaulted)
             {
-                AggregateException ex = _task.Exception
-                    ?? throw new InvalidOperationException("Result task threw an unspecified exception.");
-                throw ex.InnerExceptions.Count > 0 ? ex.InnerExceptions[0] : ex;
+                AggregateException ex = _task.Exception;
+                throw ex.InnerExceptions.Count == 1 ? ex.InnerExceptions[0] : ex;
             }
             return orElse(_task);
         }

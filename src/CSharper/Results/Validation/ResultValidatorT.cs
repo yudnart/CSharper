@@ -1,5 +1,4 @@
-﻿using BECU.Libraries.Results.Validation;
-using CSharper.Utilities;
+﻿using CSharper.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -108,7 +107,7 @@ public sealed class ResultValidator<T>
         }
 
         ValidationErrorDetail[] errorDetails = errors
-            .Select(e => new ValidationErrorDetail(e.Message, e.Code, e.Path))
+            .Select(e => new ValidationErrorDetail(e.ErrorMessage, e.ErrorCode, e.Path))
             .ToArray();
 
         return Result.Fail<T>(new ValidationError(message, code, errorDetails));

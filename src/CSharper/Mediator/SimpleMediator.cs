@@ -1,6 +1,6 @@
-﻿using CSharper.Functional;
+﻿using CSharper.Extensions;
+using CSharper.Functional;
 using CSharper.Results;
-using CSharper.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Concurrent;

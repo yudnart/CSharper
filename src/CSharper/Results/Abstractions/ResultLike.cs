@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CSharper.Results.Abstractions;
 
@@ -41,8 +42,18 @@ public sealed class ResultLike
         {
             ResultBase result => result,
             Func<ResultBase> factory => factory(),
-            _ => throw new NotSupportedException($"Invalid result type. (${_result.GetType().FullName})")
+            _ => ThrowInvalidResultType(_result)
         };
+    }
+
+    [ExcludeFromCodeCoverage
+#if NET6_0_OR_GREATER
+        (Justification = "Unreachable defensive code.")
+#endif
+    ]
+    private static ResultBase ThrowInvalidResultType(object result)
+    {
+        throw new NotSupportedException($"Invalid result type. (${result.GetType().FullName})");
     }
 
     /// <summary>

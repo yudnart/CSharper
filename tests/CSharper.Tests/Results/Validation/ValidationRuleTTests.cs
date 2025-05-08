@@ -4,19 +4,19 @@ using FluentAssertions;
 namespace CSharper.Tests.Results.Validation;
 
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(ValidationRule))]
-public sealed class ValidationRuleTests
+[Trait("TestOf", "ValidationRuleT")]
+public sealed class ValidationRuleTTests
 {
     [Fact]
     public void Ctor_ValidParams_Succeeds()
     {
         // Arrange
-        bool predicate() => true;
-        Task<bool> asyncPredicate() => Task.FromResult(predicate());
+        bool predicate(int _) => true;
+        Task<bool> asyncPredicate(int _) => Task.FromResult(predicate(_));
         string errorMessage = "Test error";
 
         // Act
-        ValidationRule[] results = [
+        ValidationRule<int>[] results = [
             new(predicate, errorMessage),
             new(asyncPredicate, errorMessage)
         ];
@@ -24,7 +24,7 @@ public sealed class ValidationRuleTests
         // Assert
         Assert.Multiple(() =>
         {
-            foreach (ValidationRule result in results)
+            foreach (ValidationRule<int> result in results)
             {
                 result.Should().NotBeNull();
                 result.Predicate.Should().NotBeNull();
@@ -38,12 +38,12 @@ public sealed class ValidationRuleTests
     {
         // Arrange
         string errorMessage = "Test error";
-        Func<bool> nullPredicate = null!;
-        Func<Task<bool>> nullAsyncPredicate = null!;
+        Func<int, bool> nullPredicate = null!;
+        Func<int, Task<bool>> nullAsyncPredicate = null!;
 
         Action[] acts = [
-            () => _ = new ValidationRule(nullPredicate, errorMessage),
-            () => _ = new ValidationRule(nullAsyncPredicate, errorMessage)
+            () => _ = new ValidationRule<int>(nullPredicate, errorMessage),
+            () => _ = new ValidationRule<int>(nullAsyncPredicate, errorMessage)
         ];
 
         // Act & Assert
@@ -58,16 +58,19 @@ public sealed class ValidationRuleTests
     }
 
     [Theory]
-    [MemberData(nameof(InvalidMessages))]
+    [MemberData(
+        nameof(ValidationRuleTests.InvalidMessages),
+        MemberType = typeof(ValidationRuleTests)
+    )]
     public void Ctor_InvalidMessage_ThrowsArgumentException(string errorMessage)
     {
         // Arrange
-        bool predicate() => true;
-        Task<bool> asyncPredicate() => Task.FromResult(predicate());
+        bool predicate(int _) => true;
+        Task<bool> asyncPredicate(int _) => Task.FromResult(predicate(_));
 
         Action[] acts = [
-            () => _ = new ValidationRule(predicate, errorMessage),
-            () => _ = new ValidationRule(asyncPredicate, errorMessage)
+            () => _ = new ValidationRule<int>(predicate, errorMessage),
+            () => _ = new ValidationRule<int>(asyncPredicate, errorMessage)
         ];
 
         // Act & Assert
@@ -79,15 +82,5 @@ public sealed class ValidationRuleTests
                     .And.ParamName.Should().NotBeNullOrWhiteSpace();
             }
         });
-    }
-
-    public static TheoryData<string> InvalidMessages()
-    {
-        return new TheoryData<string>
-        {
-            { null! },
-            { "" },
-            { " " }
-        };
     }
 }

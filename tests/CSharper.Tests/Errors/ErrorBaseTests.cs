@@ -47,14 +47,17 @@ public sealed class ErrorBaseTests
     public void Equals_MessageAndCodeAreEqual_ReturnsTrue(
         string message, string? code)
     {
-        // Act
+        // Arrange
         TestError sut = new(message, code);
         TestError error = new(message, code);
+
+        // Act
+        bool result = sut.Equals(error);
 
         // Assert
         Assert.Multiple(() =>
         {
-            sut.Should().BeEquivalentTo(error);
+            result.Should().BeTrue();
             sut.GetHashCode().Should().Be(error.GetHashCode());
         });
     }
@@ -67,7 +70,7 @@ public sealed class ErrorBaseTests
     public void Equals_MessageAndCodeAreNotEqual_ReturnsFalse(
         string message, string? code)
     {
-        // Act
+        // Arrange
         TestError sut = new(message, code);
         TestError[] errors = [
             new($"{message}Test", code),
@@ -75,13 +78,16 @@ public sealed class ErrorBaseTests
             new($"{message}Test", $"{code}Test"),
         ];
 
+        // Act
+        bool[] results = [.. errors.Select(e => sut.Equals(e))];
+
         // Assert
         Assert.Multiple(() =>
         {
-            foreach (TestError error in errors)
+            foreach (bool result in results)
             {
-                sut.Should().NotBeEquivalentTo(error);
-                sut.GetHashCode().Should().NotBe(error.GetHashCode());
+                result.Should().BeFalse();
+                sut.GetHashCode().Should().NotBe(result.GetHashCode());
             }
         });
     }

@@ -8,6 +8,8 @@ using TestData = CSharper.Tests.Functional.Validation.ResultValidatorTestData;
 
 namespace CSharper.Tests.Functional.Validation;
 
+[Trait("Category", "Unit")]
+[Trait("TestOf", nameof(ResultValidatorTExtensions))]
 public sealed class ResultValidatorTExtensionsTests
 {
     [Theory]

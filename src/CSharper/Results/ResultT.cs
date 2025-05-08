@@ -5,23 +5,23 @@ using System;
 namespace CSharper.Results;
 
 /// <summary>
-/// Represents a result of an operation with a returned <typeparamref name="T"/>,
+/// Represents a result of an operation with a returned <typeparamref name="TValue"/>,
 /// indicating success with a value or failure with an error.
 /// </summary>
-/// <typeparam name="T">The type of the value returned by a successful result.</typeparam>
+/// <typeparam name="TValue">The type of the value returned by a successful result.</typeparam>
 /// <remarks>
 /// Use <see cref="Result"/> for operations without a return value.
 /// </remarks>
-public sealed class Result<T> : ResultBase
+public sealed class Result<TValue> : ResultBase
 {
-    private readonly T _value;
+    private readonly TValue _value;
 
     /// <summary>
     /// Gets the value of a successful result.
     /// </summary>
     /// <value>The value of the result if <see cref="ResultBase.IsSuccess"/> is <see langword="true"/>.</value>
     /// <exception cref="InvalidOperationException">Thrown if accessed on a failed result.</exception>
-    public T Value => IsSuccess
+    public TValue Value => IsSuccess
         ? _value
         : throw new InvalidOperationException("Cannot access the value of a failed result.");
 
@@ -30,9 +30,9 @@ public sealed class Result<T> : ResultBase
     /// </summary>
     /// <param name="value">The value of the successful result.</param>
     /// <remarks>
-    /// This constructor is private to encourage use of the <see cref="Ok(T)"/> factory method.
+    /// This constructor is private to encourage use of the <see cref="Ok(TValue)"/> factory method.
     /// </remarks>
-    private Result(T value) : base()
+    private Result(TValue value) : base()
     {
         _value = value;
     }
@@ -68,7 +68,7 @@ public sealed class Result<T> : ResultBase
     /// <remarks>
     /// This method is internal to support factory methods in <see cref="Result"/> while restricting direct instantiation.
     /// </remarks>
-    internal static Result<T> Ok(T value) => new(value);
+    internal static Result<TValue> Ok(TValue value) => new(value);
 
     /// <summary>
     /// Creates a failed <see cref="Result{TValue}"/> instance with the specified errors.
@@ -80,5 +80,5 @@ public sealed class Result<T> : ResultBase
     /// <remarks>
     /// This method is internal to support factory methods in <see cref="Result"/> while restricting direct instantiation.
     /// </remarks>
-    internal static Result<T> Fail(Error error) => new(error);
+    internal static Result<TValue> Fail(Error error) => new(error);
 }

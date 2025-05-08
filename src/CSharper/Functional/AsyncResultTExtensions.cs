@@ -3,7 +3,6 @@ using CSharper.Extensions;
 using CSharper.Functional;
 using CSharper.Results;
 using CSharper.Results.Validation;
-using CSharper.Utilities;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
