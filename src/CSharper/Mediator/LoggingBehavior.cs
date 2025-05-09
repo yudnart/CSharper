@@ -135,8 +135,9 @@ internal sealed class LoggingBehavior : IBehavior
             requestJson = JsonSerializer.Serialize(request, request.GetType(), _serializerOptions);
             if (requestJson.Length > _maxRequestJsonLength)
             {
-#if NET6_0_OR_GREATER
-                requestJson = requestJson[.._maxRequestJsonLength];
+                requestJson =
+#if NET8_0_OR_GREATER
+                requestJson[.._maxRequestJsonLength];
 #else
                 requestJson = requestJson.Substring(0, _maxRequestJsonLength);
 #endif

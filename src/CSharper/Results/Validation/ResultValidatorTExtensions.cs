@@ -17,19 +17,20 @@ public static class ResultValidatorTExtensions
     /// <see cref="ResultValidator{T}"/>.
     /// </summary>
     /// <typeparam name="T">The type of the validator result context.</typeparam>
-    /// <param name="validator">The <see cref="ResultValidator{T}"/> containing the validation chain.</param>
+    /// <param name="asyncValidator">The <see cref="ResultValidator{T}"/> containing the validation chain.</param>
     /// <param name="predicate">The synchronous predicate to evaluate the result's value.</param>
     /// <param name="error">The <see cref="Error"/> to include if the predicate fails.</param>
     /// <returns>The updated <see cref="ResultValidator{T}"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if validator or predicate is null</exception>
     /// <exception cref="ArgumentException">Thrown if message is null or whitespace.</exception>
-    public static ResultValidator<T> And<T>(this ResultValidator<T> validator,
+    public static Task<ResultValidator<T>> And<T>(this Task<ResultValidator<T>> asyncValidator,
         Func<T, bool> predicate,
         string message,
         string? code = null,
         string? path = null)
     {
-        return validator.And(predicate, message, code, path);
+        return asyncValidator
+            .Then(v => v.And(predicate, message, code, path));
     }
 
     /// <summary>
@@ -43,17 +44,17 @@ public static class ResultValidatorTExtensions
     /// <returns>A Task containing the updated <see cref="ResultValidator{T}"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if validator or predicate is null</exception>
     /// <exception cref="ArgumentException">Thrown if message is null or whitespace.</exception>
-    public static async Task<ResultValidator<T>> And<T>(
+    public static Task<ResultValidator<T>> And<T>(
         this Task<ResultValidator<T>> asyncValidator,
-        Func<T, bool> predicate,
+        Func<T, Task<bool>> predicate,
         string message,
         string? code = null,
         string? path = null)
     {
         asyncValidator.ThrowIfNull(nameof(asyncValidator));
         predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNullOrWhitespace(nameof(message));
-        return (await asyncValidator).And(predicate, message, code, path);
+        return asyncValidator
+            .Then(v => v.And(predicate, message, code, path));
     }
 
     #endregion
@@ -90,7 +91,7 @@ public static class ResultValidatorTExtensions
     /// <param name="message">The error to use if the predicate fails.</param>
     /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidator{T}"/> for further processing.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="message"/> is null.</exception>
-    public static Task<ResultValidator<T>> Ensure<T>(
+    public static ResultValidator<T> Ensure<T>(
         this Result<T> result,
         Func<T, Task<bool>> predicate,
         string message,
@@ -99,17 +100,8 @@ public static class ResultValidatorTExtensions
     {
         predicate.ThrowIfNull(nameof(predicate));
         message.ThrowIfNullOrWhitespace(nameof(message));
-
-        if (result.IsSuccess)
-        {
-            return predicate(result.Value).ContinueWith(task => task
-                .HandleFault()
-                .Or(task => result.Ensure(_ => task.Result, message, code, path)));
-        }
-
-        // Replace predicate with noop since failed result will
-        // bypass predicate evaluation.
-        return Task.FromResult(result.Ensure(Noop, message, code, path));
+        return new ResultValidator<T>(result)
+            .And(predicate, message, code, path);
     }
 
     /// <summary>
@@ -130,9 +122,8 @@ public static class ResultValidatorTExtensions
     {
         predicate.ThrowIfNull(nameof(predicate));
         message.ThrowIfNullOrWhitespace(nameof(message));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault()
-            .Or(task => task.Result.Ensure(predicate, message, code, path)));
+        return asyncResult
+            .Then(r => r.Ensure(predicate, message, code, path));
     }
 
     /// <summary>
@@ -153,10 +144,8 @@ public static class ResultValidatorTExtensions
     {
         predicate.ThrowIfNull(nameof(predicate));
         message.ThrowIfNull(nameof(message));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault()
-            .Or(task => task.Result.Ensure(predicate, message, code, path)))
-            .Unwrap();
+        return asyncResult
+            .Then(r => r.Ensure(predicate, message, code, path));
     }
 
     #endregion
@@ -242,7 +231,7 @@ public static class ResultValidatorTExtensions
     {
         asyncValidator.ThrowIfNull(nameof(asyncValidator));
         next.ThrowIfNull(nameof(next));
-        return asyncValidator.ContinueWith(task => task.Result.Bind(next));
+        return asyncValidator.Then(v => v.Bind(next));
     }
 
     /// <summary>
@@ -260,7 +249,7 @@ public static class ResultValidatorTExtensions
     {
         asyncValidator.ThrowIfNull(nameof(asyncValidator));
         next.ThrowIfNull(nameof(next));
-        return asyncValidator.ContinueWith(task => task.Result.Bind(next));
+        return asyncValidator.Then(v => v.Bind(next));
     }
 
     /// <summary>
@@ -272,13 +261,14 @@ public static class ResultValidatorTExtensions
     /// <param name="next">The asynchronous function to execute if validation succeeds.</param>
     /// <returns>A Task containing a <see cref="Result"/> representing the asynchronous outcome.</returns>
     /// <exception cref="ArgumentNullException">Thrown if asyncBuilder or next is null.</exception>
-    public static async Task<Result> Bind<T>(
+    public static Task<Result> Bind<T>(
         this Task<ResultValidator<T>> asyncValidator, Func<T, Task<Result>> next)
     {
         asyncValidator.ThrowIfNull(nameof(asyncValidator));
         next.ThrowIfNull(nameof(next));
-        ResultValidator<T> validator = await asyncValidator;
-        return await validator.Bind(next);
+        return asyncValidator
+            .Then(v => v.Bind(next))
+            .Unwrap();
     }
 
     /// <summary>
@@ -291,13 +281,14 @@ public static class ResultValidatorTExtensions
     /// <param name="next">The asynchronous function to execute if validation succeeds.</param>
     /// <returns>A Task containing a <see cref="Result{U}"/> representing the asynchronous outcome.</returns>
     /// <exception cref="ArgumentNullException">Thrown if asyncBuilder or next is null.</exception>
-    public static async Task<Result<U>> Bind<T, U>(
+    public static Task<Result<U>> Bind<T, U>(
         this Task<ResultValidator<T>> asyncValidator, Func<T, Task<Result<U>>> next)
     {
         asyncValidator.ThrowIfNull(nameof(asyncValidator));
         next.ThrowIfNull(nameof(next));
-        ResultValidator<T> validator = await asyncValidator;
-        return await validator.Bind(next);
+        return asyncValidator
+            .Then(v => v.Bind(next))
+            .Unwrap();
     }
 
     #endregion

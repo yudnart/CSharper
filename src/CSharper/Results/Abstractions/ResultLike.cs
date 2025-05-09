@@ -47,7 +47,7 @@ public sealed class ResultLike
     }
 
     [ExcludeFromCodeCoverage
-#if NET6_0_OR_GREATER
+#if NET8_0_OR_GREATER
         (Justification = "Unreachable defensive code.")
 #endif
     ]

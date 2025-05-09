@@ -7,114 +7,178 @@ namespace CSharper.Tests.Extensions;
 [Trait("TestOf", nameof(CSharper.Extensions.TaskExtensions))]
 public sealed class TaskExtensionsTests
 {
+    private readonly int _value = 42;
+    private readonly string _errorMessage = "Test error";
+    private readonly string _secondaryErrorMessage = "Secondary error";
+    private readonly string _applicationExceptionMessage = "Task failed without providing an exception.";
+
     [Fact]
-    public async Task HandleFault_TaskIsFaulted_ThrowsException()
+    public async Task Then_TaskSuccessful_ReturnsNext()
     {
         // Arrange
-        string errorMessage = "Not implemented.";
-        Task<int> sut()
+        Task sut = Task.CompletedTask;
+        int next() => _value;
+
+        // Act
+        Task<int> resultTask = sut.Then(next);
+        int result = await resultTask;
+
+        // Assert
+        Assert.Multiple(() =>
         {
-            throw new NotImplementedException(errorMessage);
-        }
-
-        // Act
-        Func<Task<int>> act = () => sut().ContinueWith(task => task
-            .HandleFault().Or(t => default(int)));
-
-        // Assert
-        await act.Should().ThrowExactlyAsync<NotImplementedException>()
-            .WithMessage(errorMessage);
+            resultTask.Status.Should().Be(TaskStatus.RanToCompletion);
+            result.Should().Be(_value);
+        });
     }
 
     [Fact]
-    public async Task HandleFault_TaskIsFaultedWithAggregateException_ThrowsFirstInnerException()
+    public async Task Then_TaskFaultedSingleException_ThrowsInnerException()
     {
         // Arrange
-        string innerMessage = "Inner exception";
-        InvalidOperationException innerException = new(innerMessage);
-        AggregateException aggregateException = new(innerException);
-        Task task = Task.FromException(aggregateException);
+        InvalidOperationException innerException = new(_errorMessage);
+        Task task = Task.FromException(innerException);
+        int next() => _value;
 
         // Act
-        Func<Task> act = () => task.ContinueWith(task => task
-            .HandleFault().Or(t => default(int)));
+        Func<Task> act = async () => await task.Then(next);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage(innerMessage);
+        await act.Should()
+            .ThrowExactlyAsync<InvalidOperationException>()
+            .WithMessage(_errorMessage);
     }
 
     [Fact]
-    public async Task HandleFault_TaskIsNotFaulted_ReturnsOrElseResult()
+    public async Task Then_TaskFaultedMultipleExceptions_ThrowsAggregateException()
+    {
+        // Arrange
+        InvalidOperationException innerException1 = new(_errorMessage);
+        ArgumentException innerException2 = new(_secondaryErrorMessage);
+        AggregateException aggregateException = new(innerException1, innerException2);
+        Task task = Task.FromException(aggregateException);
+        int next() => _value;
+
+        // Act
+        Func<Task> act = async () => await task.Then(next);
+
+        // Assert
+        await act.Should().ThrowExactlyAsync<AggregateException>()
+            .Where(ex => ex.InnerExceptions.Count == 2 &&
+                         ex.InnerExceptions[0].Message == _errorMessage &&
+                         ex.InnerExceptions[1].Message == _secondaryErrorMessage);
+    }
+
+    [Fact]
+    public async Task ThenT_TaskSuccessful_ReturnsNext()
+    {
+        // Arrange
+        Task<int> task = Task.FromResult(_value);
+        string next(int x) => x.ToString();
+
+        // Act
+        Task<string> resultTask = task.Then(next);
+        string result = await resultTask;
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            resultTask.Status.Should().Be(TaskStatus.RanToCompletion);
+            result.Should().Be(_value.ToString());
+        });
+    }
+
+    [Fact]
+    public async Task ThenT_TaskFaultedSingleException_ThrowsInnerException()
+    {
+        // Arrange
+        InvalidOperationException innerException = new(_errorMessage);
+        Task<int> task = Task.FromException<int>(innerException);
+        string next(int x) => x.ToString();
+
+        // Act
+        Func<Task> act = async () => await task.Then(next);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage(_errorMessage);
+    }
+
+    [Fact]
+    public async Task ThenT_TaskFaultedMultipleExceptions_ThrowsAggregateException()
+    {
+        // Arrange
+        InvalidOperationException innerException1 = new(_errorMessage);
+        ArgumentException innerException2 = new(_secondaryErrorMessage);
+        AggregateException aggregateException = new(innerException1, innerException2);
+        Task<int> task = Task.FromException<int>(aggregateException);
+        string next(int x) => x.ToString();
+
+        // Act
+        Func<Task> act = async () => await task.Then(next);
+
+        // Assert
+        await act.Should().ThrowAsync<AggregateException>()
+            .Where(ex => ex.InnerExceptions.Count == 2 &&
+                         ex.InnerExceptions[0].Message == _errorMessage &&
+                         ex.InnerExceptions[1].Message == _secondaryErrorMessage);
+    }
+
+    [Fact]
+    public async Task Then_NullTask_ThrowsArgumentNullException()
+    {
+        // Arrange
+        Task task = null!;
+        int next() => _value;
+
+        // Act
+        Func<Task> act = async () => await task.Then(next);
+
+        // Assert
+        (await act.Should().ThrowExactlyAsync<ArgumentNullException>())
+            .And.ParamName.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task Then_NullNext_ThrowsArgumentNullException()
     {
         // Arrange
         Task task = Task.CompletedTask;
-        int value = 42;
+        Func<int> next = null!;
 
         // Act
-        int result = await task.ContinueWith(task => task
-            .HandleFault().Or(_ => value));
+        Func<Task> act = async () => await task.Then(next);
 
         // Assert
-        result.Should().Be(value);
+        (await act.Should().ThrowExactlyAsync<ArgumentNullException>())
+            .And.ParamName.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
-    public async Task HandleFault_TaskIsFaultedWithMultipleInnerExceptions_ThrowsAggregateException()
+    public async Task ThenT_NullTask_ThrowsArgumentNullException()
     {
         // Arrange
-        string innerErrorMessage1 = "First inner exception";
-        string innerErrorMessage2 = "Second inner exception";
-        InvalidOperationException innerException1 = new(innerErrorMessage1);
-        ArgumentException innerException2 = new(innerErrorMessage2);
-        AggregateException aggregateException = new(innerException1, innerException2);
-        Task task = Task.FromException(aggregateException);
+        Task<int> task = null!;
+        Func<int, string> next = x => x.ToString();
 
         // Act
-        Func<Task> act = () => task.ContinueWith(task => task
-            .HandleFault().Or(t => default(int)));
+        Func<Task> act = async () => await task.Then(next);
 
         // Assert
-        await act.Should().ThrowAsync<AggregateException>()
-            .Where(ex => ex.InnerExceptions.Count == 2
-                && ex.InnerExceptions[0].Message == innerErrorMessage1
-                && ex.InnerExceptions[1].Message == innerErrorMessage2);
+        (await act.Should().ThrowExactlyAsync<ArgumentNullException>())
+            .And.ParamName.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
-    public async Task HandleFault_GenericTaskIsNotFaulted_ReturnsOrElseResult()
+    public async Task ThenT_NullNext_ThrowsArgumentNullException()
     {
         // Arrange
-        int expectedResult = 100;
-        Task<int> task = Task.FromResult(expectedResult);
+        Task<int> task = Task.FromResult(_value);
+        Func<int, string> next = null!;
 
         // Act
-        int result = await task.ContinueWith(task => task
-            .HandleFault().Or(t => t.Result));
+        Func<Task> act = async () => await task.Then(next);
 
         // Assert
-        result.Should().Be(expectedResult);
-    }
-
-    [Fact]
-    public async Task HandleFault_GenericTaskIsFaultedWithMultipleInnerExceptions_ThrowsAggregateException()
-    {
-        // Arrange
-        string innerErrorMessage1 = "First inner exception";
-        string innerErrorMessage2 = "Second inner exception";
-        InvalidOperationException innerException1 = new(innerErrorMessage1);
-        ArgumentException innerException2 = new(innerErrorMessage2);
-        var aggregateException = new AggregateException(innerException1, innerException2);
-        Task<int> task = Task.FromException<int>(aggregateException);
-
-        // Act
-        Func<Task> act = () => task.ContinueWith(task => task
-            .HandleFault().Or(t => default(int)));
-
-        // Assert
-        await act.Should().ThrowAsync<AggregateException>()
-            .Where(ex => ex.InnerExceptions.Count == 2
-                && ex.InnerExceptions[0].Message == innerErrorMessage1
-                && ex.InnerExceptions[1].Message == innerErrorMessage2);
+        (await act.Should().ThrowExactlyAsync<ArgumentNullException>())
+            .And.ParamName.Should().NotBeNullOrWhiteSpace();
     }
 }

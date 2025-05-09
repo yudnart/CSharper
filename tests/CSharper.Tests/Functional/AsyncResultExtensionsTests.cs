@@ -214,48 +214,6 @@ public sealed class AsyncResultExtensionsTests
         nameof(TestData.ResultData),
         MemberType = typeof(TestData)
     )]
-    public async Task Ensure<T>(Result initial)
-    {
-        // Arrange
-        Error error = ErrorTestData.Error;
-        List<ResultValidator> results = [];
-
-        // Test 1:
-        // Ensure<T>(
-        //     this Result<T> result,
-        //     Func< T, Task<bool> > predicate,
-        //     Error error)
-        results.Add(await Task.FromResult(initial).Ensure(() => Task.FromResult(true), error.Message));
-
-        // Test 2:
-        // Ensure<T>(
-        //     this Task<Result<T>> asyncResult,
-        //     Func< T, bool> predicate,
-        //     Error error)
-        results.Add(await Task.FromResult(initial).Ensure(() => false, error.Message));
-
-        // Test 3:
-        // Ensure<T>(
-        //     this Task < Result < T >> asyncResult,
-        //     Func < T, Task<bool> > predicate,
-        //     Error error)
-        results.Add(initial.Ensure(() => Task.FromResult(true), error.Message));
-
-        // Assert
-        Assert.Multiple(() =>
-        {
-            foreach (ResultValidator result in results)
-            {
-                result.Should().BeOfType<ResultValidator>();
-            }
-        });
-    }
-
-    [Theory]
-    [MemberData(
-        nameof(TestData.ResultData),
-        MemberType = typeof(TestData)
-    )]
     public void Ensure_WithNullPredicate_ThrowsArgumentNullException<T>(
         Result initial)
     {

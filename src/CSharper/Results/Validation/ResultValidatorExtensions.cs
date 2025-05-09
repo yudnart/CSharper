@@ -2,10 +2,12 @@
 using CSharper.Functional;
 using CSharper.Results.Validation;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace CSharper.Results.Validation;
 
+[DebuggerStepThrough]
 /// <summary>
 /// Provides extension methods for handling both synchronous and asynchronous <see cref="ResultValidator{T}"/> 
 /// operations in a functional programming style.
@@ -20,11 +22,11 @@ public static class ResultValidatorExtensions
     /// <param name="asyncValidator">
     /// The async <see cref="ResultValidator"/> containing the validation chain.</param>
     /// <param name="predicate">The condition to evaluate.</param>
-    /// <param name="message">
-    /// The <see cref="Error"/> message to include if the predicate fails.
+    /// <param name="errorMessage">
+    /// The <see cref="Error"/> errorMessage to include if the predicate fails.
     /// </param>
-    /// <param name="code">
-    /// [Optional] The <see cref="Error"/> code to include if the predicate fails.
+    /// <param name="errorCode">
+    /// [Optional] The <see cref="Error"/> errorCode to include if the predicate fails.
     /// </param>
     /// <param name="path">
     /// [Optional] The <see cref="Error"/> path to include if the predicate fails.
@@ -34,29 +36,29 @@ public static class ResultValidatorExtensions
     /// <exception cref="ArgumentNullException">
     /// Thrown if validator or predicate is null</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown if message is null or whitespace.</exception>
+    /// Thrown if errorMessage is null or whitespace.</exception>
     public static Task<ResultValidator> And(this Task<ResultValidator> asyncValidator,
         Func<bool> predicate,
-        string message,
-        string? code = null,
+        string errorMessage,
+        string? errorCode = null,
         string? path = null)
     {
+        predicate.ThrowIfNull(nameof(predicate));
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
         return asyncValidator
-            .ContinueWith(task => task
-                .HandleFault()
-                .Or(task => task.Result.And(predicate, message, code, path)));
+            .Then(v => v.And(predicate, errorMessage, errorCode, path));
     }
 
     public static Task<ResultValidator> And(this Task<ResultValidator> asyncValidator,
         Func<Task<bool>> predicate,
-        string message,
-        string? code = null,
+        string errorMessage,
+        string? errorCode = null,
         string? path = null)
     {
+        predicate.ThrowIfNull(nameof(predicate));
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
         return asyncValidator
-            .ContinueWith(task => task
-                .HandleFault()
-                .Or(task => task.Result.And(predicate, message, code, path)));
+            .Then(v => v.And(predicate, errorMessage, errorCode, path));
     }
 
     #endregion
@@ -65,54 +67,52 @@ public static class ResultValidatorExtensions
 
     public static ResultValidator Ensure(this Result result,
         Func<bool> predicate,
-        string message,
-        string? code = null,
+        string errorMessage,
+        string? errorCode = null,
         string? path = null)
     {
         predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNullOrWhitespace(nameof(message));
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
         return new ResultValidator(result)
-            .And(predicate, message, code, path);
+            .And(predicate, errorMessage, errorCode, path);
     }
 
     public static ResultValidator Ensure(this Result result,
         Func<Task<bool>> predicate,
-        string message,
-        string? code = null,
+        string errorMessage,
+        string? errorCode = null,
         string? path = null)
     {
         predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNullOrWhitespace(nameof(message));
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
         return new ResultValidator(result)
-            .And(predicate, message, code, path);
+            .And(predicate, errorMessage, errorCode, path);
     }
 
     public static Task<ResultValidator> Ensure(
         this Task<Result> asyncResult,
         Func<bool> predicate,
-        string message,
-        string? code = null,
+        string errorMessage,
+        string? errorCode = null,
         string? path = null)
     {
         predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNullOrWhitespace(nameof(message));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault()
-            .Or(task => task.Result.Ensure(predicate, message, code, path)));
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
+        return asyncResult
+            .Then(v => v.Ensure(predicate, errorMessage, errorCode, path));
     }
 
     public static Task<ResultValidator> Ensure(
         this Task<Result> asyncResult,
         Func<Task<bool>> predicate,
-        string message,
-        string? code = null,
+        string errorMessage,
+        string? errorCode = null,
         string? path = null)
     {
         predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNullOrWhitespace(nameof(message));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault()
-            .Or(task => task.Result.Ensure(predicate, message, code, path)));
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
+        return asyncResult
+            .Then(v => v.Ensure(predicate, errorMessage, errorCode, path));
     }
 
     #endregion
@@ -151,30 +151,32 @@ public static class ResultValidatorExtensions
     {
         asyncValidator.ThrowIfNull(nameof(asyncValidator));
         next.ThrowIfNull(nameof(next));
-        return asyncValidator.ContinueWith(task => task.Result.Bind(next));
+        return asyncValidator.Then(v => v.Bind(next));
     }
 
     public static Task<Result<T>> Bind<T>(this Task<ResultValidator> asyncValidator, Func<Result<T>> next)
     {
         asyncValidator.ThrowIfNull(nameof(asyncValidator));
         next.ThrowIfNull(nameof(next));
-        return asyncValidator.ContinueWith(task => task.Result.Bind(next));
+        return asyncValidator.Then(v => v.Bind(next));
     }
 
-    public static async Task<Result> Bind(this Task<ResultValidator> asyncValidator, Func<Task<Result>> next)
+    public static Task<Result> Bind(this Task<ResultValidator> asyncValidator, Func<Task<Result>> next)
     {
         asyncValidator.ThrowIfNull(nameof(asyncValidator));
         next.ThrowIfNull(nameof(next));
-        ResultValidator validator = await asyncValidator;
-        return await validator.Bind(next);
+        return asyncValidator
+            .Then(v => v.Bind(next))
+            .Unwrap();
     }
 
-    public static async Task<Result<T>> Bind<T>(this Task<ResultValidator> asyncValidator, Func<Task<Result<T>>> next)
+    public static Task<Result<T>> Bind<T>(this Task<ResultValidator> asyncValidator, Func<Task<Result<T>>> next)
     {
         asyncValidator.ThrowIfNull(nameof(asyncValidator));
         next.ThrowIfNull(nameof(next));
-        ResultValidator validator = await asyncValidator;
-        return await validator.Bind(next);
+        return asyncValidator
+            .Then(v => v.Bind(next))
+            .Unwrap();
     }
 
     #endregion

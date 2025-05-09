@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace CSharper.Extensions;
@@ -7,31 +8,45 @@ namespace CSharper.Extensions;
 public static class TaskExtensions
 {
     [DebuggerStepThrough]
-    public static FaultHandler<TTask> HandleFault<TTask>(this TTask task)
-        where TTask : Task
+    internal static Task<T> Then<T>(this Task task, Func<T> next)
     {
-        return new FaultHandler<TTask>(task);
+        task.ThrowIfNull(nameof(task));
+        next.ThrowIfNull(nameof(next));
+        return task.ContinueWith(t =>
+        {
+            if (t.IsFaulted)
+            {
+                ThrowTaskException(t);
+            }
+            return next();
+        });
     }
 
-    public readonly struct FaultHandler<TTask>
-        where TTask : Task
+    [DebuggerStepThrough]
+    internal static Task<U> Then<T, U>(this Task<T> task, Func<T, U> next)
     {
-        private readonly TTask _task;
-
-        public FaultHandler(TTask task)
+        task.ThrowIfNull(nameof(task));
+        next.ThrowIfNull(nameof(next));
+        return task.ContinueWith(t =>
         {
-            _task = task;
-        }
-
-        [DebuggerStepThrough]
-        public T Or<T>(Func<TTask, T> orElse)
-        {
-            if (_task.IsFaulted)
+            if (t.IsFaulted)
             {
-                AggregateException ex = _task.Exception;
-                throw ex.InnerExceptions.Count == 1 ? ex.InnerExceptions[0] : ex;
+                ThrowTaskException(t);
             }
-            return orElse(_task);
-        }
+            return next(t.Result);
+        });
+    }
+
+    [ExcludeFromCodeCoverage
+#if NET8_0_OR_GREATER
+        (Justification = "Defensive code unreachable.")
+#endif
+    ]
+    private static void ThrowTaskException(Task task)
+    {
+        AggregateException ex = task.Exception
+            ?? throw new ApplicationException("Task failed without providing an exception.");
+        throw ex.InnerExceptions.Count == 1
+            ? ex.InnerExceptions[0] : ex;
     }
 }

@@ -1,7 +1,6 @@
 ﻿using CSharper.Events;
 using CSharper.Extensions;
 using CSharper.Types.Utilities;
-using CSharper.Utilities;
 using System;
 using System.Collections.Generic;
 

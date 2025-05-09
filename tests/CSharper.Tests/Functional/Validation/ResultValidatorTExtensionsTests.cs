@@ -12,6 +12,11 @@ namespace CSharper.Tests.Functional.Validation;
 [Trait("TestOf", nameof(ResultValidatorTExtensions))]
 public sealed class ResultValidatorTExtensionsTests
 {
+    private static readonly string _errorMessage = ErrorTestData.Error.Message;
+
+    private static bool _predicate() => true;
+    private static Task<bool> _asyncPredicate() => Task.FromResult(_predicate());
+
     [Theory]
     [MemberData(
         nameof(FunctionalResultTestData.ResultTData),
@@ -105,12 +110,25 @@ public sealed class ResultValidatorTExtensionsTests
     public async Task AndAsync_NullPredicate_ThrowsArgumentNullException<T>(Result<T> initial)
     {
         // Arrange
-        Task<ResultValidator<T>> sut = Task
-            .FromResult(new ResultValidator<T>(initial));
-        Func<Task> act = () => sut.And(null!, "Validation error");
+        Func<T, bool> nullPredicate = null!;
+        Func<T, Task<bool>> nullAsyncPredicate = null!;
+
+        Task<ResultValidator<T>> sut = Task.FromResult(new ResultValidator<T>(initial));
+
+        Func<Task>[] acts = [
+            async () => _ = await sut.And(nullPredicate, _errorMessage),
+            async () => _ = await sut.And(nullAsyncPredicate, _errorMessage)
+        ];
 
         // Act & Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        Assert.Multiple(async () =>
+        {
+            foreach (Func<Task> act in acts)
+            {
+                (await act.Should().ThrowExactlyAsync<ArgumentNullException>())
+                    .And.ParamName.Should().NotBeNullOrWhiteSpace();
+            }
+        });
     }
 
     [Theory]

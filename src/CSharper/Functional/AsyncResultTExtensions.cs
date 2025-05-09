@@ -1,8 +1,6 @@
 ﻿using CSharper.Errors;
 using CSharper.Extensions;
-using CSharper.Functional;
 using CSharper.Results;
-using CSharper.Results.Validation;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -30,10 +28,8 @@ public static class AsyncResultTExtensions
     public static Task<Result> Bind<T>(this Result<T> result, Func<T, Task<Result>> next)
     {
         next.ThrowIfNull(nameof(next));
-        //return result.IsSuccess ? await next(result.Value) : result.MapError();
         return result.IsSuccess
-            ? next(result.Value).ContinueWith(task => task
-                .HandleFault().Or(task => task.Result))
+            ? next(result.Value)
             : Task.FromResult(result.MapError());
     }
 
@@ -50,8 +46,7 @@ public static class AsyncResultTExtensions
     {
         next.ThrowIfNull(nameof(next));
         return result.IsSuccess
-            ? next(result.Value).ContinueWith(task => task
-                .HandleFault().Or(task => task.Result))
+            ? next(result.Value)
             : Task.FromResult(result.MapError<T, U>());
     }
 
@@ -66,8 +61,7 @@ public static class AsyncResultTExtensions
     public static Task<Result> Bind<T>(this Task<Result<T>> asyncResult, Func<T, Result> next)
     {
         next.ThrowIfNull(nameof(next));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.Bind(next)));
+        return asyncResult.Then(r => r.Bind(next));
     }
 
     /// <summary>
@@ -83,8 +77,7 @@ public static class AsyncResultTExtensions
         Func<T, Result<U>> next)
     {
         next.ThrowIfNull(nameof(next));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.Bind(next)));
+        return asyncResult.Then(r => r.Bind(next));
     }
 
     /// <summary>
@@ -99,8 +92,8 @@ public static class AsyncResultTExtensions
         Func<T, Task<Result>> next)
     {
         next.ThrowIfNull(nameof(next));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.Bind(next)))
+        return asyncResult
+            .Then(r => r.Bind(next))
             .Unwrap();
     }
 
@@ -117,8 +110,8 @@ public static class AsyncResultTExtensions
         Func<T, Task<Result<U>>> next)
     {
         next.ThrowIfNull(nameof(next));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.Bind(next)))
+        return asyncResult
+            .Then(r => r.Bind(next))
             .Unwrap();
     }
 
@@ -138,8 +131,7 @@ public static class AsyncResultTExtensions
     public static Task<Result<U>> Map<T, U>(this Task<Result<T>> asyncResult, Func<T, U> transform)
     {
         transform.ThrowIfNull(nameof(transform));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.Map(transform)));
+        return asyncResult.Then(r => r.Map(transform));
     }
 
     #endregion
@@ -154,8 +146,7 @@ public static class AsyncResultTExtensions
     /// <returns>A <see cref="Task{T}"/> containing an untyped result with preserved errors if failed.</returns>
     public static Task<Result> MapError<T>(this Task<Result<T>> asyncResult)
     {
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.MapError()));
+        return asyncResult.Then(r => r.MapError());
     }
 
     /// <summary>
@@ -167,8 +158,7 @@ public static class AsyncResultTExtensions
     /// <returns>A <see cref="Task{T}"/> containing a typed result with preserved errors if failed.</returns>
     public static Task<Result<U>> MapError<T, U>(this Task<Result<T>> asyncResult)
     {
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.MapError<T, U>()));
+        return asyncResult.Then(r => r.MapError<T, U>());
     }
 
     #endregion
@@ -189,8 +179,7 @@ public static class AsyncResultTExtensions
         onSuccess.ThrowIfNull(nameof(onSuccess));
         if (result.IsSuccess)
         {
-            return onSuccess(result.Value).ContinueWith(task => task
-                .HandleFault().Or(task => task.Result))!;
+            return onSuccess(result.Value)!;
         }
         return Task.FromResult(default(U));
     }
@@ -210,7 +199,9 @@ public static class AsyncResultTExtensions
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
         onFailure.ThrowIfNull(nameof(onFailure));
-        return result.IsSuccess ? onSuccess(result.Value) : onFailure(result.Error!);
+        return result.IsSuccess 
+            ? onSuccess(result.Value) 
+            : onFailure(result.Error!);
     }
 
     /// <summary>
@@ -225,8 +216,7 @@ public static class AsyncResultTExtensions
     public static Task<U?> Match<T, U>(this Task<Result<T>> asyncResult, Func<T, U> onSuccess)
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.Match(onSuccess)));
+        return asyncResult.Then(r => r.Match(onSuccess));
     }
 
     /// <summary>
@@ -244,8 +234,7 @@ public static class AsyncResultTExtensions
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
         onFailure.ThrowIfNull(nameof(onFailure));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.Match(onSuccess, onFailure)));
+        return asyncResult.Then(r => r.Match(onSuccess, onFailure));
     }
 
     /// <summary>
@@ -260,8 +249,8 @@ public static class AsyncResultTExtensions
     public static Task<U?> Match<T, U>(this Task<Result<T>> asyncResult, Func<T, Task<U>> onSuccess)
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.Match(onSuccess)))
+        return asyncResult
+            .Then(r => r.Match(onSuccess))
             .Unwrap();
     }
 
@@ -280,8 +269,8 @@ public static class AsyncResultTExtensions
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
         onFailure.ThrowIfNull(nameof(onFailure));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.Match(onSuccess, onFailure)))
+        return asyncResult
+            .Then(r => r.Match(onSuccess, onFailure))
             .Unwrap();
     }
 
@@ -303,8 +292,7 @@ public static class AsyncResultTExtensions
         fallback.ThrowIfNull(nameof(fallback));
         return result.IsSuccess
             ? Task.FromResult(result)
-            : fallback(result.Error!).ContinueWith(task => task
-                .HandleFault().Or(task => Result.Ok(task.Result)));
+            : fallback(result.Error!).Then(Result.Ok);
     }
 
     /// <summary>
@@ -319,8 +307,7 @@ public static class AsyncResultTExtensions
         Func<Error, T> fallback)
     {
         fallback.ThrowIfNull(nameof(fallback));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.Recover(fallback)));
+        return asyncResult.Then(r => r.Recover(fallback));
     }
 
     /// <summary>
@@ -335,8 +322,8 @@ public static class AsyncResultTExtensions
         Func<Error, Task<T>> fallback)
     {
         fallback.ThrowIfNull(nameof(fallback));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.Recover(fallback)))
+        return asyncResult
+            .Then(r => r.Recover(fallback))
             .Unwrap();
     }
 
@@ -356,8 +343,7 @@ public static class AsyncResultTExtensions
     {
         action.ThrowIfNull(nameof(action));
         return result.IsSuccess
-            ? action(result.Value).ContinueWith(task => task
-                .HandleFault().Or(task => result))
+            ? action(result.Value).Then(() => result)
             : Task.FromResult(result);
     }
 
@@ -372,8 +358,7 @@ public static class AsyncResultTExtensions
     public static Task<Result<T>> Tap<T>(this Task<Result<T>> asyncResult, Action<T> action)
     {
         action.ThrowIfNull(nameof(action));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.Tap(action)));
+        return asyncResult.Then(r => r.Tap(action));
     }
 
     /// <summary>
@@ -387,8 +372,8 @@ public static class AsyncResultTExtensions
     public static Task<Result<T>> Tap<T>(this Task<Result<T>> asyncResult, Func<T, Task> action)
     {
         action.ThrowIfNull(nameof(action));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.Tap(action)))
+        return asyncResult
+            .Then(r => r.Tap(action))
             .Unwrap();
     }
 
@@ -409,8 +394,7 @@ public static class AsyncResultTExtensions
         action.ThrowIfNull(nameof(action));
         action.ThrowIfNull(nameof(action));
         return result.IsFailure
-            ? action(result.Error).ContinueWith(task => task
-                .HandleFault().Or(task => result))
+            ? action(result.Error!).Then(() => result)
             : Task.FromResult(result);
     }
 
@@ -426,8 +410,7 @@ public static class AsyncResultTExtensions
         Action<Error> action)
     {
         action.ThrowIfNull(nameof(action));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.TapError(action)));
+        return asyncResult.Then(r => r.TapError(action));
     }
 
     /// <summary>
@@ -442,8 +425,8 @@ public static class AsyncResultTExtensions
         Func<Error, Task> action)
     {
         action.ThrowIfNull(nameof(action));
-        return asyncResult.ContinueWith(task => task
-            .HandleFault().Or(task => task.Result.TapError(action)))
+        return asyncResult
+            .Then(r => r.TapError(action))
             .Unwrap();
     }
 

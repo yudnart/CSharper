@@ -1,8 +1,11 @@
 ﻿using CSharper.Functional;
 using CSharper.Results;
 using CSharper.Results.Validation;
+using CSharper.Tests.Errors;
 using CSharper.Tests.Results;
 using FluentAssertions;
+using System.Threading.Tasks;
+using Xunit.Sdk;
 using TestData = CSharper.Tests.Functional.Validation.ResultValidatorTestData;
 
 namespace CSharper.Tests.Functional.Validation;
@@ -11,24 +14,36 @@ namespace CSharper.Tests.Functional.Validation;
 [Trait("TestOf", nameof(ResultValidatorExtensions))]
 public sealed class ResultValidatorExtensionsTests
 {
+    private static readonly string _errorMessage = ErrorTestData.Error.Message;
+
+    private static bool _predicate() => true;
+    private static Task<bool> _asyncPredicate() => Task.FromResult(_predicate());
+
+    #region And
+
     [Theory]
     [MemberData(
         nameof(FunctionalResultTestData.ResultData),
         MemberType = typeof(FunctionalResultTestData)
     )]
-    public void And_ValidParams_ReturnsSameValidator(Result initial)
+    public async Task And(Result initial)
     {
         // Arrange
-        ResultValidator sut = new(initial);
+        Task<ResultValidator> sut = Task.FromResult(new ResultValidator(initial));
 
         // Act
-        ResultValidator result = sut.And(() => true, "Validation error");
+        object[] results = [
+            await sut.And(_predicate, _errorMessage),
+            await sut.And(_asyncPredicate, _errorMessage)
+        ];
 
         // Assert
         Assert.Multiple(() =>
         {
-            result.Should().NotBeNull();
-            result.Validate().Should().BeSameAs(initial);
+            foreach (object result in results)
+            {
+                result.Should().BeOfType<ResultValidator>();
+            }
         });
     }
 
@@ -40,19 +55,23 @@ public sealed class ResultValidatorExtensionsTests
     public void And_NullPredicate_ThrowsArgumentException(Result initial)
     {
         // Arrange
-        ResultValidator sut = new(initial);
+        Func<bool> nullPredicate = null!;
+        Func<Task<bool>> nullAsyncPredicate = null!;
 
-        Func<bool> predicate = null!;
-        Func<Task<bool>> asyncPredicate = null!;
+        Task<ResultValidator> sut = Task.FromResult(new ResultValidator(initial));
 
-        Action act1 = () => _ = sut.And(predicate, "Validation error");
-        Action act2 = () => _ = sut.And(asyncPredicate, "Validation error");
+        Action[] acts = [
+            () => _ = sut.And(nullPredicate, _errorMessage),
+            () => _ = sut.And(nullAsyncPredicate, _errorMessage)
+        ];
 
         // Act & Assert
         Assert.Multiple(() =>
         {
-            act1.Should().Throw<ArgumentNullException>();
-            act2.Should().Throw<ArgumentNullException>();
+            foreach (Action act in acts)
+            {
+                act.Should().Throw<ArgumentNullException>();
+            }
         });
     }
 
@@ -62,39 +81,51 @@ public sealed class ResultValidatorExtensionsTests
         MemberType = typeof(TestData)
     )]
     public void And_InvalidMessage_ThrowsArgumentException(
-        string message)
+        string errorMessage)
     {
         // Arrange
-        Result initial = Result.Ok();
-        ResultValidator sut = new(initial);
-        Action act = () => _ = sut.And(() => true, message);
+        Task<ResultValidator> sut = Task
+            .FromResult(new ResultValidator(Result.Ok()));
+
+        Action[] acts = [
+            () => _ = sut.And(_predicate, errorMessage),
+            () => _ = sut.And(_asyncPredicate, errorMessage)
+        ];
 
         // Act & Assert
         Assert.Multiple(() =>
         {
-            ResultTestUtility.AssertSuccessResult(initial);
-            act.Should().Throw<ArgumentException>();
+            foreach (Action act in acts)
+            {
+                act.Should().Throw<ArgumentException>();
+            }
         });
     }
+
+    #endregion
+
+    #region Ensure
 
     [Theory]
     [MemberData(
         nameof(FunctionalResultTestData.ResultData),
         MemberType = typeof(FunctionalResultTestData)
     )]
-    public void AndAsync_ValidParams_ReturnsAsyncValidator(Result initial)
+    public void Ensure(Result sut)
     {
-        // Arrange
-        Task<ResultValidator> sut = Task.FromResult(new ResultValidator(initial));
-
         // Act
-        Task<ResultValidator> result = sut.And(() => true, "Validation error");
+        object[] results = [
+            sut.Ensure(_predicate, _errorMessage),
+            sut.Ensure(_asyncPredicate, _errorMessage)
+        ];
 
         // Assert
-        Assert.Multiple(async () =>
+        Assert.Multiple(() =>
         {
-            result.Should().NotBeNull();
-            (await result).Validate().Should().BeSameAs(initial);
+            foreach (object result in results)
+            {
+                result.Should().BeOfType<ResultValidator>();
+            }
         });
     }
 
@@ -103,43 +134,56 @@ public sealed class ResultValidatorExtensionsTests
         nameof(FunctionalResultTestData.ResultData),
         MemberType = typeof(FunctionalResultTestData)
     )]
-    public void AndAsync_NullPredicate_ThrowsArgumentNullException(Result initial)
+    public async Task EnsureAsync(Result initial)
     {
         // Arrange
-        Task<ResultValidator> sut = Task.FromResult(new ResultValidator(initial));
+        Task<Result> sut = Task.FromResult(initial);
 
-        Func<bool> predicate = null!;
-        Func<Task<bool>> asyncPredicate = null!;
+        // Act
+        object[] results = [
+            await sut.Ensure(_predicate, _errorMessage),
+            await sut.Ensure(_asyncPredicate, _errorMessage)
+        ];
 
-        Func<Task> act1 = () => sut.And(predicate, "Validation error");
-        Func<Task> act2 = () => sut.And(asyncPredicate, "Validation error");
-
-        // Act & Assert
-        Assert.Multiple(async () =>
+        // Assert
+        Assert.Multiple(() =>
         {
-            await act1.Should().ThrowAsync<ArgumentNullException>();
-            await act2.Should().ThrowAsync<ArgumentNullException>();
+            foreach (object result in results)
+            {
+                result.Should().BeOfType<ResultValidator>();
+            }
         });
     }
 
+    #endregion
+
     [Theory]
     [MemberData(
-        nameof(TestData.InvalidErrorMessages),
-        MemberType = typeof(TestData)
+        nameof(FunctionalResultTestData.ResultData),
+        MemberType = typeof(FunctionalResultTestData)
     )]
-    public void AndAsync_InvalidMessage_ThrowsArgumentException(
-        string message)
+    public void Ensure_NullPredicate_ThrowsArgumentNullException<T>(
+        Result initial)
     {
         // Arrange
-        Result initial = Result.Ok();
-        Task<ResultValidator> sut = Task.FromResult(new ResultValidator(initial));
-        Func<Task> act = () => sut.And(() => true, message);
+        Func<bool> nullPredicate = null!;
+        Func<Task<bool>> nullAsyncPredicate = null!;
+
+        Func<Task>[] acts = [
+            () => _ = Task.Run(() => initial.Ensure(nullPredicate, _errorMessage)),
+            () => _ = Task.Run(() => initial.Ensure(nullAsyncPredicate, _errorMessage)),
+            () => _ = Task.FromResult(initial).Ensure(nullPredicate, _errorMessage),
+            () => _ = Task.FromResult(initial.Ensure(nullAsyncPredicate, _errorMessage))
+        ];
 
         // Act & Assert
         Assert.Multiple(async () =>
         {
-            ResultTestUtility.AssertSuccessResult(initial);
-            await act.Should().ThrowAsync<ArgumentException>();
+            foreach (Func<Task> act in acts)
+            {
+                (await act.Should().ThrowExactlyAsync<ArgumentNullException>())
+                    .And.ParamName.Should().NotBeNullOrWhiteSpace();
+            }
         });
     }
 
@@ -194,24 +238,25 @@ public sealed class ResultValidatorExtensionsTests
     public async Task BindAsync(Result initial, Result nextResult)
     {
         // Arrange
-        List<Result> results = [];
-
         Result next() => nextResult;
         Task<Result> nextAsync() => Task.FromResult(nextResult);
-        ResultValidator sut = initial.Ensure(() => true, "Test error");
+        ResultValidator sut = initial.Ensure(_predicate, _errorMessage);
 
         // Act
-        // Test 1:
-        // Bind(this ResultValidator validator, Func<Task<Result>> next)
-        results.Add(await sut.Bind(nextAsync));
+        Result[] results = [
+            // Act
+            // Test 1:
+            // Bind(this ResultValidator validator, Func<Task<Result>> next)
+            await sut.Bind(nextAsync),
 
-        // Test 2:
-        // Bind(this Task<ResultValidator> asyncValidator, Func<Result> next)
-        results.Add(await Task.FromResult(sut).Bind(next));
+            // Test 2:
+            // Bind(this Task<ResultValidator> asyncValidator, Func<Result> next)
+            await Task.FromResult(sut).Bind(next),
 
-        // Test 3:
-        // Bind(this Task<ResultValidator> asyncValidator, Func<Task<Result>> next)
-        results.Add(await Task.FromResult(sut).Bind(nextAsync));
+            // Test 3:
+            // Bind(this Task<ResultValidator> asyncValidator, Func<Task<Result>> next)
+            await Task.FromResult(sut).Bind(nextAsync)
+        ];
 
         // Assert
         Assert.Multiple(() =>
@@ -232,29 +277,29 @@ public sealed class ResultValidatorExtensionsTests
     public async Task BindTAsync<T>(Result initial, Result<T> nextResult)
     {
         // Arrange
-        List<Result<T>> results = [];
-
         Result<T> next() => nextResult;
         Task<Result<T>> nextAsync() => Task.FromResult(nextResult);
-        ResultValidator sut = initial.Ensure(() => true, "Test error");
+        ResultValidator sut = initial.Ensure(_predicate, _errorMessage);
 
-        // Act
-        // Test 1:
-        // Bind(this ResultValidator validator, Func<Task<Result>> next)
-        results.Add(await sut.Bind(nextAsync));
+        Result<T>[] results = [
+            // Act
+            // Test 1:
+            // Bind(this ResultValidator validator, Func<Task<Result>> next)
+            await sut.Bind(nextAsync),
 
-        // Test 2:
-        // Bind(this Task<ResultValidator> asyncValidator, Func<Result> next)
-        results.Add(await Task.FromResult(sut).Bind(next));
+            // Test 2:
+            // Bind(this Task<ResultValidator> asyncValidator, Func<Result> next)
+            await Task.FromResult(sut).Bind(next),
 
-        // Test 3:
-        // Bind(this Task<ResultValidator> asyncValidator, Func<Task<Result>> next)
-        results.Add(await Task.FromResult(sut).Bind(nextAsync));
+            // Test 3:
+            // Bind(this Task<ResultValidator> asyncValidator, Func<Task<Result>> next)
+            await Task.FromResult(sut).Bind(nextAsync)
+        ];
 
         // Assert
         Assert.Multiple(() =>
         {
-            for (int idx = 0; idx < results.Count; idx++)
+            for (int idx = 0; idx < results.Length; idx++)
             {
                 Result<T> result = results[idx];
                 if (initial.IsSuccess)
@@ -279,9 +324,9 @@ public sealed class ResultValidatorExtensionsTests
         // Arrange
         Func<Result> next = null!;
         Func<Task<Result>> nextAsync = null!;
-        ResultValidator sut = initial.Ensure(() => true, "Test error");
+        ResultValidator sut = initial.Ensure(_predicate, _errorMessage);
 
-        List<Func<Task>> acts = [
+        Func<Task>[] acts = [
             () => sut.Bind(nextAsync),
             () => Task.FromResult(sut).Bind(next),
             () => Task.FromResult(sut).Bind(nextAsync)
@@ -309,7 +354,7 @@ public sealed class ResultValidatorExtensionsTests
         // Arrange
         Func<Result<string>> next = null!;
         Func<Task<Result<string>>> nextAsync = null!;
-        ResultValidator sut = initial.Ensure(() => true, "Test error");
+        ResultValidator sut = initial.Ensure(_predicate, _errorMessage);
 
         List<Func<Task>> acts = [
             () => sut.Bind(nextAsync),

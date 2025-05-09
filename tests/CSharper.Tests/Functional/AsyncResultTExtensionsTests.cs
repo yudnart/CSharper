@@ -22,7 +22,6 @@ public sealed class AsyncResultTExtensionsTests
     {
         // Arrange
         List<T> bindParams = [];
-        List<Result> results = [];
 
         Result next(T value)
         {
@@ -32,23 +31,24 @@ public sealed class AsyncResultTExtensionsTests
         Task<Result> nextAsync(T value) => Task.FromResult(next(value));
 
         // Act
+        Result[] results = [
+            // Test 1:
+            // Bind<T>(this Result<T> result, Func<T, Task<Result>> next)
+            await initial.Bind(nextAsync),
 
-        // Test 1:
-        // Bind<T>(this Result<T> result, Func<T, Task<Result>> next)
-        results.Add(await initial.Bind(nextAsync));
+            // Test 2:
+            // Bind<T>(this Task<Result<T>> asyncResult, Func<T, Result> next)
+            await Task.FromResult(initial).Bind(next),
 
-        // Test 2:
-        // Bind<T>(this Task<Result<T>> asyncResult, Func<T, Result> next)
-        results.Add(await Task.FromResult(initial).Bind(next));
-
-        // Test 3:
-        // Bind<T, U>(this Task<Result<T>> asyncResult, Func<T, Task<Result<U>>> next)
-        results.Add(await Task.FromResult(initial).Bind(nextAsync));
+            // Test 3:
+            // Bind<T, U>(this Task<Result<T>> asyncResult, Func<T, Task<Result<U>>> next)
+            await Task.FromResult(initial).Bind(nextAsync)
+        ];
 
         // Assert
         Assert.Multiple(() =>
         {
-            for (int idx = 0; idx < results.Count; idx++)
+            for (int idx = 0; idx < results.Length; idx++)
             {
                 Result result = results[idx];
                 if (initial.IsSuccess)
@@ -107,7 +107,7 @@ public sealed class AsyncResultTExtensionsTests
         Func<T, Result> next = null!;
         Func<T, Task<Result>> nextAsync = null!;
 
-        List<Func<Task>> acts = [
+        Func<Task>[] acts = [
             () => initial.Bind(nextAsync),
             () => Task.FromResult(initial).Bind(next),
             () => Task.FromResult(initial).Bind(nextAsync)
@@ -134,7 +134,6 @@ public sealed class AsyncResultTExtensionsTests
     {
         // Arrange
         List<T> bindParams = [];
-        List<Result<U>> results = [];
 
         Result<U> next(T value)
         {
@@ -144,25 +143,26 @@ public sealed class AsyncResultTExtensionsTests
         Task<Result<U>> nextAsync(T value) => Task.FromResult(next(value));
 
         // Act
+        Result<U>[] results = [
+                // Test 1:
+            // Bind<T, U>(this Result<T> result, Func<T, Task<Result<U>>> next)
+            await initial.Bind(nextAsync),
 
-        // Test 1:
-        // Bind<T, U>(this Result<T> result, Func<T, Task<Result<U>>> next)
-        results.Add(await initial.Bind(nextAsync));
+            // Test 2:
+            // Bind<T, U>(this Task<Result<T>> asyncResult,
+            //     Func<T, Result<U>> next)
+            await Task.FromResult(initial).Bind(next),
 
-        // Test 2:
-        // Bind<T, U>(this Task<Result<T>> asyncResult,
-        //     Func<T, Result<U>> next)
-        results.Add(await Task.FromResult(initial).Bind(next));
-
-        // Test 3:
-        // Bind<T, U>(this Task<Result<T>> asyncResult,
-        //     Func<T, Task<Result<U>>> next)
-        results.Add(await Task.FromResult(initial).Bind(nextAsync));
+            // Test 3:
+            // Bind<T, U>(this Task<Result<T>> asyncResult,
+            //     Func<T, Task<Result<U>>> next)
+            await Task.FromResult(initial).Bind(nextAsync)
+        ];
 
         // Assert
         Assert.Multiple(() =>
         {
-            for (int idx = 0; idx < results.Count; idx++)
+            for (int idx = 0; idx < results.Length; idx++)
             {
                 Result<U> result = results[idx];
                 if (initial.IsSuccess)
@@ -234,108 +234,6 @@ public sealed class AsyncResultTExtensionsTests
             {
                 await act.Should()
                     .ThrowExactlyAsync<ArgumentNullException>()
-                    .Where(ex => !string.IsNullOrWhiteSpace(ex.ParamName));
-            }
-        });
-    }
-
-    [Theory]
-    [MemberData(
-        nameof(TestData.ResultTData),
-        MemberType = typeof(TestData)
-    )]
-    public async Task Ensure<T>(Result<T> initial)
-    {
-        // Arrange
-        Error error = ErrorTestData.Error;
-        List<ResultValidator<T>> results = [];
-
-        // Test 1:
-        // Ensure<T>(
-        //     this Result<T> result,
-        //     Func< T, Task<bool> > predicate,
-        //     Error error)
-        results.Add(await Task.FromResult(initial).Ensure(value => Task.FromResult(true), error.Message));
-
-        // Test 2:
-        // Ensure<T>(
-        //     this Task<Result<T>> asyncResult,
-        //     Func< T, bool> predicate,
-        //     Error error)
-        results.Add(await Task.FromResult(initial).Ensure(value => false, error.Message));
-
-        // Test 3:
-        // Ensure<T>(
-        //     this Task < Result < T >> asyncResult,
-        //     Func < T, Task<bool> > predicate,
-        //     Error error)
-        results.Add(await initial.Ensure(value => Task.FromResult(true), error.Message));
-
-        // Assert
-        Assert.Multiple(() =>
-        {
-            foreach (ResultValidator<T> result in results)
-            {
-                result.Should().BeOfType<ResultValidator<T>>();
-            }
-        });
-    }
-
-    [Theory]
-    [MemberData(
-        nameof(TestData.ResultTData),
-        MemberType = typeof(TestData)
-    )]
-    public void Ensure_WithNullPredicate_ThrowsArgumentNullException<T>(
-        Result<T> initial)
-    {
-        // Arrange
-        string message = ErrorTestData.Error.Message;
-        Func<T, bool> predicate = null!;
-        Func<T, Task<bool>> asyncPredicate = null!;
-
-        List<Func<Task>> acts = [
-            () => Task.FromResult(initial).Ensure(asyncPredicate, message),
-            () => Task.FromResult(initial).Ensure(predicate, message),
-            () => initial.Ensure(asyncPredicate, message)
-        ];
-
-        // Act & Assert
-        Assert.Multiple(async () =>
-        {
-            foreach (Func<Task> act in acts)
-            {
-                await act.Should()
-                    .ThrowExactlyAsync<ArgumentNullException>()
-                    .Where(ex => !string.IsNullOrWhiteSpace(ex.ParamName));
-            }
-        });
-    }
-
-    [Theory]
-    [MemberData(
-        nameof(TestData.ResultTEnsureInvalidTestCases),
-        MemberType = typeof(TestData)
-    )]
-    public void Ensure_InvalidParams_ThrowsArgumentNullException<T>(
-        Result<T> sut, string message, string? code)
-    {
-        // Arrange
-        static bool predicate(T x) => true;
-
-        List<Func<Task>> acts = [
-            () => Task.FromResult(sut).Ensure(predicate, message, code),
-            () => Task.FromResult(sut).Ensure(value => false, message, code),
-            () => sut.Ensure(value => Task.FromResult(true), message, code)
-        ];
-
-        // Act & Assert
-        Assert.Multiple(async () =>
-        {
-            foreach (Func<Task> act in acts)
-            {
-                await act.Should()
-                    .ThrowExactlyAsync<ArgumentException>()
                     .Where(ex => !string.IsNullOrWhiteSpace(ex.ParamName));
             }
         });
