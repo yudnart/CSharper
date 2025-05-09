@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CSharper.Types
+namespace CSharper.Types.Utilities
 {
     /// <summary>
     /// Provides helper methods for handling Entity Framework Core proxy types.

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace CSharper.Utilities;
+namespace CSharper.Extensions;
 
 /// <summary>
 /// Provides internal extension methods for <see cref="Queue{T}"/> to support additional dequeuing functionality.

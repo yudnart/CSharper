@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CSharper.Types.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -37,10 +38,17 @@ public abstract class ValueObject : IComparable, IComparable<ValueObject>
             return false;
         }
 
-        ValueObject valueObject = (ValueObject)obj;
+        try
+        {
+            ValueObject valueObject = (ValueObject)obj;
+            return GetEqualityComponents()
+                .SequenceEqual(valueObject.GetEqualityComponents());
+        }
+        catch
+        {
+            return false;
+        }
 
-        return GetEqualityComponents()
-            .SequenceEqual(valueObject.GetEqualityComponents());
     }
 
     /// <summary>

@@ -1,8 +1,8 @@
-# CSharper
-
+# CSharper 
+[![NuGet Version](https://img.shields.io/github/actions/workflow/status/yudnart/CSharper/publish-nuget.yml?style=flat-square&color=green)](https://github.com/yudnart/CSharper/actions/workflows/publish-nuget.yml)
+[![codecov](https://codecov.io/gh/yudnart/CSharper/graph/badge.svg?token=1BKQBPRNT8)](https://codecov.io/gh/yudnart/CSharper)
 [![NuGet Version](https://img.shields.io/nuget/vpre/dht.csharper?label=nuget&style=flat-square&color=blue)](https://www.nuget.org/packages/dht.csharper)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/dht.csharper?label=downloads&style=flat-square&color=teal)](https://www.nuget.org/stats/packages/dht.csharper?groupby=Version)
-[![NuGet Version](https://img.shields.io/github/actions/workflow/status/yudnart/CSharper/publish-nuget.yml?style=flat-square&color=green)](https://github.com/yudnart/CSharper/actions/workflows/publish-nuget.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 
 CSharper provides utilities for .NET development, distributed as the `dht.csharper` NuGet package, targeting .NET Standard 2.0 and .NET 8.0. 

@@ -1,6 +1,7 @@
-﻿using System;
+﻿using CSharper.Extensions;
+using System;
 
-namespace CSharper.Types;
+namespace CSharper.Types.Utilities;
 
 /// <summary>
 /// Provides helper methods for handling type-related operations, particularly for resolving unproxied types.
@@ -23,7 +24,8 @@ public static class TypeHelper
     /// </remarks>
     public static void ConfigureGetUnproxiedTypeDelegate(Func<object, Type> getUnproxiedTypeDelegate)
     {
-        _getUnproxiedTypeDelegate = getUnproxiedTypeDelegate ?? throw new ArgumentNullException(nameof(getUnproxiedTypeDelegate));
+        _getUnproxiedTypeDelegate = getUnproxiedTypeDelegate 
+            ?? throw new ArgumentNullException(nameof(getUnproxiedTypeDelegate));
     }
 
     /// <summary>
@@ -37,10 +39,7 @@ public static class TypeHelper
     /// </remarks>
     public static Type GetUnproxiedType(object obj)
     {
-        if (obj == null)
-        {
-            throw new ArgumentNullException(nameof(obj));
-        }
+        obj.ThrowIfNull(nameof(obj));
         return _getUnproxiedTypeDelegate(obj);
     }
 }

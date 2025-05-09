@@ -1,4 +1,6 @@
 ﻿using CSharper.AppContext;
+using CSharper.Errors;
+using CSharper.Extensions;
 using CSharper.Functional;
 using CSharper.Results;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,7 +26,7 @@ internal sealed class LoggingBehavior : IBehavior
     private const string _notApplicable = "N/A";
     private const string _requestCompleted = "Request {RequestType} completed successfully.";
     private const string _requestFailedWithException = "Request {RequestType} failed. (CorrelationId: {CorrelationId})";
-    private const string _requestFailedWithErrors = "Request {RequestType} failed with errors:\n{Errors}";
+    private const string _requestFailedWithErrors = "Request {RequestType} failed:\n{Error}";
     private const string _requestProcessing = "Processing request {RequestType}";
     private const string _requestSerializationFailed = "Failed to serialize request {RequestType}. Using ToString instead.";
     private const string _requestTruncated = "Request JSON truncated to {MaxLength} characters.";
@@ -89,7 +91,7 @@ internal sealed class LoggingBehavior : IBehavior
             // Proceed with the request and log success or failure
             return await next(request, cancellationToken)
                 .Tap(() => LogSuccess(request))
-                .TapError(errors => LogFailure(request, errors));
+                .TapError(error => LogFailure(request, error));
         }
         catch (Exception ex)
         {
@@ -107,13 +109,12 @@ internal sealed class LoggingBehavior : IBehavior
     /// Logs a failed request with associated errors.
     /// </summary>
     /// <param name="request">The request that failed.</param>
-    /// <param name="errors">The errors causing the failure.</param>
-    private void LogFailure(IRequest request, Error[] errors)
+    /// <param name="error">The errors causing the failure.</param>
+    private void LogFailure(IRequest request, Error error)
     {
-        errors ??= [];
-        _logger.LogWarning(_requestFailedWithErrors,
-            request.GetType().Name,
-            string.Join<Error>(Environment.NewLine, errors));
+        error.ThrowIfNull(nameof(error));
+        _logger.LogWarning(
+            _requestFailedWithErrors, request.GetType().Name, error);
     }
 
     /// <summary>
@@ -134,8 +135,9 @@ internal sealed class LoggingBehavior : IBehavior
             requestJson = JsonSerializer.Serialize(request, request.GetType(), _serializerOptions);
             if (requestJson.Length > _maxRequestJsonLength)
             {
-#if NET6_0_OR_GREATER
-                requestJson = requestJson[.._maxRequestJsonLength];
+                requestJson =
+#if NET8_0_OR_GREATER
+                requestJson[.._maxRequestJsonLength];
 #else
                 requestJson = requestJson.Substring(0, _maxRequestJsonLength);
 #endif

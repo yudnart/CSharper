@@ -59,14 +59,14 @@ jobs:
 
   run-unit-tests:
     needs: build
-    uses: ./.github/workflows/run-unit-tests.yml
+    uses: ./.github/workflows/unit-tests.yml
     with:
       branch: ${{ github.event.inputs.branch || github.ref_name }}
       log-mode: 'failed-only'
 
   publish-to-nuget:
     runs-on: windows-latest
-    needs: [build, run-unit-tests]
+    needs: [build, unit-tests]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

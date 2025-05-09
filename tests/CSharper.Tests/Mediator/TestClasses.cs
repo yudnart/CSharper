@@ -5,6 +5,13 @@ namespace CSharper.Tests.Mediator;
 
 internal sealed class TestRequest : IRequest
 {
+    public readonly static TestRequest Instance = new()
+    {
+        Id = "42",
+        Value = 42,
+        Description = "Default test request"
+    };
+
     public string Id { get; set; } = string.Empty;
     public int Value { get; set; }
     public string Description { get; set; } = default!;
@@ -18,6 +25,11 @@ internal sealed class TestRequest<T> : IRequest<T>
 
 internal sealed class UnserializableTestRequest : IRequest
 {
+    public readonly static UnserializableTestRequest Instance = new()
+    {
+        Id = "42"
+    };
+
     public string Id { get; set; } = string.Empty;
     public object CircularReference => this;
 
@@ -82,7 +94,7 @@ internal sealed class FailingBehavior : IBehavior
 {
     public Task<Result> Handle(IRequest request, BehaviorDelegate next, CancellationToken ct)
     {
-        return Task.FromResult(Result.Fail(new Error("Failed")));
+        return Task.FromResult(Result.Fail("Failed"));
     }
 }
 

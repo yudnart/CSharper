@@ -1,5 +1,6 @@
 ﻿using CSharper.Events;
-using CSharper.Utilities;
+using CSharper.Extensions;
+using CSharper.Types.Utilities;
 using System;
 using System.Collections.Generic;
 
@@ -20,6 +21,8 @@ public abstract class Entity : Entity<string>
 /// <typeparam name="TId">The type of the identifier.</typeparam>
 public abstract class Entity<TId>
 {
+    private int? _cachedHashCode = null;
+
     /// <summary>
     /// Gets or sets the identifier of the entity.
     /// </summary>
@@ -44,10 +47,11 @@ public abstract class Entity<TId>
     /// <summary>
     /// Queues a domain event to be dispatched.
     /// </summary>
-    /// <param name="domainEvent">The domain event to be queued.</param>
-    protected void QueueEvent(DomainEvent domainEvent)
+    /// <param name="event">The domain event to be queued.</param>
+    protected void QueueEvent(DomainEvent @event)
     {
-        _evenStore.Enqueue(domainEvent);
+        @event.ThrowIfNull(nameof(@event));
+        _evenStore.Enqueue(@event);
     }
 
     /// <summary>
@@ -65,42 +69,6 @@ public abstract class Entity<TId>
     #endregion
 
     #region Equality
-
-    /// <summary>
-    /// Determines whether two specified entities have the same value.
-    /// </summary>
-    /// <param name="a">The first entity to compare.</param>
-    /// <param name="b">The second entity to compare.</param>
-    /// <returns>
-    /// <c>true</c> if the value of <paramref name="a"/> is the same as the value of <paramref name="b"/>; otherwise, <c>false</c>.
-    /// </returns>
-    public static bool operator ==(Entity<TId> a, Entity<TId> b)
-    {
-        if (a is null && b is null)
-        {
-            return true;
-        }
-
-        if (a is null || b is null)
-        {
-            return false;
-        }
-
-        return a.Equals(b);
-    }
-
-    /// <summary>
-    /// Determines whether two specified entities have different values.
-    /// </summary>
-    /// <param name="a">The first entity to compare.</param>
-    /// <param name="b">The second entity to compare.</param>
-    /// <returns>
-    /// <c>true</c> if the value of <paramref name="a"/> is different from the value of <paramref name="b"/>; otherwise, <c>false</c>.
-    /// </returns>
-    public static bool operator !=(Entity<TId> a, Entity<TId> b)
-    {
-        return !(a == b);
-    }
 
     /// <summary>
     /// Determines whether the specified object is equal to the current object.
@@ -140,7 +108,49 @@ public abstract class Entity<TId>
     /// <returns>A hash code for the current object.</returns>
     public override int GetHashCode()
     {
-        return (GetUnproxiedType(this).ToString() + Id).GetHashCode();
+        if (!_cachedHashCode.HasValue)
+        {
+            _cachedHashCode = (GetUnproxiedType(this)
+                .ToString() + Id)
+                .GetHashCode();
+        }
+        return _cachedHashCode.Value;
+    }
+
+    /// <summary>
+    /// Determines whether two specified entities have the same value.
+    /// </summary>
+    /// <param name="a">The first entity to compare.</param>
+    /// <param name="b">The second entity to compare.</param>
+    /// <returns>
+    /// <c>true</c> if the value of <paramref name="a"/> is the same as the value of <paramref name="b"/>; otherwise, <c>false</c>.
+    /// </returns>
+    public static bool operator ==(Entity<TId> a, Entity<TId> b)
+    {
+        if (a is null && b is null)
+        {
+            return true;
+        }
+
+        if (a is null || b is null)
+        {
+            return false;
+        }
+
+        return a.Equals(b);
+    }
+
+    /// <summary>
+    /// Determines whether two specified entities have different values.
+    /// </summary>
+    /// <param name="a">The first entity to compare.</param>
+    /// <param name="b">The second entity to compare.</param>
+    /// <returns>
+    /// <c>true</c> if the value of <paramref name="a"/> is different from the value of <paramref name="b"/>; otherwise, <c>false</c>.
+    /// </returns>
+    public static bool operator !=(Entity<TId> a, Entity<TId> b)
+    {
+        return !(a == b);
     }
 
     #endregion

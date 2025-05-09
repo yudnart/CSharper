@@ -3,192 +3,120 @@ using FluentAssertions;
 
 namespace CSharper.Tests.Types;
 
-public sealed class AuditableEntityTests
+[Trait("Category", "Unit")]
+[Trait("TestOf", nameof(AuditableEntity))]
+public class AuditableEntityTests
 {
+    private readonly string _id = "TestId";
+    private readonly DateTimeOffset _createdAt = new(2023, 1, 1, 12, 0, 0, TimeSpan.Zero);
+    private readonly string _createdBy = "User1";
+    private readonly DateTimeOffset _lastModifiedAt = new(2023, 1, 2, 12, 0, 0, TimeSpan.Zero);
+    private readonly string _lastModifiedBy = "User2";
+
     [Fact]
-    public void AuditableEntity_CreatedAt_WhenSet_ShouldStoreValue()
+    public void Ctor_ValidValues_SetsProperties()
     {
         // Arrange
-        TestAuditableEntity entity = new("test-id");
-        DateTimeOffset createdAt = new(2023, 1, 1, 12, 0, 0, TimeSpan.Zero);
-
-        // Act
-        entity.SetCreatedAt(createdAt);
+        TestAuditableEntity entity = new(_id, _createdAt, _createdBy, _lastModifiedAt, _lastModifiedBy);
 
         // Assert
-        entity.CreatedAt.Should().Be(createdAt);
+        Assert.Multiple(() =>
+        {
+            entity.Id.Should().Be(_id);
+            entity.CreatedAt.Should().Be(_createdAt);
+            entity.CreatedBy.Should().Be(_createdBy);
+            entity.LastModifiedAt.Should().Be(_lastModifiedAt);
+            entity.LastModifiedBy.Should().Be(_lastModifiedBy);
+        });
     }
 
     [Fact]
-    public void AuditableEntity_CreatedBy_WhenSet_ShouldStoreValue()
+    public void Ctor_NullLastModifiedValues_SetsNullProperties()
     {
         // Arrange
-        TestAuditableEntity entity = new("test-id");
-        string createdBy = "user1";
-
-        // Act
-        entity.SetCreatedBy(createdBy);
+        TestAuditableEntity entity = new(_id, _createdAt, _createdBy);
 
         // Assert
-        entity.CreatedBy.Should().Be(createdBy);
+        Assert.Multiple(() =>
+        {
+            entity.Id.Should().Be(_id);
+            entity.CreatedAt.Should().Be(_createdAt);
+            entity.CreatedBy.Should().Be(_createdBy);
+            entity.LastModifiedAt.Should().BeNull();
+            entity.LastModifiedBy.Should().BeNull();
+        });
     }
 
     [Fact]
-    public void AuditableEntity_LastModifiedAt_WhenNotSet_ShouldBeNull()
+    public void Ctor_NullCreatedBy_SetsDefault()
     {
         // Arrange
-        TestAuditableEntity entity = new("test-id");
-
-        // Act & Assert
-        entity.LastModifiedAt.Should().BeNull();
-    }
-
-    [Fact]
-    public void AuditableEntity_LastModifiedAt_WhenSet_ShouldStoreValue()
-    {
-        // Arrange
-        TestAuditableEntity entity = new("test-id");
-        DateTimeOffset lastModifiedAt = new(2023, 2, 1, 12, 0, 0, TimeSpan.Zero);
-
-        // Act
-        entity.SetLastModifiedAt(lastModifiedAt);
+        TestAuditableEntity entity = new(_id, _createdAt, null!);
 
         // Assert
-        entity.LastModifiedAt.Should().Be(lastModifiedAt);
+        Assert.Multiple(() =>
+        {
+            entity.Id.Should().Be(_id);
+            entity.CreatedAt.Should().Be(_createdAt);
+            entity.CreatedBy.Should().BeNull();
+            entity.LastModifiedAt.Should().BeNull();
+            entity.LastModifiedBy.Should().BeNull();
+        });
     }
 
     [Fact]
-    public void AuditableEntity_LastModifiedBy_WhenNotSet_ShouldBeNull()
+    public void SetProperties_ValidValues_UpdatesProperties()
     {
         // Arrange
-        TestAuditableEntity entity = new("test-id");
-
-        // Act & Assert
-        entity.LastModifiedBy.Should().BeNull();
-    }
-
-    [Fact]
-    public void AuditableEntity_LastModifiedBy_WhenSet_ShouldStoreValue()
-    {
-        // Arrange
-        TestAuditableEntity entity = new("test-id");
-        string lastModifiedBy = "user2";
+        TestAuditableEntity entity = new(_id, _createdAt, _createdBy);
+        string newId = "NewId";
+        DateTimeOffset newCreatedAt = new(2023, 2, 1, 12, 0, 0, TimeSpan.Zero);
+        string newCreatedBy = "NewUser";
+        DateTimeOffset newLastModifiedAt = new(2023, 2, 2, 12, 0, 0, TimeSpan.Zero);
+        string newLastModifiedBy = "NewModifier";
 
         // Act
-        entity.SetLastModifiedBy(lastModifiedBy);
+        entity.SetProperties(
+            newId, newCreatedAt, newCreatedBy, newLastModifiedAt, newLastModifiedBy);
 
         // Assert
-        entity.LastModifiedBy.Should().Be(lastModifiedBy);
+        Assert.Multiple(() =>
+        {
+            entity.Id.Should().Be(newId);
+            entity.CreatedAt.Should().Be(newCreatedAt);
+            entity.CreatedBy.Should().Be(newCreatedBy);
+            entity.LastModifiedAt.Should().Be(newLastModifiedAt);
+            entity.LastModifiedBy.Should().Be(newLastModifiedBy);
+        });
     }
 
     [Fact]
-    public void AuditableEntity_IsTransient_WhenIdIsEmpty_ShouldReturnTrue()
+    public void SetProperties_NullValues_SetsNullProperties()
     {
         // Arrange
-        TestAuditableEntity entity = new(string.Empty);
+        TestAuditableEntity entity = new(_id, _createdAt, _createdBy);
 
         // Act
-        bool result = entity.IsTransient();
+        entity.SetProperties(null!, _createdAt, null!, null, null);
 
         // Assert
-        result.Should().BeTrue();
+        Assert.Multiple(() =>
+        {
+            entity.CreatedAt.Should().Be(_createdAt);
+            entity.CreatedBy.Should().BeNull();
+            entity.LastModifiedAt.Should().BeNull();
+            entity.LastModifiedBy.Should().BeNull();
+        });
     }
 
     [Fact]
-    public void SoftDeleteEntity_IsDeleted_WhenNotSet_ShouldBeFalse()
+    public void Inheritance_AuditableEntity_InheritsFromAuditableEntityString()
     {
         // Arrange
-        TestSoftDeleteEntity entity = new("test-id");
-
-        // Act & Assert
-        entity.IsDeleted.Should().BeFalse();
-    }
-
-    [Fact]
-    public void SoftDeleteEntity_IsDeleted_WhenSetToTrue_ShouldStoreValue()
-    {
-        // Arrange
-        TestSoftDeleteEntity entity = new("test-id");
-
-        // Act
-        entity.SetIsDeleted(true);
+        Type auditableEntityType = typeof(AuditableEntity);
+        Type auditableEntityStringType = typeof(AuditableEntity<string>);
 
         // Assert
-        entity.IsDeleted.Should().BeTrue();
-    }
-
-    [Fact]
-    public void SoftDeleteEntity_DeletedAt_WhenNotSet_ShouldBeNull()
-    {
-        // Arrange
-        TestSoftDeleteEntity entity = new("test-id");
-
-        // Act & Assert
-        entity.DeletedAt.Should().BeNull();
-    }
-
-    [Fact]
-    public void SoftDeleteEntity_DeletedAt_WhenSet_ShouldStoreValue()
-    {
-        // Arrange
-        TestSoftDeleteEntity entity = new("test-id");
-        DateTimeOffset deletedAt = new(2023, 3, 1, 12, 0, 0, TimeSpan.Zero);
-
-        // Act
-        entity.SetDeletedAt(deletedAt);
-
-        // Assert
-        entity.DeletedAt.Should().Be(deletedAt);
-    }
-
-    [Fact]
-    public void SoftDeleteEntity_DeletedBy_WhenNotSet_ShouldBeNull()
-    {
-        // Arrange
-        TestSoftDeleteEntity entity = new("test-id");
-
-        // Act & Assert
-        entity.DeletedBy.Should().BeNull();
-    }
-
-    [Fact]
-    public void SoftDeleteEntity_DeletedBy_WhenSet_ShouldStoreValue()
-    {
-        // Arrange
-        TestSoftDeleteEntity entity = new("test-id");
-        string deletedBy = "user3";
-
-        // Act
-        entity.SetDeletedBy(deletedBy);
-
-        // Assert
-        entity.DeletedBy.Should().Be(deletedBy);
-    }
-
-    [Fact]
-    public void SoftDeleteEntity_InheritsAuditableProperties_CreatedAt_ShouldBeSettable()
-    {
-        // Arrange
-        TestSoftDeleteEntity entity = new("test-id");
-        DateTimeOffset createdAt = new(2023, 1, 1, 12, 0, 0, TimeSpan.Zero);
-
-        // Act
-        entity.SetCreatedAt(createdAt);
-
-        // Assert
-        entity.CreatedAt.Should().Be(createdAt);
-    }
-
-    [Fact]
-    public void SoftDeleteEntity_IsTransient_WhenIdIsEmpty_ShouldReturnTrue()
-    {
-        // Arrange
-        TestSoftDeleteEntity entity = new(string.Empty);
-
-        // Act
-        bool result = entity.IsTransient();
-
-        // Assert
-        result.Should().BeTrue();
+        auditableEntityType.BaseType.Should().Be(auditableEntityStringType);
     }
 }

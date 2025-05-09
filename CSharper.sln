@@ -4,9 +4,11 @@ VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharper", "src\CSharper\CSharper.csproj", "{FA4E6A8C-DF2F-4AA9-A93E-3612D17CC4C7}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{A58B06E7-6BF0-44FC-B7FA-FC780EE810B7}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A58B06E7-6BF0-44FC-B7FA-FC780EE810B7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharper.Tests", "tests\CSharper.Tests\CSharper.Tests.csproj", "{86124DC6-95A3-414E-BB12-4A98956F32D0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{FA4E6A8C-DF2F-4AA9-A93E-3612D17CC4C7} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{86124DC6-95A3-414E-BB12-4A98956F32D0} = {A58B06E7-6BF0-44FC-B7FA-FC780EE810B7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

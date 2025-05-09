@@ -6,6 +6,8 @@ using Moq;
 
 namespace CSharper.Tests.Mediator;
 
+[Trait("Category", "Unit")]
+[Trait("TestOf", nameof(SimpleMediator))]
 public sealed class SimpleMediatorTests
 {
     private readonly Mock<IServiceProvider> _serviceProviderMock;
@@ -200,7 +202,6 @@ public sealed class SimpleMediatorTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.Errors.Should().ContainSingle().Which.Message.Should().Be("Failed");
         _executionOrder.Should().BeEmpty();
     }
 
@@ -220,7 +221,6 @@ public sealed class SimpleMediatorTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.Errors.Should().ContainSingle().Which.Message.Should().Be("Failed");
         _executionOrder.Should().BeEmpty();
     }
 

@@ -1,11 +1,12 @@
 ﻿using System;
 
-namespace CSharper.Utilities;
+namespace CSharper.Extensions;
+
 
 /// <summary>
 /// Provides utility methods for null and whitespace validation.
 /// </summary>
-public static class NullChecker
+public static class TypeGuard
 {
     /// <summary>
     /// Throws an <see cref="ArgumentNullException"/> if the specified object is null.

@@ -1,11 +1,13 @@
-﻿using CSharper.Results;
-using CSharper.Utilities;
+﻿using CSharper.Errors;
+using CSharper.Extensions;
+using CSharper.Results;
+using CSharper.Results.Validation;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 
 namespace CSharper.Functional;
 
+[DebuggerStepThrough]
 /// <summary>
 /// Provides extension methods for handling synchronous <see cref="Result"/> operations
 /// in a functional programming style.
@@ -50,10 +52,9 @@ public static class ResultExtensions
     {
         if (result.IsSuccess)
         {
-            throw new InvalidOperationException("Cannot map errors from a successful Result.");
+            throw new InvalidOperationException("Success result cannot map to an failed result.");
         }
-        IReadOnlyList<Error> errors = result.Errors;
-        return Result.Fail<T>(errors[0], [.. errors.Skip(1)]);
+        return Result.Fail<T>(result.Error!);
     }
 
     /// <summary>
@@ -79,12 +80,11 @@ public static class ResultExtensions
     /// <param name="onFailure">The synchronous function to invoke with errors if <paramref name="result"/> is a failure.</param>
     /// <returns>The result of the appropriate handler.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> or <paramref name="onFailure"/> is null.</exception>
-    public static T Match<T>(this Result result,
-        Func<T> onSuccess, Func<Error[], T> onFailure)
+    public static T Match<T>(this Result result, Func<T> onSuccess, Func<Error, T> onFailure)
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
         onFailure.ThrowIfNull(nameof(onFailure));
-        return result.IsSuccess ? onSuccess() : onFailure([.. result.Errors]);
+        return result.IsSuccess ? onSuccess() : onFailure(result.Error!);
     }
 
     /// <summary>
@@ -94,14 +94,14 @@ public static class ResultExtensions
     /// <param name="onFailure">The synchronous action to invoke with errors if <paramref name="result"/> is a failure.</param>
     /// <returns>The original result if successful, or a successful <see cref="Result"/> after handling failure.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onFailure"/> is null.</exception>
-    public static Result Recover(this Result result, Action<Error[]> onFailure)
+    public static Result Recover(this Result result, Action<Error> onFailure)
     {
         onFailure.ThrowIfNull(nameof(onFailure));
         if (result.IsSuccess)
         {
             return result;
         }
-        onFailure([.. result.Errors]);
+        onFailure(result.Error!);
         return Result.Ok();
     }
 
@@ -129,12 +129,12 @@ public static class ResultExtensions
     /// <param name="action">The synchronous action to perform with errors if <paramref name="result"/> is a failure.</param>
     /// <returns>The original <see cref="Result"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="action"/> is null.</exception>
-    public static Result TapError(this Result result, Action<Error[]> action)
+    public static Result TapError(this Result result, Action<Error> action)
     {
         action.ThrowIfNull(nameof(action));
         if (result.IsFailure)
         {
-            action([.. result.Errors]);
+            action(result.Error!);
         }
         return result;
     }

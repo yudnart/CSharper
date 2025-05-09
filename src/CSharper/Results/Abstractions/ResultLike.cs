@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
-namespace CSharper.Results;
+namespace CSharper.Results.Abstractions;
 
 /// <summary>
-/// Wraps a result or result factory for aggregation in methods like <see cref="Result.Collect"/>.
+/// Wraps a result or result factory for aggregation in methods like <see cref="Result.Sequence"/>.
 /// </summary>
 /// <remarks>
 /// This class supports both <see cref="Result"/> and <see cref="Result{T}"/> instances, as well as
@@ -41,8 +42,18 @@ public sealed class ResultLike
         {
             ResultBase result => result,
             Func<ResultBase> factory => factory(),
-            _ => throw new NotSupportedException($"Invalid result type. (${_result.GetType().FullName})")
+            _ => ThrowInvalidResultType(_result)
         };
+    }
+
+    [ExcludeFromCodeCoverage
+#if NET8_0_OR_GREATER
+        (Justification = "Unreachable defensive code.")
+#endif
+    ]
+    private static ResultBase ThrowInvalidResultType(object result)
+    {
+        throw new NotSupportedException($"Invalid result type. (${result.GetType().FullName})");
     }
 
     /// <summary>

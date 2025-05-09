@@ -1,67 +1,110 @@
-﻿using CSharper.Results;
+﻿using CSharper.Errors;
+using CSharper.Results;
+using CSharper.Tests.Errors;
 using FluentAssertions;
+using TestData = CSharper.Tests.Results.ResultTestData;
+using TestUtility = CSharper.Tests.Results.ResultTestUtility;
 
 namespace CSharper.Tests.Results;
 
+[Trait("Category", "Unit")]
+[Trait("TestOf", "ResultT")]
 public sealed class ResultTTests
 {
     [Theory]
-    [InlineData("String value")]
-    [InlineData(42)]
-    [InlineData(42.00)]
-    [InlineData(42L)]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void ResultT_SuccessWithValue_HasCorrectStateAndValue(object value)
+    [MemberData(nameof(TValues))]
+    public void OkT_ReturnsSuccessResult<T>(T value)
     {
         // Act
-        Result<object> result = Result.Ok(value);
+        Result<T> result = Result.Ok(value);
 
         // Assert
-        ResultTestHelpers.AssertSuccessResult(result);
-        result.Value.Should().Be(value);
+        TestUtility.AssertSuccessResult(result, value);
     }
 
     [Fact]
-    public void ResultT_SuccessWithNullValue_HasCorrectStateAndNullValue()
+    public void FailT_WithError_ReturnsFailureResult()
     {
-        // Arrange
-        string nullString = null!;
-
         // Act
-        Result<string> result = Result.Ok(nullString);
+        Error error = ErrorTestData.ErrorNoCode;
+        Result<int> result = Result.Fail<int>(error);
 
         // Assert
-        ResultTestHelpers.AssertSuccessResult(result);
-        result.Value.Should().Be(nullString);
+        TestUtility.AssertFailureResult(result, error);
     }
 
     [Fact]
-    public void ResultT_FailureWithSingleError_HasCorrectErrorsAndThrowsOnValueAccess()
+    public void FailT_NullError_ThrowsArgumentNullException()
     {
         // Arrange
-        Error error = new("Something went wrong", "ERR001", "User.Name");
+        Error nullError = null!;
 
         // Act
-        Result<string> result = Result.Fail<string>(error);
-        Action act = () => _ = result.Value;
+        Action act = () => _ = Result.Fail<long>(nullError);
 
         // Assert
-        ResultTestHelpers.AssertFailureResult(result, error);
+        act.Should().ThrowExactly<ArgumentNullException>()
+            .And.ParamName.Should().NotBeNullOrWhiteSpace();
     }
 
-    [Fact]
-    public void ResultT_FailureWithMultipleErrors_HasCorrectErrorsAndThrowsOnValueAccess()
+    [Theory]
+    [MemberData(
+        nameof(TestData.FailValidTestCases),
+        MemberType = typeof(TestData)
+    )]
+    public void FailT_ValidParams_ReturnsFailureResult(
+        string message, string? code = null)
     {
-        // Arrange
-        Error mainError = new("Primary error", "ERR002", "System");
-        Error detailError1 = new("Detail 1", null, "System.Subsystem");
-        Error detailError2 = new("Detail 2", "ERR003");
-
         // Act
-        Result<int> result = Result.Fail<int>(mainError, detailError1, detailError2);
+        Result<string> result = Result.Fail<string>(message, code);
 
         // Assert
-        ResultTestHelpers.AssertFailureResult(result, mainError, detailError1, detailError2);
+        Assert.Multiple(() =>
+        {
+            TestUtility.AssertFailureResult(result);
+            result.Error!.Message.Should().Be(message);
+            result.Error!.Code.Should().Be(code);
+        });
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(TestData.FailInvalidMessageTestCases),
+        MemberType = typeof(TestData)
+    )]
+    public void FailT_InvalidMessage_ThrowArgumentNullException(
+        string? message)
+    {
+        // Arrange
+        Action act = () => _ = Result.Fail<string>(message!);
+
+        // Act & Assert
+        act.Should().ThrowExactly<ArgumentException>()
+            .And.ParamName.Should().NotBeNull();
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultTToStringTestCases),
+        MemberType = typeof(TestData)
+    )]
+    public void ToString_FormatsCorrectly<T>(
+        string description, Result<T> sut, string expected)
+    {
+        // Act
+        string result = sut.ToString();
+
+        // Assert
+        result.Should().Be(expected, description);
+    }
+
+    public static IEnumerable<object[]> TValues()
+    {
+        yield return [42];
+        yield return [42L];
+        yield return [42.0];
+        yield return ["Forty-two"];
+        yield return [true];
+        yield return [false];
     }
 }

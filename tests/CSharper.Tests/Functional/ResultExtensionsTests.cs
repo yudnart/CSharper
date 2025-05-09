@@ -1,321 +1,297 @@
-﻿using CSharper.Functional;
+﻿using CSharper.Errors;
+using CSharper.Functional;
 using CSharper.Results;
-using CSharper.Tests.Results;
-using CSharper.Tests.TestUtilities;
 using FluentAssertions;
+using TestData = CSharper.Tests.Functional.FunctionalResultTestData;
+using TestUtility = CSharper.Tests.Results.ResultTestUtility;
 
 namespace CSharper.Tests.Functional;
 
+[Trait("Category", "Unit")]
+[Trait("TestOf", nameof(ResultExtensions))]
 public sealed class ResultExtensionsTests
 {
-    #region Bind Tests
-
-    [Fact]
-    public void Bind_SuccessResult_CallsNextAndReturnsResult()
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultBindTestData),
+        MemberType = typeof(TestData)
+    )]
+    public void Bind(Result sut, Result nextResult)
     {
-        Result initial = Result.Ok();
-        Func<Result> next = Result.Ok;
+        // Act
+        Result result = sut.Bind(() => nextResult);
 
-        Result result = initial.Bind(next);
-
-        ResultTestHelpers.AssertSuccessResult(result);
+        // Assert
+        Assert.Multiple(() =>
+        {
+            result.Should().Be(
+                sut.IsSuccess ? nextResult : sut);
+        });
     }
 
-    [Fact]
-    public void BindT_SuccessResult_CallsNextAndReturnsResultT()
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultBindTestData),
+        MemberType = typeof(TestData)
+    )]
+    public void Bind_Chain(Result sut, Result final)
     {
-        Result initial = Result.Ok();
-        int value = 42;
-        Func<Result<int>> next = () => Result.Ok(value);
+        // Act
+        Result result = sut
+            .Bind(NextValue)
+            .Bind(_ => Result.Ok())
+            .Bind(() => Result.Ok("Hello world!"))
+            .Bind(_ => Result.Ok(false))
+            .Bind(_ => final);
 
-        Result<int> result = initial.Bind(next);
-
-        ResultTestHelpers.AssertSuccessResult(result, value);
+        // Assert
+        if (sut.IsSuccess)
+        {
+            result.Should().Be(final);
+        }
+        else
+        {
+            TestUtility.AssertFailureResult(result, sut.Error);
+        }
+    }
+    public Result<int> NextValue()
+    {
+        return Result.Ok(42); // Debugger steps here
     }
 
-    [Fact]
-    public void Bind_FailureResult_ReturnsOriginalFailure()
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultData),
+        MemberType = typeof(TestData)
+    )]
+    public void Bind_WithNullNext_ThrowsArgumentNullException(
+        Result sut)
     {
-        Error error = new("Error", code: "FAIL");
-        Result initial = Result.Fail(error);
-        Func<Result> next = Result.Ok;
-
-        Result result = initial.Bind(next);
-
-        ResultTestHelpers.AssertFailureResult(result, error);
-    }
-
-    [Fact]
-    public void BindT_FailureResult_MapsErrorsToResultT()
-    {
-        Error error = new("Error", code: "FAIL");
-        Result initial = Result.Fail(error);
-        Func<Result<int>> next = () => Result.Ok(42);
-
-        Result<int> result = initial.Bind(next);
-
-        ResultTestHelpers.AssertFailureResult(result, error);
-    }
-
-    [Fact]
-    public void Bind_NullNext_ThrowsArgumentNullException()
-    {
-        Result initial = Result.Ok();
+        // Arrange
         Func<Result> next = null!;
+        Action act = () => sut.Bind(next);
 
-        Action act = () => initial.Bind(next);
-
-        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
+        // Act & Assert
+        act.Should().Throw<ArgumentNullException>()
+            .And.ParamName.Should().NotBeNullOrWhiteSpace();
     }
 
-    [Fact]
-    public void BindT_NullNext_ThrowsArgumentNullException()
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultBindTTestData),
+        MemberType = typeof(TestData)
+    )]
+    public void BindT<T>(Result sut, Result<T> nextResult)
     {
-        Result initial = Result.Ok();
+        // Act
+        Result<T> result = sut.Bind(() => nextResult);
+
+        // Assert
+        if (sut.IsSuccess)
+        {
+            result.Should().Be(nextResult);
+        }
+        else
+        {
+            TestUtility.AssertFailureResult(result, sut.Error);
+        }
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultBindTTestData),
+        MemberType = typeof(TestData)
+    )]
+    public void BindT_Chain<T>(Result sut, Result<T> final)
+    {
+        // Act
+        Result<T> result = sut
+            .Bind(() => Result.Ok(42))
+            .Bind(_ => Result.Ok())
+            .Bind(() => Result.Ok("Hello world!"))
+            .Bind(_ => Result.Ok(false))
+            .Bind(_ => final);
+
+        // Assert
+        if (sut.IsSuccess)
+        {
+            result.Should().Be(final);
+        }
+        else
+        {
+            TestUtility.AssertFailureResult(result, sut.Error);
+        }
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultData),
+        MemberType = typeof(TestData)
+    )]
+    public void BindT_WithNullNext_ThrowsArgumentNullException<T>(
+        Result sut)
+    {
+        // Arrange
         Func<Result<int>> next = null!;
+        Action act = () => sut.Bind(next);
 
-        Action act = () => initial.Bind(next);
-
-        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
+        // Act & Assert
+        act.Should().Throw<ArgumentNullException>()
+            .And.ParamName.Should().NotBeNullOrWhiteSpace();
     }
 
-    #endregion
-
-    #region MapError Tests
-
-    [Fact]
-    public void MapError_FailureResult_ReturnsResultFailureT()
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultData),
+        MemberType = typeof(TestData)
+    )]
+    public void MapError(Result sut)
     {
-        Error error = new("Error", code: "FAIL");
-        Result initial = Result.Fail(error);
+        // Arrange
+        Func<Result<string>> act = sut.MapError<string>;
 
-        Result<int> result = initial.MapError<int>();
-
-        ResultTestHelpers.AssertFailureResult(result, error);
+        // Act & Assert
+        Assert.Multiple(() =>
+        {
+            if (sut.IsSuccess)
+            {
+                act.Should()
+                    .ThrowExactly<InvalidOperationException>()
+                    .And.Message.Should().NotBeNullOrWhiteSpace();
+            }
+            else
+            {
+                Result<string> result = act();
+                TestUtility.AssertFailureResult(result, sut.Error);
+            }
+        });
     }
 
-    [Fact]
-    public void MapError_SuccessResult_ThrowsInvalidOperationException()
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultMatchTestCases),
+        MemberType = typeof(TestData)
+    )]
+    public void Match<T>(Result sut, T successValue, T errorValue)
     {
-        Result initial = Result.Ok();
+        // Arrange
+        T onSuccess() => successValue;
 
-        Action act = () => initial.MapError<int>();
+        Error onFailureError = default!;
+        T onFailure(Error error)
+        {
+            onFailureError = error;
+            return errorValue;
+        }
 
-        AssertHelper.AssertException<InvalidOperationException>(act);
+        // Act
+        T? result1 = sut.Match(onSuccess);
+        T result2 = sut.Match(onSuccess, onFailure);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            if (sut.IsSuccess)
+            {
+                onFailureError.Should().Be(default(Error));
+
+                result1.Should().Be(successValue);
+                result2.Should().Be(successValue);
+            }
+            else
+            {
+                onFailureError.Should().Be(sut.Error);
+
+                result1.Should().Be(default(T));
+                result2.Should().Be(errorValue);
+            }
+        });
     }
 
-    #endregion
-
-    #region Match Tests
-
-    [Fact]
-    public void Match_SuccessOnly_CallsOnSuccessAndReturnsValue()
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultData),
+        MemberType = typeof(TestData)
+    )]
+    public void Recover(Result sut)
     {
-        Result initial = Result.Ok();
-        int value = 42;
-        Func<int> onSuccess = () => value;
+        // Arrange
+        Error error = default!;
+        Result result = sut.Recover(sutError =>
+        {
+            error = sutError;
+        });
 
-        int? result = initial.Match(onSuccess);
-
-        result.Should().Be(value);
+        // Assert
+        Assert.Multiple(() =>
+        {
+            TestUtility.AssertSuccessResult(result);
+            if (sut.IsSuccess)
+            {
+                result.Should().Be(sut);
+                error.Should().Be(default(Error));
+            }
+            else
+            {
+                result.Should().NotBe(sut);
+                error.Should().Be(sut.Error);
+            }
+        });
     }
 
-    [Fact]
-    public void Match_SuccessOnlyFailure_ReturnsDefault()
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultData),
+        MemberType = typeof(TestData)
+    )]
+    public void Tap(Result sut)
     {
-        Result initial = Result.Fail("Error", code: "FAIL");
-        Func<int> onSuccess = () => 42;
+        // Arrange
+        bool tapCalled = false;
+        void action()
+        {
+            tapCalled = true;
+        }
 
-        int? result = initial.Match(onSuccess);
+        // Act
+        Result result = sut.Tap(action);
 
-        result.Should().Be(default);
+        // Assert
+        Assert.Multiple(() =>
+        {
+            result.Should().Be(sut);
+            tapCalled.Should().Be(sut.IsSuccess ? true : false);
+        });
     }
 
-    [Fact]
-    public void Match_SuccessOnlyNullOnSuccess_ThrowsArgumentNullException()
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultData),
+        MemberType = typeof(TestData)
+    )]
+    public void TapError(Result sut)
     {
-        Result initial = Result.Ok();
-        Func<int> onSuccess = null!;
+        // Arrange
+        Error error = default!;
 
-        Action act = () => initial.Match(onSuccess);
+        // Act
+        Result result = sut.TapError(sutError =>
+        {
+            error = sutError;
+        });
 
-        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
+        // Assert
+        Assert.Multiple(() =>
+        {
+            result.Should().Be(sut);
+            if (sut.IsSuccess)
+            {
+                error.Should().Be(default(Error));
+            }
+            else
+            {
+                error.Should().Be(sut.Error);
+            }
+        });
     }
-
-    [Fact]
-    public void Match_SuccessAndFailure_CallsOnSuccessAndReturnsValue()
-    {
-        Result initial = Result.Ok();
-        int value = 42;
-        Func<int> onSuccess = () => value;
-        Func<Error[], int> onFailure = _ => -1;
-
-        int result = initial.Match(onSuccess, onFailure);
-
-        result.Should().Be(value);
-    }
-
-    [Fact]
-    public void Match_SuccessAndFailureFailure_CallsOnFailureAndReturnsValue()
-    {
-        Result initial = Result.Fail("Error", code: "FAIL");
-        Func<int> onSuccess = () => 42;
-        Func<Error[], int> onFailure = errors => errors.Length;
-
-        int result = initial.Match(onSuccess, onFailure);
-
-        result.Should().Be(1);
-    }
-
-    [Fact]
-    public void Match_SuccessAndFailureNullOnSuccess_ThrowsArgumentNullException()
-    {
-        Result initial = Result.Ok();
-        Func<int> onSuccess = null!;
-        Func<Error[], int> onFailure = _ => -1;
-
-        Action act = () => initial.Match(onSuccess, onFailure);
-
-        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
-    }
-
-    [Fact]
-    public void Match_SuccessAndFailureNullOnFailure_ThrowsArgumentNullException()
-    {
-        Result initial = Result.Ok();
-        Func<int> onSuccess = () => 42;
-        Func<Error[], int> onFailure = null!;
-
-        Action act = () => initial.Match(onSuccess, onFailure);
-
-        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
-    }
-
-    #endregion
-
-    #region Recover Tests
-
-    [Fact]
-    public void Recover_FailureResult_CallsOnFailureAndReturnsSuccess()
-    {
-        Error error = new("Error", code: "FAIL");
-        Result initial = Result.Fail(error);
-        bool wasCalled = false;
-        Action<Error[]> onFailure = _ => wasCalled = true;
-
-        Result result = initial.Recover(onFailure);
-
-        ResultTestHelpers.AssertSuccessResult(result);
-        wasCalled.Should().BeTrue();
-    }
-
-    [Fact]
-    public void Recover_SuccessResult_DoesNotCallOnFailureAndReturnsOriginal()
-    {
-        Result initial = Result.Ok();
-        bool wasCalled = false;
-        Action<Error[]> onFailure = _ => wasCalled = true;
-
-        Result result = initial.Recover(onFailure);
-
-        ResultTestHelpers.AssertSuccessResult(result);
-        wasCalled.Should().BeFalse();
-    }
-
-    [Fact]
-    public void Recover_NullOnFailure_ThrowsArgumentNullException()
-    {
-        Result initial = Result.Fail("Error", code: "FAIL");
-        Action<Error[]> onFailure = null!;
-
-        Action act = () => initial.Recover(onFailure);
-
-        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
-    }
-
-    #endregion
-
-    #region Tap Tests
-
-    [Fact]
-    public void Tap_SuccessResult_CallsActionAndReturnsOriginal()
-    {
-        Result initial = Result.Ok();
-        bool wasCalled = false;
-        Action action = () => wasCalled = true;
-
-        Result result = initial.Tap(action);
-
-        ResultTestHelpers.AssertSuccessResult(result);
-        wasCalled.Should().BeTrue();
-    }
-
-    [Fact]
-    public void Tap_FailureResult_DoesNotCallActionAndReturnsOriginal()
-    {
-        Error error = new("Error", code: "FAIL");
-        Result initial = Result.Fail(error);
-        bool wasCalled = false;
-        Action action = () => wasCalled = true;
-
-        Result result = initial.Tap(action);
-
-        ResultTestHelpers.AssertFailureResult(result, error);
-        wasCalled.Should().BeFalse();
-    }
-
-    [Fact]
-    public void Tap_NullAction_ThrowsArgumentNullException()
-    {
-        Result initial = Result.Ok();
-        Action action = null!;
-
-        Action act = () => initial.Tap(action);
-
-        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
-    }
-
-    #endregion
-
-    #region TapError Tests
-
-    [Fact]
-    public void TapError_FailureResult_CallsActionAndReturnsOriginal()
-    {
-        Error error = new("Error", code: "FAIL");
-        Result initial = Result.Fail(error);
-        bool wasCalled = false;
-        Action<Error[]> action = _ => wasCalled = true;
-
-        Result result = initial.TapError(action);
-
-        ResultTestHelpers.AssertFailureResult(result, error);
-        wasCalled.Should().BeTrue();
-    }
-
-    [Fact]
-    public void TapError_SuccessResult_DoesNotCallActionAndReturnsOriginal()
-    {
-        Result initial = Result.Ok();
-        bool wasCalled = false;
-        Action<Error[]> action = _ => wasCalled = true;
-
-        Result result = initial.TapError(action);
-
-        ResultTestHelpers.AssertSuccessResult(result);
-        wasCalled.Should().BeFalse();
-    }
-
-    [Fact]
-    public void TapError_NullAction_ThrowsArgumentNullException()
-    {
-        Result initial = Result.Fail("Error", code: "FAIL");
-        Action<Error[]> action = null!;
-
-        Action act = () => initial.TapError(action);
-
-        AssertHelper.AssertArgumentException<ArgumentNullException>(act);
-    }
-
-    #endregion
 }
