@@ -63,30 +63,28 @@ internal sealed class SimpleMediator : IMediator
 
     #region Internal
 
+    private static BehaviorDelegate BuildPipeline(BehaviorDelegate handle, IBehavior<IRequest>[] behaviors)
+    {
+        foreach (IBehavior<IRequest> behavior in behaviors.Reverse())
+        {
+            BehaviorDelegate prev = handle;
+            handle = (req, ct) => behavior.Handle(req, prev, ct);
+        }
+
+        return handle;
+    }
+
     /// <summary>
     /// Executes the pipeline for a request without a return value.
     /// </summary>
     /// <param name="request">The request to process.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A task yielding the result of the pipeline execution.</returns>
-    private async Task<Result> ExecutePipeline(IRequest request, CancellationToken cancellationToken)
+    private Task<Result> ExecutePipeline(IRequest request, CancellationToken cancellationToken)
     {
         IBehavior<IRequest>[] behaviors = [.. _globalBehaviors, .. ResolveBehaviors(request)];
-        if (behaviors.Length == 0)
-        {
-            return await Handle(request, cancellationToken);
-        }
-
-        async Task<Result> Execute(int index, IRequest req, CancellationToken ct)
-        {
-            if (index >= behaviors.Length)
-            {
-                return await Handle(req, ct);
-            }
-            return await behaviors[index].Handle(req, (r, c) => Execute(index + 1, r, c), ct);
-        }
-
-        return await Execute(0, request, cancellationToken);
+        BehaviorDelegate next = BuildPipeline(Handle, behaviors);
+        return next(request, cancellationToken);
     }
 
     /// <summary>
@@ -96,27 +94,15 @@ internal sealed class SimpleMediator : IMediator
     /// <param name="request">The request to process.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A task yielding the result of the pipeline execution, including the value.</returns>
-    private async Task<Result<TValue>> ExecutePipeline<TValue>(
+    private Task<Result<TValue>> ExecutePipeline<TValue>(
         IRequest<TValue> request, CancellationToken cancellationToken)
     {
         IBehavior<IRequest>[] behaviors = [.. _globalBehaviors, .. ResolveBehaviors(request)];
-        if (behaviors.Length == 0)
-        {
-            return await Handle(request, cancellationToken);
-        }
-
-        Result<TValue> value = null!;
-        async Task<Result> Execute(int index, IRequest req, CancellationToken ct)
-        {
-            if (index >= behaviors.Length)
-            {
-                value = await Handle(request, cancellationToken);
-                return value.Bind(_ => Result.Ok());
-            }
-            return await behaviors[index].Handle(req, (r, c) => Execute(index + 1, r, c), ct);
-        }
-
-        return await Execute(0, request, cancellationToken).Bind(() => value);
+        Result<TValue> result = null!;
+        BehaviorDelegate next = BuildPipeline((req, ct) => Handle(request, ct)
+            .Tap(value => result = Result.Ok(value))
+            .Bind(_ => Result.Ok()), behaviors);
+        return next(request, cancellationToken).Bind(() => result);
     }
 
     /// <summary>

@@ -14,6 +14,10 @@ public static class TaskExtensions
         next.ThrowIfNull(nameof(next));
         return task.ContinueWith(t =>
         {
+            if (t.IsCanceled)
+            {
+                CancelTask(t);
+            }
             if (t.IsFaulted)
             {
                 ThrowTaskException(t);
@@ -29,12 +33,22 @@ public static class TaskExtensions
         next.ThrowIfNull(nameof(next));
         return task.ContinueWith(t =>
         {
+            if (t.IsCanceled)
+            {
+                CancelTask(t);
+            }
             if (t.IsFaulted)
             {
                 ThrowTaskException(t);
             }
             return next(t.Result);
         });
+    }
+
+    private static void CancelTask(Task t)
+    {
+        throw new TaskCanceledException(
+            $@"Task canceled. TaskID={t.Id}, Status={t.Status}.");
     }
 
     [ExcludeFromCodeCoverage
