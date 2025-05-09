@@ -78,7 +78,7 @@ public sealed class ResultExtensionsTests
 
     [Theory]
     [MemberData(
-        nameof(TestData.BindTTestCases),
+        nameof(TestData.ResultBindTTestData),
         MemberType = typeof(TestData)
     )]
     public void BindT<T>(Result sut, Result<T> nextResult)
@@ -99,7 +99,7 @@ public sealed class ResultExtensionsTests
 
     [Theory]
     [MemberData(
-        nameof(TestData.BindTTestCases),
+        nameof(TestData.ResultBindTTestData),
         MemberType = typeof(TestData)
     )]
     public void BindT_Chain<T>(Result sut, Result<T> final)

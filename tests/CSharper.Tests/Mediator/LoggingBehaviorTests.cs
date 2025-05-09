@@ -29,6 +29,28 @@ public sealed class LoggingBehaviorTests
     }
 
     [Fact]
+    public void Ctor_ValidParams_Succeeds()
+    {
+        // Act
+        LoggingBehavior sut = new(_logger, _serviceProviderMock.Object);
+
+        // Assert
+        sut.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Ctor_NullLogger_Throws()
+    {
+        // Arrange
+        ILogger<LoggingBehavior> nullLogger = null!;
+        Action act = () => _ = new LoggingBehavior(nullLogger, _serviceProviderMock.Object);
+
+        // Assert
+        act.Should().ThrowExactly<ArgumentNullException>()
+            .And.ParamName.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
     public async Task Handle_SuccessfulRequest_LogsStartAndSuccess()
     {
         // Arrange
@@ -36,7 +58,7 @@ public sealed class LoggingBehaviorTests
 
         IRequest request = TestRequest.Instance;
         Result nextResult = Result.Ok();
-        BehaviorDelegate next = (r, c) => Task.FromResult(nextResult);
+        Task<Result> next(IRequest r, CancellationToken c) => Task.FromResult(nextResult);
 
         string requestType = request.GetType().Name;
         string requestData = JsonSerializer.Serialize(request, typeof(TestRequest));
@@ -71,7 +93,7 @@ public sealed class LoggingBehaviorTests
         string errorMessage = "Test error";
         Error error = new(errorMessage);
         Result nextResult = Result.Fail(error);
-        BehaviorDelegate next = (_, _) => Task.FromResult(nextResult);
+        Task<Result> next(IRequest r, CancellationToken c) => Task.FromResult(nextResult);
 
         string requestType = request.GetType().Name;
         string requestData = JsonSerializer.Serialize(request, typeof(TestRequest));
@@ -106,8 +128,8 @@ public sealed class LoggingBehaviorTests
 
         IRequest request = TestRequest.Instance;
         string exceptionMessage = "Test exception";
-        InvalidOperationException exception = new InvalidOperationException(exceptionMessage);
-        BehaviorDelegate next = (_, _) => throw exception;
+        InvalidOperationException exception = new(exceptionMessage);
+        Task<Result> next(IRequest r, CancellationToken c) => throw exception;
 
         string requestType = request.GetType().Name;
         string requestData = JsonSerializer.Serialize(request, typeof(TestRequest));

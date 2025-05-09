@@ -108,7 +108,7 @@ public sealed class AsyncResultExtensionsTests
 
     [Theory]
     [MemberData(
-        nameof(TestData.BindTTestCases),
+        nameof(TestData.ResultBindTTestData),
         MemberType = typeof(TestData)
     )]
     public async Task BindT<T>(Result initial, Result<T> nextResult)
@@ -154,7 +154,7 @@ public sealed class AsyncResultExtensionsTests
 
     [Theory]
     [MemberData(
-        nameof(TestData.BindTTestCases),
+        nameof(TestData.ResultBindTTestData),
         MemberType = typeof(TestData)
     )]
     public async Task BindT_Chain<T>(Result initial, Result<T> final)
@@ -242,19 +242,19 @@ public sealed class AsyncResultExtensionsTests
 
     [Theory]
     [MemberData(
-        nameof(TestData.ResultEnsureInvalidTestCases),
+        nameof(TestData.ResultInvalidErrorMessages),
         MemberType = typeof(TestData)
     )]
     public void Ensure_InvalidParams_ThrowsArgumentNullException<T>(
-        Result sut, string message, string? code)
+        Result sut, string message)
     {
         // Arrange
         static bool predicate() => true;
 
         List<Func<Task>> acts = [
-            () => Task.FromResult(sut).Ensure(predicate, message, code),
-            () => Task.FromResult(sut).Ensure(() => false, message, code),
-            () => Task.FromResult(sut.Ensure(() => Task.FromResult(true), message, code))
+            () => Task.FromResult(sut).Ensure(predicate, message),
+            () => Task.FromResult(sut).Ensure(() => false, message),
+            () => Task.FromResult(sut.Ensure(() => Task.FromResult(true), message))
         ];
 
         // Act & Assert

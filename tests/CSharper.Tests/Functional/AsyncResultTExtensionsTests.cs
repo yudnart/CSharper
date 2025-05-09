@@ -15,7 +15,7 @@ public sealed class AsyncResultTExtensionsTests
 {
     [Theory]
     [MemberData(
-        nameof(TestData.ResultTBindTestCases),
+        nameof(TestData.ResultTBindTestData),
         MemberType = typeof(TestData)
     )]
     public async Task Bind<T>(Result<T> initial, Result nextResult)
@@ -68,7 +68,7 @@ public sealed class AsyncResultTExtensionsTests
 
     [Theory]
     [MemberData(
-        nameof(TestData.ResultTBindTestCases),
+        nameof(TestData.ResultTBindTestData),
         MemberType = typeof(TestData)
     )]
     public async Task Bind_Chain<T>(Result<T> initial, Result final)
@@ -127,7 +127,7 @@ public sealed class AsyncResultTExtensionsTests
 
     [Theory]
     [MemberData(
-        nameof(TestData.ResultTBindTTestCases),
+        nameof(TestData.ResultTBindTTestData),
         MemberType = typeof(TestData)
     )]
     public async Task BindT<T, U>(Result<T> initial, Result<U> nextResult)
@@ -182,7 +182,7 @@ public sealed class AsyncResultTExtensionsTests
 
     [Theory]
     [MemberData(
-        nameof(TestData.ResultTBindTTestCases),
+        nameof(TestData.ResultTBindTTestData),
         MemberType = typeof(TestData)
     )]
     public async Task BindT_Chain<T, U>(Result<T> initial, Result<U> final)

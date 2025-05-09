@@ -12,29 +12,18 @@ public static class FunctionalResultTestData
     public static IEnumerable<object[]> ResultBindTestData()
         => GetBindTestData();
 
-    public static IEnumerable<object[]> ResultEnsureInvalidTestCases()
+    public static IEnumerable<object[]> ResultBindTTestData()
+        => GetBindTestData(false, true);
+
+    public static IEnumerable<object[]> ResultInvalidErrorMessages()
     {
         foreach (object result in ResultData().SelectMany(r => r))
         {
-            yield return [
-                result, null!, null!
-            ];
-            yield return [
-                result, "", "ERR001"
-            ];
-            yield return [
-                result, " ", ""
-            ];
+            yield return [result, null!];
+            yield return [result, ""];
+            yield return [result, " "];
         }
     }
-
-    /// <remarks>
-    /// Cannot use <see cref="TheoryData{T}"/> because
-    /// it requires strongly typed T.
-    /// </remarks>
-    /// <returns></returns>
-    public static IEnumerable<object[]> BindTTestCases()
-        => GetBindTestData(false, true);
 
     public static IEnumerable<object[]> ResultMatchTestCases()
         => GetMatchTestData();
@@ -42,25 +31,19 @@ public static class FunctionalResultTestData
     public static IEnumerable<object[]> ResultTData()
         => GetResults(true);
 
-    public static IEnumerable<object[]> ResultTBindTestCases()
+    public static IEnumerable<object[]> ResultTBindTestData()
         => GetBindTestData(true);
 
-    public static IEnumerable<object[]> ResultTBindTTestCases()
+    public static IEnumerable<object[]> ResultTBindTTestData()
         => GetBindTestData(true, true);
 
-    public static IEnumerable<object[]> ResultTEnsureInvalidTestCases()
+    public static IEnumerable<object[]> ResultTInvalidErrorMessages()
     {
         foreach (object result in ResultTData().SelectMany(r => r))
         {
-            yield return [
-                result, null!, null!
-            ];
-            yield return [
-                result, "", "ERR001"
-            ];
-            yield return [
-                result, " ", ""
-            ];
+            yield return [ result, null! ];
+            yield return [ result, "" ];
+            yield return [ result, " " ];
         }
     }
 

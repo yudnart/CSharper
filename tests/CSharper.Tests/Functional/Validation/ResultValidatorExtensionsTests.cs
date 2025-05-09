@@ -4,9 +4,6 @@ using CSharper.Results.Validation;
 using CSharper.Tests.Errors;
 using CSharper.Tests.Results;
 using FluentAssertions;
-using System.Threading.Tasks;
-using Xunit.Sdk;
-using TestData = CSharper.Tests.Functional.Validation.ResultValidatorTestData;
 
 namespace CSharper.Tests.Functional.Validation;
 
@@ -42,7 +39,9 @@ public sealed class ResultValidatorExtensionsTests
         {
             foreach (object result in results)
             {
-                result.Should().BeOfType<ResultValidator>();
+                ResultValidator validator = result
+                    .Should().BeOfType<ResultValidator>().Subject;
+                validator.Validate().Should().BeSameAs(initial);
             }
         });
     }
@@ -77,15 +76,15 @@ public sealed class ResultValidatorExtensionsTests
 
     [Theory]
     [MemberData(
-        nameof(TestData.InvalidErrorMessages),
-        MemberType = typeof(TestData)
+        nameof(FunctionalResultTestData.ResultInvalidErrorMessages),
+        MemberType = typeof(FunctionalResultTestData)
     )]
     public void And_InvalidMessage_ThrowsArgumentException(
-        string errorMessage)
+        Result initial, string errorMessage)
     {
         // Arrange
         Task<ResultValidator> sut = Task
-            .FromResult(new ResultValidator(Result.Ok()));
+            .FromResult(new ResultValidator(initial));
 
         Action[] acts = [
             () => _ = sut.And(_predicate, errorMessage),
@@ -124,7 +123,9 @@ public sealed class ResultValidatorExtensionsTests
         {
             foreach (object result in results)
             {
-                result.Should().BeOfType<ResultValidator>();
+                ResultValidator validator = result
+                    .Should().BeOfType<ResultValidator>().Subject;
+                validator.Validate().Should().BeSameAs(sut);
             }
         });
     }
@@ -150,12 +151,12 @@ public sealed class ResultValidatorExtensionsTests
         {
             foreach (object result in results)
             {
-                result.Should().BeOfType<ResultValidator>();
+                ResultValidator validator = result
+                    .Should().BeOfType<ResultValidator>().Subject;
+                validator.Validate().Should().BeSameAs(initial);
             }
         });
     }
-
-    #endregion
 
     [Theory]
     [MemberData(
@@ -163,17 +164,17 @@ public sealed class ResultValidatorExtensionsTests
         MemberType = typeof(FunctionalResultTestData)
     )]
     public void Ensure_NullPredicate_ThrowsArgumentNullException<T>(
-        Result initial)
+        Result sut)
     {
         // Arrange
         Func<bool> nullPredicate = null!;
         Func<Task<bool>> nullAsyncPredicate = null!;
 
         Func<Task>[] acts = [
-            () => _ = Task.Run(() => initial.Ensure(nullPredicate, _errorMessage)),
-            () => _ = Task.Run(() => initial.Ensure(nullAsyncPredicate, _errorMessage)),
-            () => _ = Task.FromResult(initial).Ensure(nullPredicate, _errorMessage),
-            () => _ = Task.FromResult(initial.Ensure(nullAsyncPredicate, _errorMessage))
+            () => _ = Task.Run(() => sut.Ensure(nullPredicate, _errorMessage)),
+            () => _ = Task.Run(() => sut.Ensure(nullAsyncPredicate, _errorMessage)),
+            () => _ = Task.FromResult(sut).Ensure(nullPredicate, _errorMessage),
+            () => _ = Task.FromResult(sut.Ensure(nullAsyncPredicate, _errorMessage))
         ];
 
         // Act & Assert
@@ -189,73 +190,53 @@ public sealed class ResultValidatorExtensionsTests
 
     [Theory]
     [MemberData(
-        nameof(FunctionalResultTestData.ResultBindTestData),
+        nameof(FunctionalResultTestData.ResultInvalidErrorMessages),
         MemberType = typeof(FunctionalResultTestData)
     )]
-    public void Bind(Result initial, Result nextResult)
+    public void Ensure_InvalidMessage_ThrowsArgumentException(
+        Result sut, string errorMessage)
     {
         // Arrange
-        Result next() => nextResult;
-        ResultValidator sut = initial.Ensure(() => true, "Test error");
+        Func<Task>[] acts = [
+            () => _ = Task.Run(() => sut.Ensure(_predicate, errorMessage)),
+            () => _ = Task.Run(() => sut.Ensure(_asyncPredicate, errorMessage)),
+            () => _ = Task.FromResult(sut).Ensure(_asyncPredicate, errorMessage),
+            () => _ = Task.FromResult(sut.Ensure(_asyncPredicate, errorMessage))
+        ];
 
-        // Act
-        Result result = sut.Bind(next);
-
-        // Assert
-        result.Should().Be(initial.IsSuccess ? nextResult : initial);
+        // Act & Assert
+        Assert.Multiple(async () =>
+        {
+            foreach (Func<Task> act in acts)
+            {
+                (await act.Should().ThrowExactlyAsync<ArgumentException>())
+                    .And.ParamName.Should().NotBeNullOrWhiteSpace();
+            }
+        });
     }
 
-    [Theory]
-    [MemberData(
-        nameof(FunctionalResultTestData.BindTTestCases),
-        MemberType = typeof(FunctionalResultTestData)
-    )]
-    public void BindT<T>(Result initial, Result<T> nextResult)
-    {
-        // Arrange
-        Result<T> next() => nextResult;
-        ResultValidator sut = initial.Ensure(() => true, "Test error");
+    #endregion
 
-        // Act
-        Result<T> result = sut.Bind(next);
-
-        // Assert
-        if (initial.IsSuccess)
-        {
-            result.Should().Be(nextResult);
-        }
-        else
-        {
-            ResultTestUtility.AssertFailureResult(result, initial.Error);
-        }
-    }
+    #region Bind
 
     [Theory]
     [MemberData(
         nameof(FunctionalResultTestData.ResultBindTestData),
         MemberType = typeof(FunctionalResultTestData)
     )]
-    public async Task BindAsync(Result initial, Result nextResult)
+    public async Task Bind(Result initial, Result nextResult)
     {
         // Arrange
         Result next() => nextResult;
-        Task<Result> nextAsync() => Task.FromResult(nextResult);
+        Task<Result> asyncNext() => Task.FromResult(next());
         ResultValidator sut = initial.Ensure(_predicate, _errorMessage);
 
         // Act
         Result[] results = [
-            // Act
-            // Test 1:
-            // Bind(this ResultValidator validator, Func<Task<Result>> next)
-            await sut.Bind(nextAsync),
-
-            // Test 2:
-            // Bind(this Task<ResultValidator> asyncValidator, Func<Result> next)
+            sut.Bind(next),
+            await sut.Bind(asyncNext),
             await Task.FromResult(sut).Bind(next),
-
-            // Test 3:
-            // Bind(this Task<ResultValidator> asyncValidator, Func<Task<Result>> next)
-            await Task.FromResult(sut).Bind(nextAsync)
+            await Task.FromResult(sut).Bind(asyncNext)
         ];
 
         // Assert
@@ -263,45 +244,43 @@ public sealed class ResultValidatorExtensionsTests
         {
             foreach (Result result in results)
             {
-                result.Should().Be(initial.IsSuccess ? nextResult : initial);
+                if (initial.IsSuccess)
+                {
+                    result.Should().Be(nextResult);
+                }
+                else
+                {
+                    ResultTestUtility.AssertFailureResult(result, initial.Error);
+                }
             }
         });
     }
 
-
     [Theory]
     [MemberData(
-        nameof(FunctionalResultTestData.BindTTestCases),
+        nameof(FunctionalResultTestData.ResultBindTTestData),
         MemberType = typeof(FunctionalResultTestData)
     )]
-    public async Task BindTAsync<T>(Result initial, Result<T> nextResult)
+    public async Task BindT<T>(Result initial, Result<T> nextResult)
     {
         // Arrange
         Result<T> next() => nextResult;
-        Task<Result<T>> nextAsync() => Task.FromResult(nextResult);
+        Task<Result<T>> asyncNext() => Task.FromResult(next());
         ResultValidator sut = initial.Ensure(_predicate, _errorMessage);
 
+        // Act
         Result<T>[] results = [
-            // Act
-            // Test 1:
-            // Bind(this ResultValidator validator, Func<Task<Result>> next)
-            await sut.Bind(nextAsync),
-
-            // Test 2:
-            // Bind(this Task<ResultValidator> asyncValidator, Func<Result> next)
+            sut.Bind(next),
+            await sut.Bind(asyncNext),
             await Task.FromResult(sut).Bind(next),
-
-            // Test 3:
-            // Bind(this Task<ResultValidator> asyncValidator, Func<Task<Result>> next)
-            await Task.FromResult(sut).Bind(nextAsync)
+            await Task.FromResult(sut).Bind(asyncNext)
         ];
 
         // Assert
         Assert.Multiple(() =>
         {
-            for (int idx = 0; idx < results.Length; idx++)
+            foreach (Result<T> result in results)
             {
-                Result<T> result = results[idx];
                 if (initial.IsSuccess)
                 {
                     result.Should().Be(nextResult);
@@ -373,4 +352,6 @@ public sealed class ResultValidatorExtensionsTests
             }
         });
     }
+
+    #endregion
 }

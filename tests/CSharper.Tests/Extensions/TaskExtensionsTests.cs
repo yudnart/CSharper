@@ -10,7 +10,6 @@ public sealed class TaskExtensionsTests
     private readonly int _value = 42;
     private readonly string _errorMessage = "Test error";
     private readonly string _secondaryErrorMessage = "Secondary error";
-    private readonly string _applicationExceptionMessage = "Task failed without providing an exception.";
 
     [Fact]
     public async Task Then_TaskSuccessful_ReturnsNext()

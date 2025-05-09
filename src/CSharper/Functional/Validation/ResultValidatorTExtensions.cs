@@ -8,8 +8,6 @@ namespace CSharper.Results.Validation;
 
 public static class ResultValidatorTExtensions
 {
-    private static bool Noop<T>(T _) => true;
-
     #region And
 
     /// <summary>
@@ -22,15 +20,18 @@ public static class ResultValidatorTExtensions
     /// <param name="error">The <see cref="Error"/> to include if the predicate fails.</param>
     /// <returns>The updated <see cref="ResultValidator{T}"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if validator or predicate is null</exception>
-    /// <exception cref="ArgumentException">Thrown if message is null or whitespace.</exception>
+    /// <exception cref="ArgumentException">Thrown if errorMessage is null or whitespace.</exception>
     public static Task<ResultValidator<T>> And<T>(this Task<ResultValidator<T>> asyncValidator,
         Func<T, bool> predicate,
-        string message,
-        string? code = null,
+        string errorMessage,
+        string? errorCode = null,
         string? path = null)
     {
+        asyncValidator.ThrowIfNull(nameof(asyncValidator));
+        predicate.ThrowIfNull(nameof(predicate));
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
         return asyncValidator
-            .Then(v => v.And(predicate, message, code, path));
+            .Then(v => v.And(predicate, errorMessage, errorCode, path));
     }
 
     /// <summary>
@@ -43,18 +44,18 @@ public static class ResultValidatorTExtensions
     /// <param name="error">The <see cref="Error"/> to include if the predicate fails.</param>
     /// <returns>A Task containing the updated <see cref="ResultValidator{T}"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if validator or predicate is null</exception>
-    /// <exception cref="ArgumentException">Thrown if message is null or whitespace.</exception>
-    public static Task<ResultValidator<T>> And<T>(
-        this Task<ResultValidator<T>> asyncValidator,
+    /// <exception cref="ArgumentException">Thrown if errorMessage is null or whitespace.</exception>
+    public static Task<ResultValidator<T>> And<T>(this Task<ResultValidator<T>> asyncValidator,
         Func<T, Task<bool>> predicate,
-        string message,
-        string? code = null,
+        string errorMessage,
+        string? errorCode = null,
         string? path = null)
     {
         asyncValidator.ThrowIfNull(nameof(asyncValidator));
         predicate.ThrowIfNull(nameof(predicate));
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
         return asyncValidator
-            .Then(v => v.And(predicate, message, code, path));
+            .Then(v => v.And(predicate, errorMessage, errorCode, path));
     }
 
     #endregion
@@ -72,14 +73,14 @@ public static class ResultValidatorTExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="error"/> is null.</exception>
     public static ResultValidator<T> Ensure<T>(this Result<T> result,
         Func<T, bool> predicate,
-        string message,
-        string? code = null,
+        string errorMessage,
+        string? errorCode = null,
         string? path = null)
     {
         predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNullOrWhitespace(nameof(message));
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
         return new ResultValidator<T>(result)
-            .And(predicate, message, code, path);
+            .And(predicate, errorMessage, errorCode, path);
     }
 
     /// <summary>
@@ -88,20 +89,20 @@ public static class ResultValidatorTExtensions
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <param name="result">The result to validate.</param>
     /// <param name="predicate">The asynchronous predicate to evaluate the value if <paramref name="result"/> is successful.</param>
-    /// <param name="message">The error to use if the predicate fails.</param>
+    /// <param name="errorMessage">The error to use if the predicate fails.</param>
     /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidator{T}"/> for further processing.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="message"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="errorMessage"/> is null.</exception>
     public static ResultValidator<T> Ensure<T>(
         this Result<T> result,
         Func<T, Task<bool>> predicate,
-        string message,
-        string? code = null,
+        string errorMessage,
+        string? errorCode = null,
         string? path = null)
     {
         predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNullOrWhitespace(nameof(message));
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
         return new ResultValidator<T>(result)
-            .And(predicate, message, code, path);
+            .And(predicate, errorMessage, errorCode, path);
     }
 
     /// <summary>
@@ -116,14 +117,14 @@ public static class ResultValidatorTExtensions
     public static Task<ResultValidator<T>> Ensure<T>(
         this Task<Result<T>> asyncResult,
         Func<T, bool> predicate,
-        string message,
-        string? code = null,
+        string errorMessage,
+        string? errorCode = null,
         string? path = null)
     {
         predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNullOrWhitespace(nameof(message));
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
         return asyncResult
-            .Then(r => r.Ensure(predicate, message, code, path));
+            .Then(r => r.Ensure(predicate, errorMessage, errorCode, path));
     }
 
     /// <summary>
@@ -138,14 +139,14 @@ public static class ResultValidatorTExtensions
     public static Task<ResultValidator<T>> Ensure<T>(
         this Task<Result<T>> asyncResult,
         Func<T, Task<bool>> predicate,
-        string message,
-        string? code = null,
+        string errorMessage,
+        string? errorCode = null,
         string? path = null)
     {
         predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNull(nameof(message));
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
         return asyncResult
-            .Then(r => r.Ensure(predicate, message, code, path));
+            .Then(r => r.Ensure(predicate, errorMessage, errorCode, path));
     }
 
     #endregion

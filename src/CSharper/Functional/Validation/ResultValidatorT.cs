@@ -37,53 +37,53 @@ public sealed class ResultValidator<T>
     /// <param name="predicate">A function that evaluates <typeparamref name="T"/>
     /// and returns <see langword="true"/> if the element meets the condition,
     /// otherwise <see langword="false"/>.</param>
-    /// <param name="message">
+    /// <param name="errorMessage">
     /// The <see cref="ValidationErrorDetail"/> message to include if the specified
     /// <paramref name="predicate"/> is <see langword="false"/>.
     /// </param>
-    /// <param name="code">Optional <see cref="ValidationErrorDetail"/> code.</param>
+    /// <param name="errorCode">Optional <see cref="ValidationErrorDetail"/> code.</param>
     /// <param name="path">Optional <see cref="ValidationErrorDetail"/> path.</param>
     /// <returns>
     /// The current <see cref="ResultValidator"/> instance for method chaining.</returns>
     /// <exception cref="ArgumentNullException">
     /// Thrown if <paramref name="predicate"/> is null</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown if <paramref name="message"/> is null or whitespace.</exception>
+    /// Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
     public ResultValidator<T> And(
         Func<T, bool> predicate,
-        string message,
-        string? code = null,
+        string errorMessage,
+        string? errorCode = null,
         string? path = null)
     {
         predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNull(nameof(message));
-        _rules.Add((new(predicate, message, code, path)));
+        errorMessage.ThrowIfNull(nameof(errorMessage));
+        _rules.Add((new(predicate, errorMessage, errorCode, path)));
         return this;
     }
 
     public ResultValidator<T> And(
         Func<T, Task<bool>> predicate,
-        string message,
-        string? code = null,
+        string errorMessage,
+        string? errorCode = null,
         string? path = null)
     {
         predicate.ThrowIfNull(nameof(predicate));
-        message.ThrowIfNull(nameof(message));
-        _rules.Add((new(predicate, message, code, path)));
+        errorMessage.ThrowIfNull(nameof(errorMessage));
+        _rules.Add((new(predicate, errorMessage, errorCode, path)));
         return this;
     }
 
     /// <summary>
     /// Evaluate all predicates and return the appropriate <see cref="Result{T}"/>.
     /// </summary>
-    /// <param name="message">
+    /// <param name="errorMessage">
     /// The primary <see cref="ValidationError"/> message for a failure result.</param>
-    /// <param name="code">Optional <see cref="ValidationError"/> code.</param>
+    /// <param name="errorCode">Optional <see cref="ValidationError"/> code.</param>
     /// <returns>A successful result if all predicates are true. Otherwise,
     /// return a failure result.</returns>
     public Result<T> Validate(
-        string message = ValidationError.DefaultErrorMessage,
-        string code = ValidationError.DefaultErrorCode)
+        string errorMessage = ValidationError.DefaultErrorMessage,
+        string errorCode = ValidationError.DefaultErrorCode)
     {
         if (_initialResult.IsFailure)
         {
@@ -110,6 +110,6 @@ public sealed class ResultValidator<T>
             .Select(e => new ValidationErrorDetail(e.ErrorMessage, e.ErrorCode, e.Path))
             .ToArray();
 
-        return Result.Fail<T>(new ValidationError(message, code, errorDetails));
+        return Result.Fail<T>(new ValidationError(errorMessage, errorCode, errorDetails));
     }
 }
