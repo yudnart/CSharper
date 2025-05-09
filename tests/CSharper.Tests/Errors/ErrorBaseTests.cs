@@ -92,6 +92,20 @@ public sealed class ErrorBaseTests
         });
     }
 
+    [Fact]
+    public void Equals_TypeNotErrorBase_ReturnsFalse()
+    {
+        // Arrange
+        TestError sut = new("Test error");
+        object other = new();
+
+        // Act
+        bool result = sut.Equals(other);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
     [Theory]
     [MemberData(
         nameof(TestData.ErrorBaseToStringTestCases),

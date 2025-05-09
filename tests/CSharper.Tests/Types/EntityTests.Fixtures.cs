@@ -52,33 +52,27 @@ internal sealed class TestAuditableEntity : AuditableEntity<string>
 
 internal class TestSoftDeleteEntity : SoftDeleteEntity<string>
 {
-    public TestSoftDeleteEntity(string id)
+    public TestSoftDeleteEntity(
+        string id,
+        DateTimeOffset createdAt,
+        string createdBy,
+        DateTimeOffset? lastModifiedAt = null,
+        string? lastModifiedBy = null)
     {
         Id = id;
-    }
-
-    public void SetCreatedAt(DateTimeOffset createdAt)
-    {
         CreatedAt = createdAt;
-    }
-
-    public void SetCreatedBy(string createdBy)
-    {
         CreatedBy = createdBy;
+        LastModifiedAt = lastModifiedAt;
+        LastModifiedBy = lastModifiedBy;
     }
 
-    public void SetIsDeleted(bool isDeleted)
+    /// <summary>
+    /// Helper to test protected setters
+    /// </summary>
+    public void Delete(string deletedBy)
     {
-        IsDeleted = isDeleted;
-    }
-
-    public void SetDeletedAt(DateTimeOffset? deletedAt)
-    {
-        DeletedAt = deletedAt;
-    }
-
-    public void SetDeletedBy(string? deletedBy)
-    {
+        IsDeleted = true;
+        DeletedAt = DateTimeOffset.UtcNow;
         DeletedBy = deletedBy;
     }
 }
