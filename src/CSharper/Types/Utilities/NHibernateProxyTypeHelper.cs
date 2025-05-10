@@ -16,13 +16,13 @@ public static class NHibernateProxyTypeHelper
     /// Configures the delegate used to retrieve the unproxied type of an object.
     /// </summary>
     /// <remarks>
-    /// This method sets up <see cref="TypeHelper"/> to identify NHibernate proxy types by checking if the type's
+    /// This method sets up <see cref="ProxyTypeHelper"/> to identify NHibernate proxy types by checking if the type's
     /// string representation ends with <see cref="TypePrefix"/>. If a proxy is detected, it returns the base type;
     /// otherwise, it returns the original type.
     /// </remarks>
     public static void Configure()
     {
-        TypeHelper.ConfigureGetUnproxiedTypeDelegate(obj =>
+        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(obj =>
         {
             Type type = obj.GetType();
             string typeString = type.ToString();

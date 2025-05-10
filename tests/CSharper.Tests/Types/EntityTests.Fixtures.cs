@@ -3,7 +3,7 @@ using CSharper.Types;
 
 namespace CSharper.Tests.Types;
 
-internal sealed class TestEntity : Entity<string>
+public sealed class TestEntity : Entity<string>
 {
     public TestEntity(string id)
     {

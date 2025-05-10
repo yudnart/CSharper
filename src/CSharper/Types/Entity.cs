@@ -158,7 +158,7 @@ public abstract class Entity<TId>
     #region Helpers
 
     private static Type GetUnproxiedType(object obj)
-        => TypeHelper.GetUnproxiedType(obj);
+        => ProxyTypeHelper.GetUnproxiedType(obj);
 
     #endregion
 }

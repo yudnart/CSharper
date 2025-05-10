@@ -195,5 +195,5 @@ public abstract class ValueObject : IComparable, IComparable<ValueObject>
     }
 
     private static Type GetUnproxiedType(object obj)
-        => TypeHelper.GetUnproxiedType(obj);
+        => ProxyTypeHelper.GetUnproxiedType(obj);
 }

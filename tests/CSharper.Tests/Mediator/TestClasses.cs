@@ -118,6 +118,8 @@ internal sealed class TestHandlerTValue : IRequestHandler<TestRequest<string>, s
 {
     private readonly List<string> _order;
 
+    public string ReturnValue { get; set; } = "Success";
+
     public TestHandlerTValue(List<string> order)
     {
         _order = order;
@@ -126,7 +128,7 @@ internal sealed class TestHandlerTValue : IRequestHandler<TestRequest<string>, s
     public Task<Result<string>> Handle(TestRequest<string> request, CancellationToken ct)
     {
         _order.Add("H");
-        return Task.FromResult(Result.Ok("Success"));
+        return Task.FromResult(Result.Ok(ReturnValue));
     }
 }
 
@@ -150,16 +152,20 @@ internal sealed class SlowHandlerTValue : IRequestHandler<TestRequest<string>, s
 
 internal sealed class ThrowingHandler : IRequestHandler<TestRequest>
 {
+    public InvalidOperationException Exception { get; set; } 
+        = new InvalidOperationException("Handler failed");
     public Task<Result> Handle(TestRequest request, CancellationToken ct)
     {
-        throw new InvalidOperationException("Handler failed");
+        throw Exception;
     }
 }
 
 internal sealed class ThrowingHandlerT : IRequestHandler<TestRequest<string>, string>
 {
+    public InvalidOperationException Exception { get; set; } 
+        = new InvalidOperationException("Handler failed");
     public Task<Result<string>> Handle(TestRequest<string> request, CancellationToken ct)
     {
-        throw new InvalidOperationException("Handler failed");
+        throw Exception;
     }
 }

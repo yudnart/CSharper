@@ -6,12 +6,13 @@ namespace CSharper.Types.Utilities;
 /// <summary>
 /// Provides helper methods for handling type-related operations, particularly for resolving unproxied types.
 /// </summary>
-public static class TypeHelper
+public static class ProxyTypeHelper
 {
+    private static Func<object, Type> DefaultProxyTypeDelegate = obj => obj.GetType();
     /// <summary>
     /// Delegate to provide the unproxied type of an object.
     /// </summary>
-    private static Func<object, Type> _getUnproxiedTypeDelegate = obj => obj.GetType();
+    private static Func<object, Type> _getUnproxiedTypeDelegate = DefaultProxyTypeDelegate;
 
     /// <summary>
     /// Configures the delegate used to retrieve the unproxied type of an object.
@@ -22,10 +23,9 @@ public static class TypeHelper
     /// This method allows customization of type resolution, typically for handling proxies created by ORMs
     /// like Entity Framework Core or NHibernate.
     /// </remarks>
-    public static void ConfigureGetUnproxiedTypeDelegate(Func<object, Type> getUnproxiedTypeDelegate)
+    public static void ConfigureGetUnproxiedTypeDelegate(Func<object, Type>? getUnproxiedTypeDelegate)
     {
-        _getUnproxiedTypeDelegate = getUnproxiedTypeDelegate 
-            ?? throw new ArgumentNullException(nameof(getUnproxiedTypeDelegate));
+        _getUnproxiedTypeDelegate = getUnproxiedTypeDelegate ?? DefaultProxyTypeDelegate;
     }
 
     /// <summary>
