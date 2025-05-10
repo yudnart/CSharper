@@ -151,7 +151,7 @@ public sealed class EntityTests
     {
         // Arrange
         TestEntity entity1 = new("test-id-1");
-        object entity2 = new();
+        TestEntity entity2 = new("test-id-2");
 
         // Act
         // Set the proxy type delegate to toggle between string and int.
