@@ -16,13 +16,13 @@ namespace CSharper.Types.Utilities
         /// Configures the delegate used to retrieve the unproxied type of an object.
         /// </summary>
         /// <remarks>
-        /// This method sets up <see cref="TypeHelper"/> to identify EF Core proxy types by checking for the
+        /// This method sets up <see cref="ProxyTypeHelper"/> to identify EF Core proxy types by checking for the
         /// <see cref="TypePrefix"/> in the type's string representation. If a proxy is detected, it returns
         /// the base type; otherwise, it returns the original type.
         /// </remarks>
         public static void Configure()
         {
-            TypeHelper.ConfigureGetUnproxiedTypeDelegate(obj =>
+            ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(obj =>
             {
                 Type type = obj.GetType();
                 string typeString = type.ToString();

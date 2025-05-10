@@ -65,7 +65,7 @@ public sealed class ValueObjectTests
         // Arrange
         TestValueObject obj = new(_name, _value);
         object other = new();
-        TypeHelper.ConfigureGetUnproxiedTypeDelegate(_ => typeof(object));
+        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(_ => typeof(object));
 
         // Act
         bool result = obj.Equals(other);
@@ -178,7 +178,7 @@ public sealed class ValueObjectTests
         // Arrange
         TestValueObject obj = new(_name, _value);
         object other = new();
-        TypeHelper.ConfigureGetUnproxiedTypeDelegate(obj => 
+        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(obj => 
             obj is TestValueObject ? typeof(TestValueObject) : typeof(object));
 
         string objTypeName = typeof(TestValueObject).ToString();
@@ -199,7 +199,7 @@ public sealed class ValueObjectTests
         // Arrange
         TestValueObject obj = new(_name, _value);
         object other = new();
-        TypeHelper.ConfigureGetUnproxiedTypeDelegate(_ => typeof(TestValueObject));
+        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(_ => typeof(TestValueObject));
 
         // Act
         int result = obj.CompareTo(other);
@@ -268,7 +268,7 @@ public sealed class ValueObjectTests
     public void GetUnproxiedType_NullObject_ThrowsArgumentNullException()
     {
         // Arrange
-        Action act = () => TypeHelper.GetUnproxiedType(null!);
+        Action act = () => ProxyTypeHelper.GetUnproxiedType(null!);
 
         // Assert
         act.Should().ThrowExactly<ArgumentNullException>()

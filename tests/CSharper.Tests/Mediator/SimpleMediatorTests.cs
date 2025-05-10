@@ -1,5 +1,6 @@
 ﻿using CSharper.Mediator;
 using CSharper.Results;
+using CSharper.Tests.Results;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -24,11 +25,14 @@ public sealed class SimpleMediatorTests
     {
         // Arrange
         IServiceProvider nullServiceProvider = null!;
-        IEnumerable<IBehavior> behaviors = [];
+        IMediator act() => new SimpleMediator(nullServiceProvider, []);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(
-            () => new SimpleMediator(nullServiceProvider, behaviors));
+        Assert.Multiple(() =>
+        {
+            ArgumentNullException ex = Assert.Throws<ArgumentNullException>(act);
+            ex.ParamName.Should().NotBeNullOrWhiteSpace();
+        });
     }
 
     [Fact]
@@ -44,32 +48,48 @@ public sealed class SimpleMediatorTests
         Result result = await sut.Send(request);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        _executionOrder.Should().Equal("H");
+        Assert.Multiple(() =>
+        {
+            ResultTestUtility.AssertSuccessResult(result);
+            _executionOrder.Should().Equal("H");
+        });
     }
 
     [Fact]
-    public async Task Send_NullRequest_ThrowsArgumentNullException()
+    public void Send_NullRequest_ThrowsArgumentNullException()
     {
         // Arrange
-        SimpleMediator sut = new(_serviceProviderMock.Object, new IBehavior[0]);
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
+        Task act() => sut.Send(null!, default);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => sut.Send(null!, default));
+        Assert.Multiple(async () =>
+        {
+            ArgumentNullException ex = await Assert
+                .ThrowsAsync<ArgumentNullException>(act);
+            ex.ParamName.Should().NotBeNullOrWhiteSpace();
+        });
+
     }
 
     [Fact]
-    public async Task SendT_NullRequest_ThrowsArgumentNullException()
+    public void SendT_NullRequest_ThrowsArgumentNullException()
     {
         // Arrange
-        SimpleMediator sut = new(_serviceProviderMock.Object, new IBehavior[0]);
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
+        IRequest<string> request = null!;
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => sut.Send<string>(null!, default));
+        Assert.Multiple(async () =>
+        {
+            ArgumentNullException ex = await Assert
+                .ThrowsAsync<ArgumentNullException>(() => sut.Send(request, default));
+            ex.ParamName.Should().NotBeNullOrWhiteSpace();
+        });
     }
 
     [Fact]
-    public async Task Send_NoBehaviorsNoHandler_ThrowsInvalidOperationException()
+    public void Send_NoBehaviorsNoHandler_ThrowsInvalidOperationException()
     {
         // Arrange
         _serviceProviderMock.Setup(sp => sp.GetService(It.IsAny<Type>())).Returns(null!);
@@ -77,11 +97,16 @@ public sealed class SimpleMediatorTests
         TestRequest request = new();
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+        Assert.Multiple(async () =>
+        {
+            InvalidOperationException ex = await Assert
+                .ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+            ex.Message.Should().NotBeNullOrWhiteSpace();
+        });
     }
 
     [Fact]
-    public async Task SendT_NoBehaviorsNoHandler_ThrowsInvalidOperationException()
+    public void SendT_NoBehaviorsNoHandler_ThrowsInvalidOperationException()
     {
         // Arrange
         _serviceProviderMock.Setup(sp => sp.GetService(It.IsAny<Type>())).Returns(null!);
@@ -89,7 +114,12 @@ public sealed class SimpleMediatorTests
         TestRequest<string> request = new();
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+        Assert.Multiple(async () =>
+        {
+            InvalidOperationException ex = await Assert
+                .ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+            ex.Message.Should().NotBeNullOrWhiteSpace();
+        });
     }
 
     [Fact]
@@ -105,8 +135,11 @@ public sealed class SimpleMediatorTests
         Result result = await sut.Send(request);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        _executionOrder.Should().Equal("H");
+        Assert.Multiple(() =>
+        {
+            ResultTestUtility.AssertSuccessResult(result);
+            _executionOrder.Should().Equal("H");
+        });
     }
 
     [Fact]
@@ -122,9 +155,11 @@ public sealed class SimpleMediatorTests
         Result<string> result = await sut.Send(request);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().Be("Success");
-        _executionOrder.Should().Equal("H");
+        Assert.Multiple(() =>
+        {
+            ResultTestUtility.AssertSuccessResult(result, handler.ReturnValue);
+            _executionOrder.Should().Equal("H");
+        });
     }
 
     [Fact]
@@ -152,8 +187,11 @@ public sealed class SimpleMediatorTests
         Result result = await sut.Send(request);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        _executionOrder.Should().Equal("G1", "G2", "S1", "S2", "H");
+        Assert.Multiple(() =>
+        {
+            ResultTestUtility.AssertSuccessResult(result);
+            _executionOrder.Should().Equal("G1", "G2", "S1", "S2", "H");
+        });
     }
 
     [Fact]
@@ -181,9 +219,11 @@ public sealed class SimpleMediatorTests
         Result<string> result = await sut.Send(request);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().Be("Success");
-        _executionOrder.Should().Equal("G1", "G2", "S1", "S2", "H");
+        Assert.Multiple(() =>
+        {
+            ResultTestUtility.AssertSuccessResult(result, handler.ReturnValue);
+            _executionOrder.Should().Equal("G1", "G2", "S1", "S2", "H");
+        });
     }
 
     [Fact]
@@ -201,8 +241,11 @@ public sealed class SimpleMediatorTests
         Result result = await sut.Send(request);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        _executionOrder.Should().BeEmpty();
+        Assert.Multiple(() =>
+        {
+            ResultTestUtility.AssertFailureResult(result);
+            _executionOrder.Should().BeEmpty();
+        });
     }
 
     [Fact]
@@ -220,8 +263,65 @@ public sealed class SimpleMediatorTests
         Result<string> result = await sut.Send(request);
 
         // Assert
+        Assert.Multiple(() =>
+        {
+            ResultTestUtility.AssertFailureResult(result);
+            _executionOrder.Should().BeEmpty();
+        });
+    }
+
+    [Fact]
+    public async Task Send_BehaviorFails_CascadesErrorAndStopsPipeline()
+    {
+        // Arrange
+        TestGlobalBehavior global1 = new("G1", _executionOrder);
+        FailingBehavior failingBehavior = new();
+        TestSpecificBehavior specific1 = new("S1", _executionOrder);
+        TestHandler handler = new(_executionOrder);
+
+        ServiceCollection services = new();
+        services.AddScoped<IBehavior>(_ => global1);
+        services.AddScoped<IBehavior>(_ => failingBehavior);
+        services.AddScoped<IBehavior<TestRequest>>(_ => specific1);
+        services.AddScoped<IRequestHandler<TestRequest>, TestHandler>(_ => handler);
+        IServiceProvider provider = services.BuildServiceProvider().CreateScope().ServiceProvider;
+
+        SimpleMediator sut = new(provider, provider.GetServices<IBehavior>());
+        TestRequest request = new();
+
+        // Act
+        Result result = await sut.Send(request);
+
+        // Assert
         result.IsSuccess.Should().BeFalse();
-        _executionOrder.Should().BeEmpty();
+        _executionOrder.Should().Equal("G1");
+    }
+
+    [Fact]
+    public async Task SendT_BehaviorFails_CascadesErrorAndStopsPipeline()
+    {
+        // Arrange
+        TestGlobalBehavior global1 = new("G1", _executionOrder);
+        FailingBehavior failingBehavior = new();
+        TestSpecificBehavior specific1 = new("S1", _executionOrder);
+        TestHandler handler = new(_executionOrder);
+
+        ServiceCollection services = new();
+        services.AddScoped<IBehavior>(_ => global1);
+        services.AddScoped<IBehavior>(_ => failingBehavior);
+        services.AddScoped<IBehavior<TestRequest>>(_ => specific1);
+        services.AddScoped<IRequestHandler<TestRequest>, TestHandler>(_ => handler);
+        IServiceProvider provider = services.BuildServiceProvider().CreateScope().ServiceProvider;
+
+        SimpleMediator sut = new(provider, provider.GetServices<IBehavior>());
+        TestRequest<string> request = new();
+
+        // Act
+        Result<string> result = await sut.Send(request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        _executionOrder.Should().Equal("G1");
     }
 
     [Fact]
@@ -229,7 +329,7 @@ public sealed class SimpleMediatorTests
     {
         // Arrange
         SlowHandler handler = new();
-        SetupRequest(_serviceProviderMock, handler, []);
+        SetupRequest(_serviceProviderMock, handler);
 
         SimpleMediator sut = new(_serviceProviderMock.Object, []);
         TestRequest request = new();
@@ -263,7 +363,7 @@ public sealed class SimpleMediatorTests
     }
 
     [Fact]
-    public async Task Send_HandlerThrowsException_PropagatesException()
+    public void Send_HandlerThrowsException_PropagatesException()
     {
         // Arrange
         ThrowingHandler handler = new();
@@ -272,11 +372,16 @@ public sealed class SimpleMediatorTests
         TestRequest request = new();
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+        Assert.Multiple(async () =>
+        {
+            InvalidOperationException ex = await Assert
+                .ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+            ex.Should().Be(handler.Exception);
+        });
     }
 
     [Fact]
-    public async Task SendT_HandlerThrowsException_PropagatesException()
+    public void SendT_HandlerThrowsException_PropagatesException()
     {
         // Arrange
         ThrowingHandlerT handler = new();
@@ -285,11 +390,16 @@ public sealed class SimpleMediatorTests
         TestRequest<string> request = new();
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+        Assert.Multiple(async () =>
+        {
+            InvalidOperationException ex = await Assert
+                .ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+            ex.Should().Be(handler.Exception);
+        });
     }
 
     [Fact]
-    public async Task Send_HandlerThrowsException_CascadesThroughBehaviors()
+    public void Send_HandlerThrowsException_CascadesThroughBehaviors()
     {
         // Arrange
         TestGlobalBehavior globalBehavior = new("G1", _executionOrder);
@@ -306,12 +416,17 @@ public sealed class SimpleMediatorTests
         TestRequest request = new();
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
-        _executionOrder.Should().Equal("G1", "S1");
+        Assert.Multiple(async () =>
+        {
+            InvalidOperationException ex = await Assert
+                .ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+            ex.Should().Be(handler.Exception);
+            _executionOrder.Should().Equal("G1", "S1");
+        });
     }
 
     [Fact]
-    public async Task SendT_HandlerThrowsException_CascadesThroughBehaviors()
+    public void SendT_HandlerThrowsException_CascadesThroughBehaviors()
     {
         // Arrange
         TestGlobalBehavior globalBehavior = new("G1", _executionOrder);
@@ -328,12 +443,17 @@ public sealed class SimpleMediatorTests
         TestRequest<string> request = new();
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
-        _executionOrder.Should().Equal("G1", "S1");
+        Assert.Multiple(async () =>
+        {
+            InvalidOperationException ex = await Assert
+                .ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+            ex.Should().Be(handler.Exception);
+            _executionOrder.Should().Equal("G1", "S1");
+        });
     }
 
     [Fact]
-    public async Task Send_HandlerNotFound_ThrowsInvalidOperationException()
+    public void Send_HandlerNotFound_ThrowsInvalidOperationException()
     {
         // Arrange
         _serviceProviderMock.Setup(sp => sp
@@ -343,11 +463,16 @@ public sealed class SimpleMediatorTests
         TestRequest request = new();
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+        Assert.Multiple(async () =>
+        {
+            InvalidOperationException ex = await Assert
+                .ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+            ex.Message.Should().NotBeNullOrWhiteSpace();
+        });
     }
 
     [Fact]
-    public async Task SendT_HandlerNotFound_ThrowsInvalidOperationException()
+    public void SendT_HandlerNotFound_ThrowsInvalidOperationException()
     {
         // Arrange
         _serviceProviderMock.Setup(sp => sp
@@ -357,7 +482,95 @@ public sealed class SimpleMediatorTests
         TestRequest<string> request = new();
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+        Assert.Multiple(async () =>
+        {
+            InvalidOperationException ex = await Assert
+                .ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+            ex.Message.Should().NotBeNullOrWhiteSpace();
+        });
+    }
+
+    [Fact]
+    public async Task Send_HandlerInstance_NotCached()
+    {
+        // Arrange
+        TestHandler handler = new(_executionOrder);
+
+        SetupRequest(_serviceProviderMock, handler);
+
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
+        TestRequest request = new();
+
+        // Act
+        await sut.Send(request);
+        await sut.Send(request);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            _serviceProviderMock.Verify(sp => sp
+                .GetService(typeof(IRequestHandler<TestRequest>)), Times.Exactly(2));
+            _executionOrder.Should().Equal("H", "H");
+        });
+    }
+
+    [Fact]
+    public async Task SendT_HandlerInstance_NotCached()
+    {
+
+        // Arrange
+        TestHandlerTValue handler = new(_executionOrder);
+        SetupRequest(_serviceProviderMock, handler);
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
+        TestRequest<string> request = new();
+
+        // Act
+        await sut.Send(request);
+        await sut.Send(request);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            _serviceProviderMock.Verify(sp => sp
+                .GetService(typeof(IRequestHandler<TestRequest<string>, string>)), Times.Exactly(2));
+            _executionOrder.Should().Equal("H", "H");
+        });
+    }
+
+    [Fact]
+    public async Task Send_Behaviors_NotCached()
+    {
+        // Arrange
+        TestHandler handler = new(_executionOrder);
+        SetupRequest(_serviceProviderMock, handler,
+            new TestSpecificBehavior("S1", _executionOrder));
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
+        TestRequest request = new();
+
+        // Act
+        await sut.Send(request);
+        await sut.Send(request);
+
+        // Assert
+        _executionOrder.Should().Equal("S1", "H", "S1", "H");
+    }
+
+    [Fact]
+    public async Task SendT_Behaviors_NotCached()
+    {
+        // Arrange
+        TestHandlerTValue handler = new(_executionOrder);
+        SetupRequest(_serviceProviderMock, handler,
+            new TestSpecificBehaviorTValue("S1", _executionOrder));
+        SimpleMediator sut = new(_serviceProviderMock.Object, []);
+        TestRequest<string> request = new();
+
+        // Act
+        await sut.Send(request);
+        await sut.Send(request);
+
+        // Assert
+        _executionOrder.Should().Equal("S1", "H", "S1", "H");
     }
 
     #region Test Helpers

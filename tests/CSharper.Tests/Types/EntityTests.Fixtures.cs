@@ -3,8 +3,9 @@ using CSharper.Types;
 
 namespace CSharper.Tests.Types;
 
-internal sealed class TestEntity : Entity<string>
+public sealed class TestEntity : Entity<string>
 {
+    public Action? EqualsIntercepter { get; set; }
     public TestEntity(string id)
     {
         Id = id;
@@ -13,6 +14,17 @@ internal sealed class TestEntity : Entity<string>
     public void QueueTestEvent(DomainEvent domainEvent)
     {
         QueueEvent(domainEvent);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        EqualsIntercepter?.Invoke();
+        return base.Equals(obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return base.GetHashCode();
     }
 }
 

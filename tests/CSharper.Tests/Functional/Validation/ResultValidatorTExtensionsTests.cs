@@ -14,7 +14,8 @@ public sealed class ResultValidatorTExtensionsTests
     private static readonly string _errorMessage = ErrorTestData.Error.Message;
 
     private static bool _predicate<T>(T _) => true;
-    private static Task<bool> _asyncPredicate<T>(T _) => Task.FromResult(_predicate(_));
+    private static Task<bool> _asyncPredicate<T>(T _) 
+        => Task.FromResult(_predicate(_));
 
 
     #region And
