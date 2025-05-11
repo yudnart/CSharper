@@ -1,7 +1,6 @@
-﻿using CSharper.Events;
-using CSharper.Types;
+﻿using CSharper.Types.Entities;
 
-namespace CSharper.Tests.Types;
+namespace CSharper.Tests.Types.Entities;
 
 public sealed class TestEntity : Entity<string>
 {

@@ -1,10 +1,9 @@
-﻿using CSharper.Events;
-using CSharper.Extensions;
+﻿using CSharper.Extensions;
 using CSharper.Types.Utilities;
 using System;
 using System.Collections.Generic;
 
-namespace CSharper.Types;
+namespace CSharper.Types.Entities;
 
 /// <summary>
 /// Represents an entity with a string identifier.
@@ -37,7 +36,7 @@ public abstract class Entity<TId>
     public virtual bool IsTransient()
     {
         return Id is null || Id.Equals(default(TId))
-            || (Id is string idStr && string.IsNullOrWhiteSpace(idStr));
+            || Id is string idStr && string.IsNullOrWhiteSpace(idStr);
     }
 
     #region Events

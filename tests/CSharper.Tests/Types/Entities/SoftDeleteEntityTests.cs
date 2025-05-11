@@ -1,7 +1,7 @@
-﻿using CSharper.Types;
+﻿using CSharper.Types.Entities;
 using FluentAssertions;
 
-namespace CSharper.Tests.Types;
+namespace CSharper.Tests.Types.Entities;
 
 [Trait("Category", "Unit")]
 [Trait("TestFor", nameof(SoftDeleteEntity))]

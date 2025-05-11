@@ -1,11 +1,10 @@
-﻿using CSharper.Events;
-using CSharper.Types;
+﻿using CSharper.Types.Entities;
 using CSharper.Types.Utilities;
 using FluentAssertions;
 using Moq;
 using System.Diagnostics;
 
-namespace CSharper.Tests.Types;
+namespace CSharper.Tests.Types.Entities;
 
 [Collection(nameof(SequentialTests))]
 [Trait("Category", "Unit")]
@@ -166,7 +165,7 @@ public sealed class EntityTests
             // Use Stopwatch for high-resolution timing
             long ticks = Stopwatch.GetTimestamp();
             // Toggle between two types based on ticks
-            return (ticks % 2 == 0) ? typeof(string) : typeof(int);
+            return ticks % 2 == 0 ? typeof(string) : typeof(int);
         });
 
         bool result = entity1.Equals(entity2);

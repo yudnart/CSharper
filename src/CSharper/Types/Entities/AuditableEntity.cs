@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CSharper.Types;
+namespace CSharper.Types.Entities;
 
 /// <summary>
 /// Represents an auditable entity with a string identifier.

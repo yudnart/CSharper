@@ -1,6 +1,7 @@
-﻿using System;
+﻿using CSharper.Events;
+using System;
 
-namespace CSharper.Events;
+namespace CSharper.Types.Entities;
 
 /// <summary>
 /// Represents an abstract base class for domain events that implement the <see cref="IEvent"/> interface.

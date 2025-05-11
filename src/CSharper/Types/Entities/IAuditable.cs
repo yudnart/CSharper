@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CSharper.Types;
+namespace CSharper.Types.Entities;
 
 /// <summary>
 /// Defines a contract for auditable entities with creation and modification audit information.
