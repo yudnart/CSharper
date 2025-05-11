@@ -8,7 +8,7 @@ using FluentAssertions;
 namespace CSharper.Tests.Functional.Validation;
 
 [Trait("Category", "Unit")]
-[Trait("TestOf", "ResultValidatorT")]
+[Trait("TestFor", "ResultValidatorT")]
 public sealed class ResultValidatorTTests
 {
     [Fact]

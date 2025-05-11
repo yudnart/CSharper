@@ -6,7 +6,7 @@ using TestUtility = CSharper.Tests.Errors.ErrorTestUtility;
 namespace CSharper.Tests.Errors;
 
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(Error))]
+[Trait("TestFor", nameof(Error))]
 public sealed class ErrorTests
 {
     [Theory]

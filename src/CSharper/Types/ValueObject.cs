@@ -33,6 +33,11 @@ public abstract class ValueObject : IComparable, IComparable<ValueObject>
             return false;
         }
 
+        if (ReferenceEquals(this, obj))
+        {
+            return true;
+        }
+
         if (GetUnproxiedType(this) != GetUnproxiedType(obj))
         {
             return false;
@@ -89,15 +94,11 @@ public abstract class ValueObject : IComparable, IComparable<ValueObject>
 
         if (thisType != otherType)
         {
-            return string.Compare(
-                thisType.ToString(),
-                otherType.ToString(),
-                StringComparison.Ordinal);
+            return thisType.ToString()
+                .CompareTo(otherType.ToString());
         }
 
-        ValueObject? other = obj as ValueObject;
-
-        if (other is null)
+        if (obj is not ValueObject other)
         {
             return 1;
         }

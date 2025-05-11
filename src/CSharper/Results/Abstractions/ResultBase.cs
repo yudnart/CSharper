@@ -1,5 +1,6 @@
 ﻿using CSharper.Errors;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CSharper.Results.Abstractions;
 
@@ -74,6 +75,11 @@ public abstract class ResultBase
     /// <exception cref="InvalidOperationException">
     /// Thrown if a success result has errors or a failure result has no errors.
     /// </exception>
+    [ExcludeFromCodeCoverage
+#if NET8_0_OR_GREATER
+        (Justification = "Unreachable defensive code.")
+#endif
+    ]
     private void ValidateErrors()
     {
         if (IsSuccess && _error != null)

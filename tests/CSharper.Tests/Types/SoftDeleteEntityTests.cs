@@ -4,7 +4,7 @@ using FluentAssertions;
 namespace CSharper.Tests.Types;
 
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(SoftDeleteEntity))]
+[Trait("TestFor", nameof(SoftDeleteEntity))]
 public class SoftDeleteEntityTests
 {
     private readonly string _id = "TestId";

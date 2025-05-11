@@ -7,10 +7,16 @@ using System.Diagnostics;
 
 namespace CSharper.Tests.Types;
 
+[Collection(nameof(SequentialTests))]
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(Entity))]
+[Trait("TestFor", nameof(Entity))]
 public sealed class EntityTests
 {
+    public EntityTests()
+    {
+        ProxyTypeHelper.ResetGetUnproxiedTypeDelegate();
+    }
+
     [Fact]
     public void IsTransient_IdIsNull_ReturnsTrue()
     {
@@ -165,12 +171,11 @@ public sealed class EntityTests
 
         bool result = entity1.Equals(entity2);
 
-        // revert proxy type helper
-        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(null);
-
         // Assert
         result.Should().BeFalse();
-
+        
+        // Clean up
+        ProxyTypeHelper.ResetGetUnproxiedTypeDelegate();
     }
 
     [Fact]

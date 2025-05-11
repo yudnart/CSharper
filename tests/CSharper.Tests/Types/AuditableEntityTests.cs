@@ -4,7 +4,7 @@ using FluentAssertions;
 namespace CSharper.Tests.Types;
 
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(AuditableEntity))]
+[Trait("TestFor", nameof(AuditableEntity))]
 public class AuditableEntityTests
 {
     private readonly string _id = "TestId";

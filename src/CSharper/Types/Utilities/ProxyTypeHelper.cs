@@ -8,11 +8,12 @@ namespace CSharper.Types.Utilities;
 /// </summary>
 public static class ProxyTypeHelper
 {
-    private static Func<object, Type> DefaultProxyTypeDelegate = obj => obj.GetType();
+    private static readonly Func<object, Type> _defaultProxyTypeDelegate = obj => obj.GetType();
+
     /// <summary>
     /// Delegate to provide the unproxied type of an object.
     /// </summary>
-    private static Func<object, Type> _getUnproxiedTypeDelegate = DefaultProxyTypeDelegate;
+    private static Func<object, Type> _getUnproxiedTypeDelegate = _defaultProxyTypeDelegate;
 
     /// <summary>
     /// Configures the delegate used to retrieve the unproxied type of an object.
@@ -20,12 +21,38 @@ public static class ProxyTypeHelper
     /// <param name="getUnproxiedTypeDelegate">The delegate to use for resolving the unproxied type.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="getUnproxiedTypeDelegate"/> is null.</exception>
     /// <remarks>
-    /// This method allows customization of type resolution, typically for handling proxies created by ORMs
-    /// like Entity Framework Core or NHibernate.
+    /// This method customizes type resolution for handling proxies created by ORMs like Entity Framework Core or NHibernate.
+    /// To reset to the default behavior, use <see cref="ResetGetUnproxiedTypeDelegate"/>.
     /// </remarks>
-    public static void ConfigureGetUnproxiedTypeDelegate(Func<object, Type>? getUnproxiedTypeDelegate)
+    /// <example>
+    /// <code>
+    /// ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(obj => obj.GetType().BaseType ?? obj.GetType());
+    /// Type unproxiedType = ProxyTypeHelper.GetUnproxiedType(new object());
+    /// </code>
+    /// </example>
+    public static void ConfigureGetUnproxiedTypeDelegate(Func<object, Type> getUnproxiedTypeDelegate)
     {
-        _getUnproxiedTypeDelegate = getUnproxiedTypeDelegate ?? DefaultProxyTypeDelegate;
+        getUnproxiedTypeDelegate.ThrowIfNull(nameof(getUnproxiedTypeDelegate));
+        _getUnproxiedTypeDelegate = getUnproxiedTypeDelegate;
+    }
+
+    /// <summary>
+    /// Resets the delegate used to retrieve the unproxied type to its default behavior.
+    /// </summary>
+    /// <remarks>
+    /// The default delegate returns the object's runtime type via <see cref="object.GetType"/>.
+    /// This method is useful for reverting custom proxy handling configurations.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(obj => obj.GetType().BaseType ?? obj.GetType());
+    /// ProxyTypeHelper.ResetGetUnproxiedTypeDelegate();
+    /// Type unproxiedType = ProxyTypeHelper.GetUnproxiedType(new object()); // Returns runtime type
+    /// </code>
+    /// </example>
+    public static void ResetGetUnproxiedTypeDelegate()
+    {
+        _getUnproxiedTypeDelegate = _defaultProxyTypeDelegate;
     }
 
     /// <summary>
@@ -35,8 +62,14 @@ public static class ProxyTypeHelper
     /// <returns>The unproxied type of the object.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="obj"/> is null.</exception>
     /// <remarks>
-    /// If no delegate is configured, the method returns the object's runtime type via <see cref="object.GetType"/>.
+    /// If no delegate is configured or after a reset, the method returns the object's runtime type via <see cref="object.GetType"/>.
     /// </remarks>
+    /// <example>
+    /// <code>
+    /// var obj = new object();
+    /// Type unproxiedType = ProxyTypeHelper.GetUnproxiedType(obj); // Returns typeof(object)
+    /// </code>
+    /// </example>
     public static Type GetUnproxiedType(object obj)
     {
         obj.ThrowIfNull(nameof(obj));

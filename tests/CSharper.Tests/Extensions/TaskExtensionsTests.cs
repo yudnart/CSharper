@@ -4,7 +4,7 @@ using FluentAssertions;
 namespace CSharper.Tests.Extensions;
 
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(CSharper.Extensions.TaskExtensions))]
+[Trait("TestFor", nameof(CSharper.Extensions.TaskExtensions))]
 public sealed class TaskExtensionsTests
 {
     private readonly int _value = 42;
@@ -28,6 +28,24 @@ public sealed class TaskExtensionsTests
             resultTask.Status.Should().Be(TaskStatus.RanToCompletion);
             result.Should().Be(_value);
         });
+    }
+
+    [Fact]
+    public async Task Then_TaskCanceled_ThrowsTaskCanceledException()
+    {
+        // Arrange
+        CancellationTokenSource cts = new();
+        cts.Cancel();
+        Task task = Task.FromCanceled(cts.Token);
+        int next() => _value;
+
+        // Act
+        Func<Task> act = async () => await task.Then(next);
+
+        // Assert
+        await act.Should()
+            .ThrowExactlyAsync<TaskCanceledException>()
+            .WithMessage($"Task canceled. TaskID={task.Id}, Status={task.Status}.");
     }
 
     [Fact]
@@ -84,6 +102,24 @@ public sealed class TaskExtensionsTests
             resultTask.Status.Should().Be(TaskStatus.RanToCompletion);
             result.Should().Be(_value.ToString());
         });
+    }
+
+    [Fact]
+    public async Task ThenT_TaskCanceled_ThrowsTaskCanceledException()
+    {
+        // Arrange
+        CancellationTokenSource cts = new();
+        cts.Cancel();
+        Task<int> task = Task.FromCanceled<int>(cts.Token);
+        string next(int x) => x.ToString();
+
+        // Act
+        Func<Task> act = async () => await task.Then(next);
+
+        // Assert
+        await act.Should()
+            .ThrowExactlyAsync<TaskCanceledException>()
+            .WithMessage($"Task canceled. TaskID={task.Id}, Status={task.Status}.");
     }
 
     [Fact]

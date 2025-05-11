@@ -1,26 +1,32 @@
 ﻿using CSharper.Errors;
 using CSharper.Extensions;
 using CSharper.Results;
-using CSharper.Results.Validation;
 using System;
 using System.Diagnostics;
 
 namespace CSharper.Functional;
 
-[DebuggerStepThrough]
 /// <summary>
-/// Provides extension methods for handling synchronous <see cref="Result"/> operations
+/// Provides extension methods for handling <see cref="Result"/> operations
 /// in a functional programming style.
 /// </summary>
+[DebuggerStepThrough]
 public static class ResultExtensions
 {
     /// <summary>
-    /// Chains a <see cref="Result"/> to a synchronous operation if the result is successful; otherwise, returns the original result.
+    /// Chains a <see cref="Result"/> to a synchronous operation if successful; otherwise, returns the original result.
     /// </summary>
     /// <param name="result">The initial result to evaluate.</param>
     /// <param name="next">The synchronous function to invoke if <paramref name="result"/> is successful.</param>
     /// <returns>The result of the chained operation or the original result if failed.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Result initial = Result.Ok();
+    /// Result Next() => Result.Ok();
+    /// Result final = initial.Bind(Next);
+    /// </code>
+    /// </example>
     public static Result Bind(this Result result, Func<Result> next)
     {
         next.ThrowIfNull(nameof(next));
@@ -35,6 +41,13 @@ public static class ResultExtensions
     /// <param name="next">The synchronous function to invoke if <paramref name="result"/> is successful.</param>
     /// <returns>The typed result of the chained operation or a mapped error result.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Result initial = Result.Ok();
+    /// Result<int> Next() => Result.Ok(42);
+    /// Result<int> final = initial.Bind(Next);
+    /// </code>
+    /// </example>
     public static Result<T> Bind<T>(this Result result, Func<Result<T>> next)
     {
         next.ThrowIfNull(nameof(next));
@@ -42,12 +55,21 @@ public static class ResultExtensions
     }
 
     /// <summary>
-    /// Maps a failed <see cref="Result"/> to a typed failed result, preserving errors.
+    /// Maps a failed <see cref="Result"/> to a typed failed result, preserving the error.
     /// </summary>
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <param name="result">The result to map.</param>
-    /// <returns>A typed <see cref="Result{T}"/> with preserved errors if failed.</returns>
+    /// <returns>The typed result with the preserved error if failed.</returns>
     /// <exception cref="InvalidOperationException">Thrown if <paramref name="result"/> is successful.</exception>
+    /// <remarks>
+    /// This method throws an <see cref="InvalidOperationException"/> if the result is successful, as mapping a success to a failed result is invalid.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// Result failed = Result.Fail("Error");
+    /// Result<int> final = failed.MapError<int>();
+    /// </code>
+    /// </example>
     public static Result<T> MapError<T>(this Result result)
     {
         if (result.IsSuccess)
@@ -65,6 +87,13 @@ public static class ResultExtensions
     /// <param name="onSuccess">The synchronous function to invoke if <paramref name="result"/> is successful.</param>
     /// <returns>The result of the success handler or <c>default(T)</c> if failed.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Result result = Result.Ok();
+    /// string OnSuccess() => "Success";
+    /// string? final = result.Match(OnSuccess);
+    /// </code>
+    /// </example>
     public static T? Match<T>(this Result result, Func<T> onSuccess)
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
@@ -77,9 +106,17 @@ public static class ResultExtensions
     /// <typeparam name="T">The type of the value returned by the handlers.</typeparam>
     /// <param name="result">The result to evaluate.</param>
     /// <param name="onSuccess">The synchronous function to invoke if <paramref name="result"/> is successful.</param>
-    /// <param name="onFailure">The synchronous function to invoke with errors if <paramref name="result"/> is a failure.</param>
+    /// <param name="onFailure">The synchronous function to invoke with the error if <paramref name="result"/> is a failure.</param>
     /// <returns>The result of the appropriate handler.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> or <paramref name="onFailure"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Result result = Result.Fail("Error");
+    /// string OnSuccess() => "Success";
+    /// string OnFailure(Error e) => e.ToString();
+    /// string final = result.Match(OnSuccess, OnFailure);
+    /// </code>
+    /// </example>
     public static T Match<T>(this Result result, Func<T> onSuccess, Func<Error, T> onFailure)
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
@@ -91,9 +128,16 @@ public static class ResultExtensions
     /// Recovers from a failed <see cref="Result"/> by executing a synchronous failure handler and returning a successful result.
     /// </summary>
     /// <param name="result">The result to evaluate.</param>
-    /// <param name="onFailure">The synchronous action to invoke with errors if <paramref name="result"/> is a failure.</param>
+    /// <param name="onFailure">The synchronous action to invoke with the error if <paramref name="result"/> is a failure.</param>
     /// <returns>The original result if successful, or a successful <see cref="Result"/> after handling failure.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onFailure"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Result failed = Result.Fail("Error");
+    /// void OnFailure(Error e) => Console.WriteLine(e.ToString());
+    /// Result final = failed.Recover(OnFailure);
+    /// </code>
+    /// </example>
     public static Result Recover(this Result result, Action<Error> onFailure)
     {
         onFailure.ThrowIfNull(nameof(onFailure));
@@ -112,6 +156,13 @@ public static class ResultExtensions
     /// <param name="action">The synchronous action to perform if <paramref name="result"/> is successful.</param>
     /// <returns>The original <see cref="Result"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="action"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Result result = Result.Ok();
+    /// void OnSuccess() => Console.WriteLine("Success");
+    /// Result final = result.Tap(OnSuccess);
+    /// </code>
+    /// </example>
     public static Result Tap(this Result result, Action action)
     {
         action.ThrowIfNull(nameof(action));
@@ -126,9 +177,16 @@ public static class ResultExtensions
     /// Performs a synchronous side-effect if the <see cref="Result"/> is a failure, then returns the original result.
     /// </summary>
     /// <param name="result">The result to evaluate.</param>
-    /// <param name="action">The synchronous action to perform with errors if <paramref name="result"/> is a failure.</param>
+    /// <param name="action">The synchronous action to perform with the error if <paramref name="result"/> is a failure.</param>
     /// <returns>The original <see cref="Result"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="action"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Result failed = Result.Fail("Error");
+    /// void OnFailure(Error e) => Console.WriteLine(e.ToString());
+    /// Result final = failed.TapError(OnFailure);
+    /// </code>
+    /// </example>
     public static Result TapError(this Result result, Action<Error> action)
     {
         action.ThrowIfNull(nameof(action));

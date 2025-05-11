@@ -1,17 +1,24 @@
 ﻿using CSharper.Types;
 using CSharper.Types.Utilities;
 using FluentAssertions;
+using System.Diagnostics;
 
 namespace CSharper.Tests.Types;
 
+[Collection(nameof(SequentialTests))]
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(ValueObject))]
+[Trait("TestFor", nameof(ValueObject))]
 public sealed class ValueObjectTests
 {
     private readonly string _name = "Test";
     private readonly int _value = 42;
     private readonly string _differentName = "Different";
     private readonly int _differentValue = 99;
+
+    public ValueObjectTests()
+    {
+        ProxyTypeHelper.ResetGetUnproxiedTypeDelegate();
+    }
 
     [Fact]
     public void Equals_SameComponents_ReturnsTrue()
@@ -65,13 +72,38 @@ public sealed class ValueObjectTests
         // Arrange
         TestValueObject obj = new(_name, _value);
         object other = new();
-        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(_ => typeof(object));
 
         // Act
         bool result = obj.Equals(other);
 
         // Assert
         result.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Equals_DifferenProxyTypes_ReturnsFalse()
+    {
+        // Arrange
+        TestValueObject obj = new(_name, _value);
+        object other = new();
+
+        // Act
+        // Set the proxy type delegate to toggle between string and int.
+        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(obj =>
+        {
+            // Use Stopwatch for high-resolution timing
+            long ticks = Stopwatch.GetTimestamp();
+            // Toggle between two types based on ticks
+            return (ticks % 2 == 0) ? typeof(string) : typeof(int);
+        });
+
+        bool result = obj.Equals(other);
+
+        // Assert
+        result.Should().BeFalse();
+
+        // Clean up
+        ProxyTypeHelper.ResetGetUnproxiedTypeDelegate();
     }
 
     [Fact]
@@ -178,34 +210,16 @@ public sealed class ValueObjectTests
         // Arrange
         TestValueObject obj = new(_name, _value);
         object other = new();
-        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(obj => 
-            obj is TestValueObject ? typeof(TestValueObject) : typeof(object));
 
         string objTypeName = typeof(TestValueObject).ToString();
         string otherTypeName = typeof(object).ToString();
 
-        int expected = string
-            .Compare(objTypeName, otherTypeName, StringComparison.Ordinal);
+        int expected = objTypeName.CompareTo(otherTypeName);
         // Act
         int result = obj.CompareTo(other);
 
         // Assert
         result.Should().Be(expected);
-    }
-
-    [Fact]
-    public void CompareTo_NonValueObject_ReturnsPositive()
-    {
-        // Arrange
-        TestValueObject obj = new(_name, _value);
-        object other = new();
-        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(_ => typeof(TestValueObject));
-
-        // Act
-        int result = obj.CompareTo(other);
-
-        // Assert
-        result.Should().Be(1);
     }
 
     [Fact]

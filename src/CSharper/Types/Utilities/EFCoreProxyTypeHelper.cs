@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CSharper.Extensions;
+using System;
 
 namespace CSharper.Types.Utilities
 {
@@ -24,12 +25,16 @@ namespace CSharper.Types.Utilities
         {
             ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(obj =>
             {
+                obj.ThrowIfNull(nameof(obj));
+
                 Type type = obj.GetType();
                 string typeString = type.ToString();
 
-                if (typeString.Contains(TypePrefix))
+                if (typeString.Contains(TypePrefix) 
+                    && type.BaseType != null 
+                    && type.BaseType != typeof(object))
                 {
-                    return type.BaseType ?? type;
+                    return type.BaseType;
                 }
 
                 return type;
