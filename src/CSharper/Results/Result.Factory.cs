@@ -9,7 +9,6 @@ namespace CSharper.Results;
 
 public sealed partial class Result
 {
-    public static object IndentMarker { get; private set; }
     #region Result
 
     /// <summary>
