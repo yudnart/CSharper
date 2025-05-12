@@ -212,7 +212,6 @@ public sealed class ValueObjectTests
         yield return ["Same components", testData1, equalTestData1, true];
         yield return ["Different components", testData1, notEqualTestData1, false];
         yield return ["Reference object", testData1, testData1, true];
-        //yield return ["Different types", testData1, new object(), false];
     }
 
     public static IEnumerable<object[]> CompareToTestData()
