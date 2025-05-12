@@ -57,7 +57,7 @@ jobs:
             **/obj/
           retention-days: 1
 
-  run-unit-tests:
+  unit-tests:
     needs: build
     uses: ./.github/workflows/unit-tests.yml
     with:
