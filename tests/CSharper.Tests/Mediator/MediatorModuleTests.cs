@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace CSharper.Tests.Mediator;
 
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(MediatorModule))]
+[Trait("TestFor", nameof(MediatorModule))]
 public sealed class MediatorModuleTests
 {
     [Fact]

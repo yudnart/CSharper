@@ -1,16 +1,21 @@
-﻿using CSharper.Events;
-using CSharper.Types;
-using CSharper.Types.Utilities;
+﻿using CSharper.Types;
+using CSharper.Types.Proxy;
 using FluentAssertions;
 using Moq;
 using System.Diagnostics;
 
 namespace CSharper.Tests.Types;
 
+[Collection(nameof(SequentialTests))]
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(Entity))]
+[Trait("TestFor", nameof(Entity))]
 public sealed class EntityTests
 {
+    public EntityTests()
+    {
+        ProxyTypeHelper.ResetGetUnproxiedTypeDelegate();
+    }
+
     [Fact]
     public void IsTransient_IdIsNull_ReturnsTrue()
     {
@@ -90,32 +95,21 @@ public sealed class EntityTests
         });
     }
 
-    [Fact]
-    public void Equals_SameIdAndType_ReturnsTrue()
+    [Theory]
+    [MemberData(nameof(EqualsTestData))]
+    public void EqualsTest(string description, TestEntity obj1, TestEntity obj2, bool expected)
     {
-        // Arrange
-        TestEntity entity1 = new("test-id");
-        TestEntity entity2 = new("test-id");
-
-        // Act
-        bool result = entity1.Equals(entity2);
-
-        // Assert
-        result.Should().BeTrue();
-    }
-
-    [Fact]
-    public void Equals_DifferentIds_ReturnsFalse()
-    {
-        // Arrange
-        TestEntity entity1 = new("test-id-1");
-        TestEntity entity2 = new("test-id-2");
-
-        // Act
-        bool result = entity1.Equals(entity2);
-
-        // Assert
-        result.Should().BeFalse();
+        Assert.Multiple(() =>
+        {
+            if (obj1! != null!)
+            {
+                obj1!.Equals(obj2).Should().Be(expected, description);
+            }
+            if (obj2! != null!)
+            {
+                obj2.Equals(obj1).Should().Be(expected, description);
+            }
+        });
     }
 
     [Fact]
@@ -133,20 +127,6 @@ public sealed class EntityTests
     }
 
     [Fact]
-    public void Equals_ReferenceEquals_ReturnsTrue()
-    {
-        // Arrange
-        TestEntity entity1 = new("test-id-1");
-        TestEntity entity2 = entity1;
-
-        // Act
-        bool result = entity1.Equals(entity2);
-
-        // Assert
-        result.Should().BeTrue();
-    }
-
-    [Fact]
     public void Equals_DifferenProxyTypes_ReturnsFalse()
     {
         // Arrange
@@ -160,53 +140,39 @@ public sealed class EntityTests
             // Use Stopwatch for high-resolution timing
             long ticks = Stopwatch.GetTimestamp();
             // Toggle between two types based on ticks
-            return (ticks % 2 == 0) ? typeof(string) : typeof(int);
+            return ticks % 2 == 0 ? typeof(string) : typeof(int);
         });
 
         bool result = entity1.Equals(entity2);
 
-        // revert proxy type helper
-        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(null);
-
         // Assert
         result.Should().BeFalse();
-
-    }
-
-    [Fact]
-    public void Equals_TransientEntities_ReturnsFalse()
-    {
-        // Arrange
-        TestEntity entity1 = new(null!);
-        TestEntity entity2 = new(null!);
-
-        // Act
-        bool result = entity1.Equals(entity2);
-
-        // Assert
-        result.Should().BeFalse();
+        
+        // Clean up
+        ProxyTypeHelper.ResetGetUnproxiedTypeDelegate();
     }
 
     [Theory]
-    [MemberData(nameof(EqualTestData))]
-    public void OperatorEqual(TestEntity obj1, TestEntity obj2, bool expected)
+    [MemberData(nameof(EqualsTestData))]
+    public void OperatorEqual(string description, TestEntity obj1, TestEntity obj2, bool expected)
     {
         Assert.Multiple(() =>
         {
-            (obj1 == obj2).Should().Be(expected);
-            (obj2 == obj1).Should().Be(expected);
+            (obj1 == obj2).Should().Be(expected, description);
+            (obj2 == obj1).Should().Be(expected, description);
         });
     }
 
     [Theory]
-    [MemberData(nameof(EqualTestData))]
+    [MemberData(nameof(EqualsTestData))]
     public void OperatorNotEqual_IsInverseOfEqualOperator(
-        TestEntity obj1, TestEntity obj2, bool expected)
+        string description, TestEntity obj1, TestEntity obj2, bool expected)
     {
+        string actualDescription = $"{description} - Inverse";
         Assert.Multiple(() =>
         {
-            (obj1 != obj2).Should().NotBe(expected);
-            (obj2 != obj1).Should().NotBe(expected);
+            (obj1 != obj2).Should().NotBe(expected, actualDescription);
+            (obj2 != obj1).Should().NotBe(expected, actualDescription);
         });
     }
 
@@ -226,21 +192,22 @@ public sealed class EntityTests
         result.Should().Be(expected);
     }
 
-    public static TheoryData<TestEntity, TestEntity, bool> EqualTestData()
+    public static TheoryData<string, TestEntity, TestEntity, bool> EqualsTestData()
     {
+        TestEntity transientEntity1 = new(null!);
+        TestEntity transientEntity2 = new(null!);
         TestEntity testEntity = new("1");
         TestEntity equalTestEntity = new("1");
         TestEntity notEqualTestEntity = new("2");
-        return new TheoryData<TestEntity, TestEntity, bool>
+        return new TheoryData<string, TestEntity, TestEntity, bool>
         {
-            // both null => true
-            { null!, null!, true },
-            // one null => false
-            { null!, new TestEntity("2"), false },
-            { new TestEntity("1"), null!, false },
-            // both not null => return .Equals
-            { testEntity, equalTestEntity, testEntity.Equals(equalTestEntity) },
-            { testEntity, notEqualTestEntity, testEntity.Equals(notEqualTestEntity) },
+            { "Both null", null!, null!, true },
+            { "One null", null!, testEntity, false },
+            { "One is transient", testEntity, transientEntity1, false },
+            { "Both are transient", transientEntity1, transientEntity2, false },
+            { "Referenced equal", testEntity, testEntity, true },
+            { "Same ID", testEntity, equalTestEntity, testEntity.Equals(equalTestEntity) },
+            { "Different ID", testEntity, notEqualTestEntity, testEntity.Equals(notEqualTestEntity) },
         };
     }
 }

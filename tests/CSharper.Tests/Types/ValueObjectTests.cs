@@ -1,98 +1,110 @@
-﻿using CSharper.Types;
-using CSharper.Types.Utilities;
+﻿using CSharper.Results;
+using CSharper.Types;
+using CSharper.Types.Proxy;
 using FluentAssertions;
+using System.Diagnostics;
 
 namespace CSharper.Tests.Types;
 
+[Collection(nameof(SequentialTests))]
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(ValueObject))]
+[Trait("TestFor", nameof(ValueObject))]
 public sealed class ValueObjectTests
 {
-    private readonly string _name = "Test";
     private readonly int _value = 42;
-    private readonly string _differentName = "Different";
     private readonly int _differentValue = 99;
 
-    [Fact]
-    public void Equals_SameComponents_ReturnsTrue()
+    public ValueObjectTests()
     {
-        // Arrange
-        TestValueObject obj1 = new(_name, _value);
-        TestValueObject obj2 = new(_name, _value);
-
-        // Act
-        bool result = obj1.Equals(obj2);
-
-        // Assert
-        result.Should().BeTrue();
+        ProxyTypeHelper.ResetGetUnproxiedTypeDelegate();
     }
 
-    [Fact]
-    public void Equals_DifferentComponents_ReturnsFalse()
+    [Theory]
+    [MemberData(nameof(EqualsTestData))]
+    public void EqualsTest(string description, ValueObject obj1, object obj2, bool expected)
     {
-        // Arrange
-        TestValueObject obj1 = new(_name, _value);
-        TestValueObject obj2 = new(_differentName, _differentValue);
-
-        // Act
-        bool result = obj1.Equals(obj2);
-
-        // Assert
-        result.Should().BeFalse();
-    }
-
-    [Fact]
-    public void Equals_NullObject_ReturnsFalse()
-    {
-        // Arrange
-        TestValueObject obj = new(_name, _value);
-
-        // Act
-        bool result = obj.Equals(null);
-
-        // Assert
         Assert.Multiple(() =>
         {
-            result.Should().BeFalse();
-            (obj! == null!).Should().BeFalse();
-            (null! == obj!).Should().BeFalse();
+            if (obj1! != null!)
+            {
+                obj1!.Equals(obj2).Should().Be(expected, description);
+            }
+            if (obj2! != null!)
+            {
+                obj2.Equals(obj1).Should().Be(expected, description);
+            }
         });
     }
 
     [Fact]
-    public void Equals_DifferentType_ReturnsFalse()
+    public void Equals_DifferenTypes_ReturnsFalse()
     {
         // Arrange
-        TestValueObject obj = new(_name, _value);
-        object other = new();
-        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(_ => typeof(object));
+        TestValueObject<int> entity1 = new(_value);
+        object entity2 = new();
 
         // Act
-        bool result = obj.Equals(other);
+        bool result = entity1.Equals(entity2);
 
         // Assert
         result.Should().BeFalse();
     }
 
     [Fact]
-    public void Equals_SameObject_ReturnsTrue()
+    public void Equals_DifferenProxyTypes_ReturnsFalse()
     {
         // Arrange
-        TestValueObject obj = new(_name, _value);
+        TestValueObject<int> obj = new(_value);
+        object other = new();
 
         // Act
-        bool result = obj.Equals(obj);
+        // Set the proxy type delegate to toggle between string and int.
+        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(obj =>
+        {
+            // Use Stopwatch for high-resolution timing
+            long ticks = Stopwatch.GetTimestamp();
+            // Toggle between two types based on ticks
+            return (ticks % 2 == 0) ? typeof(string) : typeof(int);
+        });
+
+        bool result = obj.Equals(other);
 
         // Assert
-        result.Should().BeTrue();
+        result.Should().BeFalse();
+
+        // Clean up
+        ProxyTypeHelper.ResetGetUnproxiedTypeDelegate();
+    }
+
+    [Theory]
+    [MemberData(nameof(EqualsTestData))]
+    public void OperatorEqual<T>(string description, TestValueObject<T> obj1, TestValueObject<T> obj2, bool expected)
+    {
+        Assert.Multiple(() =>
+        {
+            (obj1! == obj2!).Should().Be(expected, description);
+            (obj2! == obj1!).Should().Be(expected, description);
+        });
+    }
+
+    [Theory]
+    [MemberData(nameof(EqualsTestData))]
+    public void OperatorNotEqual_IsInverseOfEqualOperator<T>(string description, TestValueObject<T> obj1, TestValueObject<T> obj2, bool expected)
+    {
+        string actualDescription = $"{description} - Inverse";
+        Assert.Multiple(() =>
+        {
+            (obj1 != obj2).Should().NotBe(expected, actualDescription);
+            (obj2 != obj1).Should().NotBe(expected, actualDescription);
+        });
     }
 
     [Fact]
     public void GetHashCode_SameComponents_ReturnsSameHashCode()
     {
         // Arrange
-        TestValueObject obj1 = new(_name, _value);
-        TestValueObject obj2 = new(_name, _value);
+        TestValueObject<int> obj1 = new(_value);
+        TestValueObject<int> obj2 = new(_value);
 
         // Act
         int hash1 = obj1.GetHashCode();
@@ -106,8 +118,8 @@ public sealed class ValueObjectTests
     public void GetHashCode_DifferentComponents_ReturnsDifferentHashCode()
     {
         // Arrange
-        TestValueObject obj1 = new(_name, _value);
-        TestValueObject obj2 = new(_differentName, _differentValue);
+        TestValueObject<int> obj1 = new(_value);
+        TestValueObject<int> obj2 = new(_differentValue);
 
         // Act
         int hash1 = obj1.GetHashCode();
@@ -121,7 +133,7 @@ public sealed class ValueObjectTests
     public void GetHashCode_Cached_ReturnsSameHashCode()
     {
         // Arrange
-        TestValueObject obj = new(_name, _value);
+        TestValueObject<int> obj = new(_value);
 
         // Act
         int hash1 = obj.GetHashCode();
@@ -131,137 +143,50 @@ public sealed class ValueObjectTests
         hash1.Should().Be(hash2);
     }
 
+    [Theory]
+    [MemberData(nameof(CompareToTestData))]
+    public void CompareToTest(
+        string description, ValueObject sut, object obj, int expected)
+    {
+        int result = sut.CompareTo(obj);
+        result.Should().Be(expected, description);
+    }
+
     [Fact]
-    public void CompareTo_SameComponents_ReturnsZero()
+    public void CompareTo_DifferentProxyTypes_CompareTypeNames()
     {
         // Arrange
-        TestValueObject obj1 = new(_name, _value);
-        TestValueObject obj2 = new(_name, _value);
+        TestValueObject<int> obj1 = new(_value);
+        TestValueObject<int> obj2 = new(_differentValue);
+
+        Type mockType1 = typeof(TestValueObject<int>);
+        Type mockType2 = typeof(Result);
+
+        string obj1TypeName = mockType1.ToString();
+        string obj2TypeName = mockType2.ToString();
+
+        int expected = obj1TypeName.CompareTo(obj2TypeName);
+
+        // mock GetUnproxiedType to return mock type.
+        bool calledOnce = false;
+        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(obj =>
+        {
+            if (!calledOnce)
+            {
+                calledOnce = true;
+                return mockType1;
+            }
+            return mockType2;
+        });
 
         // Act
         int result = obj1.CompareTo(obj2);
-
-        // Assert
-        result.Should().Be(0);
-    }
-
-    [Fact]
-    public void CompareTo_DifferentComponents_ReturnsNonZero()
-    {
-        // Arrange
-        TestValueObject obj1 = new(_name, _value);
-        TestValueObject obj2 = new(_differentName, _differentValue);
-
-        // Act
-        int result = obj1.CompareTo(obj2);
-
-        // Assert
-        result.Should().NotBe(0);
-    }
-
-    [Fact]
-    public void CompareTo_NullObject_ReturnsPositive()
-    {
-        // Arrange
-        TestValueObject obj = new(_name, _value);
-
-        // Act
-        int result = obj.CompareTo((object?)null);
-
-        // Assert
-        result.Should().Be(1);
-    }
-
-    [Fact]
-    public void CompareTo_DifferentType_CompareTypeNames()
-    {
-        // Arrange
-        TestValueObject obj = new(_name, _value);
-        object other = new();
-        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(obj => 
-            obj is TestValueObject ? typeof(TestValueObject) : typeof(object));
-
-        string objTypeName = typeof(TestValueObject).ToString();
-        string otherTypeName = typeof(object).ToString();
-
-        int expected = string
-            .Compare(objTypeName, otherTypeName, StringComparison.Ordinal);
-        // Act
-        int result = obj.CompareTo(other);
 
         // Assert
         result.Should().Be(expected);
-    }
 
-    [Fact]
-    public void CompareTo_NonValueObject_ReturnsPositive()
-    {
-        // Arrange
-        TestValueObject obj = new(_name, _value);
-        object other = new();
-        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(_ => typeof(TestValueObject));
-
-        // Act
-        int result = obj.CompareTo(other);
-
-        // Assert
-        result.Should().Be(1);
-    }
-
-    [Fact]
-    public void CompareTo_NullComponents_HandlesCorrectly()
-    {
-        // Arrange
-        TestValueObject obj1 = new(null!, _value);
-        TestValueObject obj2 = new(null!, _value);
-
-        // Act
-        int result = obj1.CompareTo(obj2);
-
-        // Assert
-        result.Should().Be(0);
-    }
-
-    [Fact]
-    public void CompareTo_NonComparableComponents_UsesEquals()
-    {
-        // Arrange
-        TestValueObject obj1 = new(_name, _value);
-        TestValueObject obj2 = new(_name, _value);
-
-        // Act
-        int result = obj1.CompareTo(obj2);
-
-        // Assert
-        result.Should().Be(0);
-    }
-
-    [Fact]
-    public void OperatorEquals_BothNull_ReturnsTrue()
-    {
-        // Arrange
-        TestValueObject? obj1 = null;
-        TestValueObject? obj2 = null;
-
-        // Act
-        bool result = obj1! == obj2!;
-
-        // Assert
-        result.Should().BeTrue();
-    }
-
-    [Fact]
-    public void OperatorNotEquals_OneNull_ReturnsTrue()
-    {
-        // Arrange
-        TestValueObject obj = new(_name, _value);
-        TestValueObject? nullObj = null;
-
-        // Act
-        bool result = obj != nullObj!;
-
-        // Assert
-        result.Should().BeTrue();
+        // Clean up
+        ProxyTypeHelper.ResetGetUnproxiedTypeDelegate();
     }
 
     [Fact]
@@ -275,21 +200,57 @@ public sealed class ValueObjectTests
             .And.ParamName.Should().NotBeNullOrWhiteSpace();
     }
 
-    private class TestValueObject : ValueObject
+    public static IEnumerable<object[]> EqualsTestData()
     {
-        public string Name { get; }
-        public int Value { get; }
+        TestValueObject<int> testData1 = new(42);
+        TestValueObject<int> equalTestData1 = new(testData1.Value);
+        TestValueObject<int> notEqualTestData1 = new(24);
 
-        public TestValueObject(string name, int value)
-        {
-            Name = name;
-            Value = value;
-        }
+        // description, left, right, expected
+        yield return ["Both null", null!, null!, true];
+        yield return ["One null", testData1, null!, false];
+        yield return ["Same components", testData1, equalTestData1, true];
+        yield return ["Different components", testData1, notEqualTestData1, false];
+        yield return ["Reference object", testData1, testData1, true];
+        //yield return ["Different types", testData1, new object(), false];
+    }
+
+    public static IEnumerable<object[]> CompareToTestData()
+    {
+        int value1 = 42;
+        int value2 = 24;
+        NonComparableObject nonComparableObject1 = new(value1);
+        NonComparableObject nonComparableObject2 = new(value2);
+
+        TestValueObject<int> testData1 = new(value1);
+        TestValueObject<int> testData2 = new(value2);
+        TestValueObject<string> testData3 = new("Hello world");
+        TestValueObject<NonComparableObject> testData4 = new(nonComparableObject1);
+        TestValueObject<NonComparableObject> testData5 = new(nonComparableObject2);
+        TestValueObject<string> nullTestValue = new(null!);
+
+        // description, sut, obj, expected
+        yield return ["Null object", testData1, null!, 1];
+        yield return ["Different type", testData1, new object(), 1];
+        yield return ["Both has null components", nullTestValue, nullTestValue, 0];
+        yield return ["Right side has null component", testData3, nullTestValue, 1];
+        yield return ["Left side has null component", nullTestValue, testData3, -1];
+        yield return ["Both IComparable", testData1, testData2, value1.CompareTo(value2)];
+        yield return ["Non IComparable", testData4, testData5, -1];
+    }
+
+    public sealed class TestValueObject<T>(T value) : ValueObject
+    {
+        public T Value { get; } = value;
 
         public override IEnumerable<object> GetEqualityComponents()
         {
-            yield return Name;
-            yield return Value;
+            yield return Value!;
         }
+    }
+
+    private class NonComparableObject(int value)
+    {
+        public int Value => value;
     }
 }

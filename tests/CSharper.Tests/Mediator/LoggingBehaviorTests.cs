@@ -11,7 +11,7 @@ using System.Text.Json;
 namespace CSharper.Tests.Mediator;
 
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(LoggingBehavior))]
+[Trait("TestFor", nameof(LoggingBehavior))]
 public sealed class LoggingBehaviorTests
 {
     private readonly MemoryLogger<LoggingBehavior> _logger;

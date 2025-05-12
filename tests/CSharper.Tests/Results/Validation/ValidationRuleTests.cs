@@ -4,7 +4,7 @@ using FluentAssertions;
 namespace CSharper.Tests.Results.Validation;
 
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(ValidationRule))]
+[Trait("TestFor", nameof(ValidationRule))]
 public sealed class ValidationRuleTests
 {
     [Fact]

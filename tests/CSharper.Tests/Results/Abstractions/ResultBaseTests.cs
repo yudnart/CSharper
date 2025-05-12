@@ -7,7 +7,7 @@ using TestUtility = CSharper.Tests.Results.ResultTestUtility;
 namespace CSharper.Tests.Results.Abstractions;
 
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(ResultBase))]
+[Trait("TestFor", nameof(ResultBase))]
 public sealed class ResultBaseTests
 {
     [Fact]

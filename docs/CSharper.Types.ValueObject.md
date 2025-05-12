@@ -136,7 +136,7 @@ else
   - `CompareTo(object?)` and `CompareTo(ValueObject?)`: Compare value objects by their equality components, supporting
   sorting and ordering.
   - Handles nulls, type mismatches, and non-comparable components gracefully.
-- **Type Resolution**:
+- **Proxy Type Resolution**:
   - Uses `TypeHelper.GetUnproxiedType` to handle ORM proxies (e.g., Entity Framework Core, NHibernate), ensuring correct 
   type comparisons for equality and ordering.
 - **Immutability**:

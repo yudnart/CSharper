@@ -19,18 +19,18 @@ public sealed class Result<TValue> : ResultBase
     /// <summary>
     /// Gets the value of a successful result.
     /// </summary>
-    /// <value>The value of the result if <see cref="ResultBase.IsSuccess"/> is <see langword="true"/>.</value>
+    /// <value>The value of the result if <see cref="ResultBase.IsSuccess"/> is true.</value>
     /// <exception cref="InvalidOperationException">Thrown if accessed on a failed result.</exception>
     public TValue Value => IsSuccess
         ? _value
         : throw new InvalidOperationException("Cannot access the value of a failed result.");
 
     /// <summary>
-    /// Initializes a new instance of a success <see cref="Result{TValue}"/>.
+    /// Initializes a new instance of a successful <see cref="Result{TValue}"/>.
     /// </summary>
     /// <param name="value">The value of the successful result.</param>
     /// <remarks>
-    /// This constructor is private to encourage use of the <see cref="Ok(TValue)"/> factory method.
+    /// This constructor is private to encourage use of the <see cref="Result.Ok{T}(T)"/> factory method.
     /// </remarks>
     private Result(TValue value) : base()
     {
@@ -38,22 +38,25 @@ public sealed class Result<TValue> : ResultBase
     }
 
     /// <summary>
-    /// Initializes a new instance of a failure <see cref="Result{TValue}"/> with error.
+    /// Initializes a new instance of a failed <see cref="Result{TValue}"/> with an error.
     /// </summary>
     /// <param name="error">The error causing the failure.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="error"/> is null.</exception>
     /// <remarks>
-    /// Use <see cref="Result.Fail(Error, Error[])"/> factory method.
+    /// This constructor is private to encourage use of the <see cref="Result.Fail{TValue}(Error)"/> factory method.
     /// </remarks>
     private Result(Error error) : base(error)
     {
         _value = default!;
     }
 
+    /// <summary>
+    /// Returns a string representation of the result.
+    /// </summary>
     /// <returns>
-    /// <c>"{Value}"</c> or <c>"Success: {Value}"</c> for a success result, or a formatted string for a failure result.
+    /// For a success result, returns the value's string representation or "Success: null" if the value is null.
+    /// For a failure result, returns the base class's string representation.
     /// </returns>
-    /// <inheritdoc/>
     public override string ToString()
     {
         return IsSuccess ?
@@ -71,10 +74,9 @@ public sealed class Result<TValue> : ResultBase
     internal static Result<TValue> Ok(TValue value) => new(value);
 
     /// <summary>
-    /// Creates a failed <see cref="Result{TValue}"/> instance with the specified errors.
+    /// Creates a failed <see cref="Result{TValue}"/> instance with the specified error.
     /// </summary>
     /// <param name="error">The primary error causing the failure.</param>
-    /// <param name="details">Additional error details, if any.</param>
     /// <returns>A new <see cref="Result{TValue}"/> representing a failed operation.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="error"/> is null.</exception>
     /// <remarks>

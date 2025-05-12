@@ -9,7 +9,7 @@ using TestUtility = CSharper.Tests.Results.ResultTestUtility;
 namespace CSharper.Tests.Results;
 
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(Result))]
+[Trait("TestFor", nameof(Result))]
 public sealed class ResultTests
 {
     [Fact]

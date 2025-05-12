@@ -1,4 +1,4 @@
-﻿using CSharper.Types.Utilities;
+﻿using CSharper.Types.Proxy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,6 +31,11 @@ public abstract class ValueObject : IComparable, IComparable<ValueObject>
         if (obj == null)
         {
             return false;
+        }
+
+        if (ReferenceEquals(this, obj))
+        {
+            return true;
         }
 
         if (GetUnproxiedType(this) != GetUnproxiedType(obj))
@@ -84,22 +89,18 @@ public abstract class ValueObject : IComparable, IComparable<ValueObject>
             return 1;
         }
 
+        if (obj is not ValueObject other)
+        {
+            return 1;
+        }
+
         Type thisType = GetUnproxiedType(this);
         Type otherType = GetUnproxiedType(obj);
 
         if (thisType != otherType)
         {
-            return string.Compare(
-                thisType.ToString(),
-                otherType.ToString(),
-                StringComparison.Ordinal);
-        }
-
-        ValueObject? other = obj as ValueObject;
-
-        if (other is null)
-        {
-            return 1;
+            return thisType.ToString()
+                .CompareTo(otherType.ToString());
         }
 
         object[] components = [.. GetEqualityComponents()];

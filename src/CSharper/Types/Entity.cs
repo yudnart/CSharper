@@ -1,6 +1,5 @@
-﻿using CSharper.Events;
-using CSharper.Extensions;
-using CSharper.Types.Utilities;
+﻿using CSharper.Extensions;
+using CSharper.Types.Proxy;
 using System;
 using System.Collections.Generic;
 
@@ -37,7 +36,7 @@ public abstract class Entity<TId>
     public virtual bool IsTransient()
     {
         return Id is null || Id.Equals(default(TId))
-            || (Id is string idStr && string.IsNullOrWhiteSpace(idStr));
+            || Id is string idStr && string.IsNullOrWhiteSpace(idStr);
     }
 
     #region Events

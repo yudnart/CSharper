@@ -20,7 +20,7 @@ Configure the Mediator in your dependency injection container:
 using Microsoft.Extensions.DependencyInjection;
 
 var services = new ServiceCollection();
-services.AddMediator();
+services.AddSimpleMediator();
 ```
 
 Include the `CSharper.Mediator` namespace:

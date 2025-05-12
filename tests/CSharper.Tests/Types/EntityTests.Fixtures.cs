@@ -1,5 +1,4 @@
-﻿using CSharper.Events;
-using CSharper.Types;
+﻿using CSharper.Types;
 
 namespace CSharper.Tests.Types;
 

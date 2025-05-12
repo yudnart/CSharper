@@ -8,7 +8,7 @@ using Moq;
 namespace CSharper.Tests.Mediator;
 
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(SimpleMediator))]
+[Trait("TestFor", nameof(SimpleMediator))]
 public sealed class SimpleMediatorTests
 {
     private readonly Mock<IServiceProvider> _serviceProviderMock;

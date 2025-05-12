@@ -6,7 +6,7 @@ using TestUtility = CSharper.Tests.Errors.ErrorTestUtility;
 namespace CSharper.Tests.Functional.Validation;
 
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(ValidationError))]
+[Trait("TestFor", nameof(ValidationError))]
 public sealed class ValidationErrorTests
 {
     [Fact]

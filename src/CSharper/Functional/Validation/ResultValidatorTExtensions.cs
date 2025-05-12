@@ -2,25 +2,41 @@
 using CSharper.Functional;
 using CSharper.Results.Validation;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace CSharper.Results.Validation;
 
+/// <summary>
+/// Provides extension methods for handling synchronous and asynchronous <see cref="ResultValidator{T}"/> operations
+/// in a functional programming style.
+/// </summary>
+[DebuggerStepThrough]
 public static class ResultValidatorTExtensions
 {
     #region And
 
     /// <summary>
-    /// Adds a predicate and associated error to the validation chain of a
-    /// <see cref="ResultValidator{T}"/>.
+    /// Adds a synchronous predicate and associated error to the validation chain of an asynchronous <see cref="ResultValidator{T}"/>.
     /// </summary>
-    /// <typeparam name="T">The type of the validator result context.</typeparam>
-    /// <param name="asyncValidator">The <see cref="ResultValidator{T}"/> containing the validation chain.</param>
-    /// <param name="predicate">The synchronous predicate to evaluate the result's value.</param>
-    /// <param name="error">The <see cref="Error"/> to include if the predicate fails.</param>
-    /// <returns>The updated <see cref="ResultValidator{T}"/>.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if validator or predicate is null</exception>
-    /// <exception cref="ArgumentException">Thrown if errorMessage is null or whitespace.</exception>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
+    /// <param name="asyncValidator">The asynchronous <see cref="ResultValidator{T}"/> containing the validation chain.</param>
+    /// <param name="predicate">The synchronous condition to evaluate on the result's value, returning true if valid.</param>
+    /// <param name="errorMessage">The error message for the <see cref="ValidationErrorDetail"/> if <paramref name="predicate"/> returns false.</param>
+    /// <param name="errorCode">Optional error code for the <see cref="ValidationErrorDetail"/>.</param>
+    /// <param name="path">Optional path for the <see cref="ValidationErrorDetail"/>, indicating the error context (e.g., a field name).</param>
+    /// <returns>A task containing the <see cref="ResultValidator{T}"/> for further chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncValidator"/> or <paramref name="predicate"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
+    /// <remarks>
+    /// The predicate is evaluated only if the initial <see cref="Result{T}"/> is successful.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; validator = Task.FromResult(new ResultValidator&lt;int&gt;(Result.Ok(42)));
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; chained = validator.And(x => x > 0, "Value must be positive", "POSITIVE", "value");
+    /// </code>
+    /// </example>
     public static Task<ResultValidator<T>> And<T>(this Task<ResultValidator<T>> asyncValidator,
         Func<T, bool> predicate,
         string errorMessage,
@@ -35,16 +51,26 @@ public static class ResultValidatorTExtensions
     }
 
     /// <summary>
-    /// Adds a predicate and associated error to the validation chain of an
-    /// asynchronous <see cref="ResultValidator{T}"/>.
+    /// Adds an asynchronous predicate and associated error to the validation chain of an asynchronous <see cref="ResultValidator{T}"/>.
     /// </summary>
-    /// <typeparam name="T">The type of the validator result context.</typeparam>
-    /// <param name="asyncValidator">The Task containing the <see cref="ResultValidator{T}"/>.</param>
-    /// <param name="predicate">The synchronous predicate to evaluate the result's value.</param>
-    /// <param name="error">The <see cref="Error"/> to include if the predicate fails.</param>
-    /// <returns>A Task containing the updated <see cref="ResultValidator{T}"/>.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if validator or predicate is null</exception>
-    /// <exception cref="ArgumentException">Thrown if errorMessage is null or whitespace.</exception>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
+    /// <param name="asyncValidator">The asynchronous <see cref="ResultValidator{T}"/> containing the validation chain.</param>
+    /// <param name="predicate">The asynchronous condition to evaluate on the result's value, returning true if valid.</param>
+    /// <param name="errorMessage">The error message for the <see cref="ValidationErrorDetail"/> if <paramref name="predicate"/> returns false.</param>
+    /// <param name="errorCode">Optional error code for the <see cref="ValidationErrorDetail"/>.</param>
+    /// <param name="path">Optional path for the <see cref="ValidationErrorDetail"/>, indicating the error context (e.g., a field name).</param>
+    /// <returns>A task containing the <see cref="ResultValidator{T}"/> for further chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncValidator"/> or <paramref name="predicate"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
+    /// <remarks>
+    /// The predicate is evaluated only if the initial <see cref="Result{T}"/> is successful.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; validator = Task.FromResult(new ResultValidator&lt;int&gt;(Result.Ok(42)));
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; chained = validator.And(async x => await Task.FromResult(x > 0), "Value must be positive", "POSITIVE", "value");
+    /// </code>
+    /// </example>
     public static Task<ResultValidator<T>> And<T>(this Task<ResultValidator<T>> asyncValidator,
         Func<T, Task<bool>> predicate,
         string errorMessage,
@@ -63,20 +89,33 @@ public static class ResultValidatorTExtensions
     #region Ensure
 
     /// <summary>
-    /// Validates a <see cref="Result{T}"/> using a synchronous predicate, returning a builder for further validation.
+    /// Starts a validation chain for a synchronous <see cref="Result{T}"/> with a synchronous predicate.
     /// </summary>
     /// <typeparam name="T">The type of the successful result value.</typeparam>
-    /// <param name="result">The result to validate.</param>
-    /// <param name="predicate">The synchronous predicate to evaluate the value if <paramref name="result"/> is successful.</param>
-    /// <param name="error">The error to include if the predicate fails.</param>
-    /// <returns>A <see cref="ResultValidator{T}"/> for chaining additional validations.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="error"/> is null.</exception>
+    /// <param name="result">The initial <see cref="Result{T}"/> to validate.</param>
+    /// <param name="predicate">The synchronous condition to evaluate on the result's value, returning true if valid.</param>
+    /// <param name="errorMessage">The error message for the <see cref="ValidationErrorDetail"/> if <paramref name="predicate"/> returns false.</param>
+    /// <param name="errorCode">Optional error code for the <see cref="ValidationErrorDetail"/>.</param>
+    /// <param name="path">Optional path for the <see cref="ValidationErrorDetail"/>, indicating the error context (e.g., a field name).</param>
+    /// <returns>A new <see cref="ResultValidator{T}"/> for chaining validation rules.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="result"/> or <paramref name="predicate"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
+    /// <remarks>
+    /// This method initializes a new validation chain with the provided predicate.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// Result&lt;int&gt; result = Result.Ok(42);
+    /// ResultValidator&lt;int&gt; validator = result.Ensure(x => x > 0, "Value must be positive", "POSITIVE", "value");
+    /// </code>
+    /// </example>
     public static ResultValidator<T> Ensure<T>(this Result<T> result,
         Func<T, bool> predicate,
         string errorMessage,
         string? errorCode = null,
         string? path = null)
     {
+        result.ThrowIfNull(nameof(result));
         predicate.ThrowIfNull(nameof(predicate));
         errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
         return new ResultValidator<T>(result)
@@ -84,14 +123,26 @@ public static class ResultValidatorTExtensions
     }
 
     /// <summary>
-    /// Validates a <see cref="Result{T}"/> using an asynchronous predicate, returning a builder to handle the outcome.
+    /// Starts a validation chain for a synchronous <see cref="Result{T}"/> with an asynchronous predicate.
     /// </summary>
     /// <typeparam name="T">The type of the successful result value.</typeparam>
-    /// <param name="result">The result to validate.</param>
-    /// <param name="predicate">The asynchronous predicate to evaluate the value if <paramref name="result"/> is successful.</param>
-    /// <param name="errorMessage">The error to use if the predicate fails.</param>
-    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidator{T}"/> for further processing.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="errorMessage"/> is null.</exception>
+    /// <param name="result">The initial <see cref="Result{T}"/> to validate.</param>
+    /// <param name="predicate">The asynchronous condition to evaluate on the result's value, returning true if valid.</param>
+    /// <param name="errorMessage">The error message for the <see cref="ValidationErrorDetail"/> if <paramref name="predicate"/> returns false.</param>
+    /// <param name="errorCode">Optional error code for the <see cref="ValidationErrorDetail"/>.</param>
+    /// <param name="path">Optional path for the <see cref="ValidationErrorDetail"/>, indicating the error context (e.g., a field name).</param>
+    /// <returns>A new <see cref="ResultValidator{T}"/> for chaining validation rules.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="result"/> or <paramref name="predicate"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
+    /// <remarks>
+    /// This method initializes a new validation chain with the provided predicate.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// Result&lt;int&gt; result = Result.Ok(42);
+    /// ResultValidator&lt;int&gt; validator = result.Ensure(async x => await Task.FromResult(x > 0), "Value must be positive", "POSITIVE", "value");
+    /// </code>
+    /// </example>
     public static ResultValidator<T> Ensure<T>(
         this Result<T> result,
         Func<T, Task<bool>> predicate,
@@ -99,6 +150,7 @@ public static class ResultValidatorTExtensions
         string? errorCode = null,
         string? path = null)
     {
+        result.ThrowIfNull(nameof(result));
         predicate.ThrowIfNull(nameof(predicate));
         errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
         return new ResultValidator<T>(result)
@@ -106,14 +158,26 @@ public static class ResultValidatorTExtensions
     }
 
     /// <summary>
-    /// Validates an asynchronous <see cref="Result{T}"/> using a synchronous predicate, returning a builder.
+    /// Starts a validation chain for an asynchronous <see cref="Result{T}"/> with a synchronous predicate.
     /// </summary>
     /// <typeparam name="T">The type of the successful result value.</typeparam>
-    /// <param name="asyncResult">The asynchronous result to validate.</param>
-    /// <param name="predicate">The synchronous predicate to evaluate the value if the result is successful.</param>
-    /// <param name="error">The error to use if the predicate fails.</param>
-    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidator{T}"/> for further processing.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="error"/> is null.</exception>
+    /// <param name="asyncResult">The asynchronous <see cref="Result{T}"/> to validate.</param>
+    /// <param name="predicate">The synchronous condition to evaluate on the result's value, returning true if valid.</param>
+    /// <param name="errorMessage">The error message for the <see cref="ValidationErrorDetail"/> if <paramref name="predicate"/> returns false.</param>
+    /// <param name="errorCode">Optional error code for the <see cref="ValidationErrorDetail"/>.</param>
+    /// <param name="path">Optional path for the <see cref="ValidationErrorDetail"/>, indicating the error context (e.g., a field name).</param>
+    /// <returns>A task containing a new <see cref="ResultValidator{T}"/> for chaining validation rules.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncResult"/> or <paramref name="predicate"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
+    /// <remarks>
+    /// This method initializes a new validation chain with the provided predicate.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// Task&lt;Result&lt;int&gt;&gt; asyncResult = Task.FromResult(Result.Ok(42));
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; validator = asyncResult.Ensure(x => x > 0, "Value must be positive", "POSITIVE", "value");
+    /// </code>
+    /// </example>
     public static Task<ResultValidator<T>> Ensure<T>(
         this Task<Result<T>> asyncResult,
         Func<T, bool> predicate,
@@ -121,6 +185,7 @@ public static class ResultValidatorTExtensions
         string? errorCode = null,
         string? path = null)
     {
+        asyncResult.ThrowIfNull(nameof(asyncResult));
         predicate.ThrowIfNull(nameof(predicate));
         errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
         return asyncResult
@@ -128,14 +193,26 @@ public static class ResultValidatorTExtensions
     }
 
     /// <summary>
-    /// Validates an asynchronous <see cref="Result{T}"/> using an asynchronous predicate, returning a builder.
+    /// Starts a validation chain for an asynchronous <see cref="Result{T}"/> with an asynchronous predicate.
     /// </summary>
     /// <typeparam name="T">The type of the successful result value.</typeparam>
-    /// <param name="asyncResult">The asynchronous result to validate.</param>
-    /// <param name="predicate">The asynchronous predicate to evaluate the value if the result is successful.</param>
-    /// <param name="error">The error to use if the predicate fails.</param>
-    /// <returns>A <see cref="Task{T}"/> containing a <see cref="ResultValidator{T}"/> for further processing.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> or <paramref name="error"/> is null.</exception>
+    /// <param name="asyncResult">The asynchronous <see cref="Result{T}"/> to validate.</param>
+    /// <param name="predicate">The asynchronous condition to evaluate on the result's value, returning true if valid.</param>
+    /// <param name="errorMessage">The error message for the <see cref="ValidationErrorDetail"/> if <paramref name="predicate"/> returns false.</param>
+    /// <param name="errorCode">Optional error code for the <see cref="ValidationErrorDetail"/>.</param>
+    /// <param name="path">Optional path for the <see cref="ValidationErrorDetail"/>, indicating the error context (e.g., a field name).</param>
+    /// <returns>A task containing a new <see cref="ResultValidator{T}"/> for chaining validation rules.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncResult"/> or <paramref name="predicate"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
+    /// <remarks>
+    /// This method initializes a new validation chain with the provided predicate.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// Task&lt;Result&lt;int&gt;&gt; asyncResult = Task.FromResult(Result.Ok(42));
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; validator = asyncResult.Ensure(async x => await Task.FromResult(x > 0), "Value must be positive", "POSITIVE", "value");
+    /// </code>
+    /// </example>
     public static Task<ResultValidator<T>> Ensure<T>(
         this Task<Result<T>> asyncResult,
         Func<T, Task<bool>> predicate,
@@ -143,6 +220,7 @@ public static class ResultValidatorTExtensions
         string? errorCode = null,
         string? path = null)
     {
+        asyncResult.ThrowIfNull(nameof(asyncResult));
         predicate.ThrowIfNull(nameof(predicate));
         errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
         return asyncResult
@@ -154,79 +232,109 @@ public static class ResultValidatorTExtensions
     #region Bind
 
     /// <summary>
-    /// Binds the validator result to a function that returns a <see cref="Result"/>.
+    /// Chains a <see cref="ResultValidator{T}"/> to a synchronous operation producing a non-generic result if validation succeeds.
     /// </summary>
-    /// <typeparam name="T">The type of the validator result context.</typeparam>
-    /// <param name="validator">The <see cref="ResultValidator{T}"/> containing the validation chain.</param>
-    /// <param name="next">The function to execute if validation succeeds.</param>
-    /// <returns>A <see cref="Result"/> representing the outcome of the binding operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if validator or next is null.</exception>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
+    /// <param name="validator">The <see cref="ResultValidator{T}"/> to evaluate.</param>
+    /// <param name="next">The synchronous function to invoke with the validated value if validation succeeds.</param>
+    /// <returns>The result of the chained operation, or a mapped error result if validation fails.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// ResultValidator&lt;int&gt; validator = new ResultValidator&lt;int&gt;(Result.Ok(42));
+    /// Result Next(int value) => Result.Ok();
+    /// Result final = validator.Bind(Next);
+    /// </code>
+    /// </example>
     public static Result Bind<T>(this ResultValidator<T> validator, Func<T, Result> next)
     {
-        validator.ThrowIfNull(nameof(validator));
         next.ThrowIfNull(nameof(next));
         return validator.Validate().Bind(next);
     }
 
     /// <summary>
-    /// Binds the validator result to a function that returns a <see cref="Result{U}"/>.
+    /// Chains a <see cref="ResultValidator{T}"/> to a synchronous operation producing a typed result if validation succeeds.
     /// </summary>
-    /// <typeparam name="T">The type of the validator result context.</typeparam>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <typeparam name="U">The type of the successful result value of the next operation.</typeparam>
-    /// <param name="validator">The <see cref="ResultValidator{T}"/> containing the validation chain.</param>
-    /// <param name="next">The function to execute if validation succeeds.</param>
-    /// <returns>A <see cref="Result{U}"/> representing the outcome of the binding operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if builder or next is null.</exception>
+    /// <param name="validator">The <see cref="ResultValidator{T}"/> to evaluate.</param>
+    /// <param name="next">The synchronous function to invoke with the validated value if validation succeeds.</param>
+    /// <returns>The typed result of the chained operation, or a mapped error result if validation fails.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// ResultValidator&lt;int&gt; validator = new ResultValidator&lt;int&gt;(Result.Ok(42));
+    /// Result&lt;string&gt; Next(int value) => Result.Ok(value.ToString());
+    /// Result&lt;string&gt; final = validator.Bind(Next);
+    /// </code>
+    /// </example>
     public static Result<U> Bind<T, U>(
         this ResultValidator<T> validator, Func<T, Result<U>> next)
     {
-        validator.ThrowIfNull(nameof(validator));
         next.ThrowIfNull(nameof(next));
         return validator.Validate().Bind(next);
     }
 
     /// <summary>
-    /// Binds the validator result to an asynchronous function that returns a <see cref="Result"/>.
+    /// Chains a <see cref="ResultValidator{T}"/> to an asynchronous operation producing a non-generic result if validation succeeds.
     /// </summary>
-    /// <typeparam name="T">The type of the validator result context.</typeparam>
-    /// <param name="validator">The <see cref="ResultValidator{T}"/> containing the validation chain.</param>
-    /// <param name="next">The asynchronous function to execute if validation succeeds.</param>
-    /// <returns>A Task containing a <see cref="Result"/> representing the asynchronous outcome.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if builder or next is null.</exception>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
+    /// <param name="validator">The <see cref="ResultValidator{T}"/> to evaluate.</param>
+    /// <param name="next">The asynchronous function to invoke with the validated value if validation succeeds.</param>
+    /// <returns>A task containing the result of the chained operation, or a mapped error result if validation fails.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// ResultValidator&lt;int&gt; validator = new ResultValidator&lt;int&gt;(Result.Ok(42));
+    /// async Task&lt;Result&gt; Next(int value) => await Task.FromResult(Result.Ok());
+    /// Task&lt;Result&gt; final = validator.Bind(Next);
+    /// </code>
+    /// </example>
     public static Task<Result> Bind<T>(
         this ResultValidator<T> validator, Func<T, Task<Result>> next)
     {
-        validator.ThrowIfNull(nameof(validator));
         next.ThrowIfNull(nameof(next));
         return validator.Validate().Bind(next);
     }
 
     /// <summary>
-    /// Binds the validator result to an asynchronous function that returns a <see cref="Result{U}"/>.
+    /// Chains a <see cref="ResultValidator{T}"/> to an asynchronous operation producing a typed result if validation succeeds.
     /// </summary>
-    /// <typeparam name="T">The type of the validator result context.</typeparam>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <typeparam name="U">The type of the successful result value of the next operation.</typeparam>
-    /// <param name="validator">The <see cref="ResultValidator{T}"/> containing the validation chain.</param>
-    /// <param name="next">The asynchronous function to execute if validation succeeds.</param>
-    /// <returns>A Task containing a <see cref="Result{U}"/> representing the asynchronous outcome.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if builder or next is null.</exception>
+    /// <param name="validator">The <see cref="ResultValidator{T}"/> to evaluate.</param>
+    /// <param name="next">The asynchronous function to invoke with the validated value if validation succeeds.</param>
+    /// <returns>A task containing the typed result of the chained operation, or a mapped error result if validation fails.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// ResultValidator&lt;int&gt; validator = new ResultValidator&lt;int&gt;(Result.Ok(42));
+    /// async Task&lt;Result&lt;string&gt;&gt; Next(int value) => await Task.FromResult(Result.Ok(value.ToString()));
+    /// Task&lt;Result&lt;string&gt;&gt; final = validator.Bind(Next);
+    /// </code>
+    /// </example>
     public static Task<Result<U>> Bind<T, U>(
         this ResultValidator<T> validator, Func<T, Task<Result<U>>> next)
     {
-        validator.ThrowIfNull(nameof(validator));
         next.ThrowIfNull(nameof(next));
         return validator.Validate().Bind(next);
     }
 
     /// <summary>
-    /// Binds the validator result of an asynchronous <see cref="ResultValidator{T}"/> to a function
-    /// that returns a <see cref="Result"/>.
+    /// Chains an asynchronous <see cref="ResultValidator{T}"/> to a synchronous operation producing a non-generic result if validation succeeds.
     /// </summary>
-    /// <typeparam name="T">The type of the validator result context.</typeparam>
-    /// <param name="asyncValidator">The Task containing the <see cref="ResultValidator{T}"/>.</param>
-    /// <param name="next">The function to execute if validation succeeds.</param>
-    /// <returns>A Task containing a <see cref="Result"/> representing the asynchronous outcome.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if asyncBuilder or next is null.</exception>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
+    /// <param name="asyncValidator">The asynchronous <see cref="ResultValidator{T}"/> to evaluate.</param>
+    /// <param name="next">The synchronous function to invoke with the validated value if validation succeeds.</param>
+    /// <returns>A task containing the result of the chained operation, or a mapped error result if validation fails.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncValidator"/> or <paramref name="next"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; asyncValidator = Task.FromResult(new ResultValidator&lt;int&gt;(Result.Ok(42)));
+    /// Result Next(int value) => Result.Ok();
+    /// Task&lt;Result&gt; final = asyncValidator.Bind(Next);
+    /// </code>
+    /// </example>
     public static Task<Result> Bind<T>(
         this Task<ResultValidator<T>> asyncValidator, Func<T, Result> next)
     {
@@ -236,15 +344,21 @@ public static class ResultValidatorTExtensions
     }
 
     /// <summary>
-    /// Binds the validator result of an asynchronous <see cref="ResultValidator{T}"/> to a function
-    /// that returns a <see cref="Result{U}"/>.
+    /// Chains an asynchronous <see cref="ResultValidator{T}"/> to a synchronous operation producing a typed result if validation succeeds.
     /// </summary>
-    /// <typeparam name="T">The type of the validator result context.</typeparam>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <typeparam name="U">The type of the successful result value of the next operation.</typeparam>
-    /// <param name="asyncValidator">The Task containing the <see cref="ResultValidator{T}"/>.</param>
-    /// <param name="next">The function to execute if validation succeeds.</param>
-    /// <returns>A Task containing a <see cref="Result{U}"/> representing the asynchronous outcome.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if asyncBuilder or next is null.</exception>
+    /// <param name="asyncValidator">The asynchronous <see cref="ResultValidator{T}"/> to evaluate.</param>
+    /// <param name="next">The synchronous function to invoke with the validated value if validation succeeds.</param>
+    /// <returns>A task containing the typed result of the chained operation, or a mapped error result if validation fails.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncValidator"/> or <paramref name="next"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; asyncValidator = Task.FromResult(new ResultValidator&lt;int&gt;(Result.Ok(42)));
+    /// Result&lt;string&gt; Next(int value) => Result.Ok(value.ToString());
+    /// Task&lt;Result&lt;string&gt;&gt; final = asyncValidator.Bind(Next);
+    /// </code>
+    /// </example>
     public static Task<Result<U>> Bind<T, U>(
         this Task<ResultValidator<T>> asyncValidator, Func<T, Result<U>> next)
     {
@@ -254,14 +368,20 @@ public static class ResultValidatorTExtensions
     }
 
     /// <summary>
-    /// Binds the validator result of an asynchronous <see cref="ResultValidator{T}"/> to an asynchronous
-    /// function that returns a <see cref="Result"/>.
+    /// Chains an asynchronous <see cref="ResultValidator{T}"/> to an asynchronous operation producing a non-generic result if validation succeeds.
     /// </summary>
-    /// <typeparam name="T">The type of the validator result context.</typeparam>
-    /// <param name="asyncValidator">The Task containing the <see cref="ResultValidator{T}"/>.</param>
-    /// <param name="next">The asynchronous function to execute if validation succeeds.</param>
-    /// <returns>A Task containing a <see cref="Result"/> representing the asynchronous outcome.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if asyncBuilder or next is null.</exception>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
+    /// <param name="asyncValidator">The asynchronous <see cref="ResultValidator{T}"/> to evaluate.</param>
+    /// <param name="next">The asynchronous function to invoke with the validated value if validation succeeds.</param>
+    /// <returns>A task containing the result of the chained operation, or a mapped error result if validation fails.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncValidator"/> or <paramref name="next"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; asyncValidator = Task.FromResult(new ResultValidator&lt;int&gt;(Result.Ok(42)));
+    /// async Task&lt;Result&gt; Next(int value) => await Task.FromResult(Result.Ok());
+    /// Task&lt;Result&gt; final = asyncValidator.Bind(Next);
+    /// </code>
+    /// </example>
     public static Task<Result> Bind<T>(
         this Task<ResultValidator<T>> asyncValidator, Func<T, Task<Result>> next)
     {
@@ -273,15 +393,21 @@ public static class ResultValidatorTExtensions
     }
 
     /// <summary>
-    /// Binds the validator result of an asynchronous <see cref="ResultValidator{T}"/> to an asynchronous
-    /// function that returns a <see cref="Result{U}"/>.
+    /// Chains an asynchronous <see cref="ResultValidator{T}"/> to an asynchronous operation producing a typed result if validation succeeds.
     /// </summary>
-    /// <typeparam name="T">The type of the validator result context.</typeparam>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <typeparam name="U">The type of the successful result value of the next operation.</typeparam>
-    /// <param name="asyncValidator">The Task containing the <see cref="ResultValidator{T}"/>.</param>
-    /// <param name="next">The asynchronous function to execute if validation succeeds.</param>
-    /// <returns>A Task containing a <see cref="Result{U}"/> representing the asynchronous outcome.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if asyncBuilder or next is null.</exception>
+    /// <param name="asyncValidator">The asynchronous <see cref="ResultValidator{T}"/> to evaluate.</param>
+    /// <param name="next">The asynchronous function to invoke with the validated value if validation succeeds.</param>
+    /// <returns>A task containing the typed result of the chained operation, or a mapped error result if validation fails.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncValidator"/> or <paramref name="next"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; asyncValidator = Task.FromResult(new ResultValidator&lt;int&gt;(Result.Ok(42)));
+    /// async Task&lt;Result&lt;string&gt; Next(int value) => await Task.FromResult(Result.Ok(value.ToString()));
+    /// Task&lt;Result&lt;string>> final = asyncValidator.Bind(Next);
+    /// </code>
+    /// </example>
     public static Task<Result<U>> Bind<T, U>(
         this Task<ResultValidator<T>> asyncValidator, Func<T, Task<Result<U>>> next)
     {

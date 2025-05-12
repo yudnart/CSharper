@@ -8,7 +8,7 @@ using FluentAssertions;
 namespace CSharper.Tests.Functional.Validation;
 
 [Trait("Category", "Unit")]
-[Trait("TestOf", nameof(ResultValidatorExtensions))]
+[Trait("TestFor", nameof(ResultValidatorExtensions))]
 public sealed class ResultValidatorExtensionsTests
 {
     private static readonly string _errorMessage = ErrorTestData.Error.Message;
