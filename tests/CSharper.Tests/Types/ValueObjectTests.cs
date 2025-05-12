@@ -1,4 +1,5 @@
-﻿using CSharper.Types;
+﻿using CSharper.Results;
+using CSharper.Types;
 using CSharper.Types.Utilities;
 using FluentAssertions;
 using System.Diagnostics;
@@ -164,6 +165,71 @@ public sealed class ValueObjectTests
     }
 
     [Fact]
+    public void CompareTo_NullObject_ReturnsOne()
+    {
+        // Arrange
+        TestValueObject obj = new(_name, _value);
+        object nullObject = null!;
+
+        // Act
+        int result = obj.CompareTo(nullObject);
+
+        // Assert
+        result.Should().Be(1);
+    }
+
+    [Fact]
+    public void CompareTo_NotValueObject_ReturnsOne()
+    {
+        // Arrange
+        TestValueObject obj1 = new(_name, _value);
+        object obj2 = new();
+
+        // Act
+        int result = obj1.CompareTo(obj2);
+
+        // Assert
+        result.Should().Be(1);
+    }
+
+    [Fact]
+    public void CompareTo_DifferentProxyTypes_CompareTypeNames()
+    {
+        // Arrange
+        TestValueObject obj1 = new(_name, _value);
+        TestValueObject obj2 = new(_differentName, _differentValue);
+
+        Type mockType1 = typeof(TestValueObject);
+        Type mockType2 = typeof(Result);
+
+        string obj1TypeName = mockType1.ToString();
+        string obj2TypeName = mockType2.ToString();
+
+        int expected = obj1TypeName.CompareTo(obj2TypeName);
+
+        // mock GetUnproxiedType to return mock type.
+        bool calledOnce = false;
+        ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(obj =>
+        {
+            if (!calledOnce)
+            {
+                calledOnce = true;
+                return mockType1;
+            }
+            return mockType2;
+        });
+
+        // Act
+        int result = obj1.CompareTo(obj2);
+
+        // Assert
+        result.Should().Be(expected);
+
+        // Clean up
+        ProxyTypeHelper.ResetGetUnproxiedTypeDelegate();
+    }
+
+    [Fact]
     public void CompareTo_SameComponents_ReturnsZero()
     {
         // Arrange
@@ -192,62 +258,22 @@ public sealed class ValueObjectTests
     }
 
     [Fact]
-    public void CompareTo_NullObject_ReturnsPositive()
-    {
-        // Arrange
-        TestValueObject obj = new(_name, _value);
-
-        // Act
-        int result = obj.CompareTo((object?)null);
-
-        // Assert
-        result.Should().Be(1);
-    }
-
-    [Fact]
-    public void CompareTo_DifferentType_CompareTypeNames()
-    {
-        // Arrange
-        TestValueObject obj = new(_name, _value);
-        object other = new();
-
-        string objTypeName = typeof(TestValueObject).ToString();
-        string otherTypeName = typeof(object).ToString();
-
-        int expected = objTypeName.CompareTo(otherTypeName);
-        // Act
-        int result = obj.CompareTo(other);
-
-        // Assert
-        result.Should().Be(expected);
-    }
-
-    [Fact]
     public void CompareTo_NullComponents_HandlesCorrectly()
     {
         // Arrange
         TestValueObject obj1 = new(null!, _value);
-        TestValueObject obj2 = new(null!, _value);
+        TestValueObject obj2 = new(_name, null!);
 
         // Act
-        int result = obj1.CompareTo(obj2);
+        int result1 = obj1.CompareTo(obj2);
+        int result2 = obj2.CompareTo(obj1);
 
         // Assert
-        result.Should().Be(0);
-    }
-
-    [Fact]
-    public void CompareTo_NonComparableComponents_UsesEquals()
-    {
-        // Arrange
-        TestValueObject obj1 = new(_name, _value);
-        TestValueObject obj2 = new(_name, _value);
-
-        // Act
-        int result = obj1.CompareTo(obj2);
-
-        // Assert
-        result.Should().Be(0);
+        Assert.Multiple(() =>
+        {
+            result1.Should().Be(-1);
+            result2.Should().Be(1);
+        });
     }
 
     [Fact]
@@ -289,16 +315,10 @@ public sealed class ValueObjectTests
             .And.ParamName.Should().NotBeNullOrWhiteSpace();
     }
 
-    private class TestValueObject : ValueObject
+    private class TestValueObject(string name, int? value) : ValueObject
     {
-        public string Name { get; }
-        public int Value { get; }
-
-        public TestValueObject(string name, int value)
-        {
-            Name = name;
-            Value = value;
-        }
+        public string Name { get; } = name;
+        public int? Value { get; } = value;
 
         public override IEnumerable<object> GetEqualityComponents()
         {

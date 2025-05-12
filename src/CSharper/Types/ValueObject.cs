@@ -89,6 +89,11 @@ public abstract class ValueObject : IComparable, IComparable<ValueObject>
             return 1;
         }
 
+        if (obj is not ValueObject other)
+        {
+            return 1;
+        }
+
         Type thisType = GetUnproxiedType(this);
         Type otherType = GetUnproxiedType(obj);
 
@@ -96,11 +101,6 @@ public abstract class ValueObject : IComparable, IComparable<ValueObject>
         {
             return thisType.ToString()
                 .CompareTo(otherType.ToString());
-        }
-
-        if (obj is not ValueObject other)
-        {
-            return 1;
         }
 
         object[] components = [.. GetEqualityComponents()];
