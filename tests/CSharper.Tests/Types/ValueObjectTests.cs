@@ -21,16 +21,33 @@ public sealed class ValueObjectTests
 
     [Theory]
     [MemberData(nameof(EqualsTestData))]
-    public void EqualsTest(string description, ValueObject left, object right, bool expected)
+    public void EqualsTest(string description, ValueObject obj1, object obj2, bool expected)
     {
         Assert.Multiple(() =>
         {
-            left.Equals(right).Should().Be(expected, description);
-            if (right != null!)
+            if (obj1! != null!)
             {
-                right.Equals(left).Should().Be(expected, description);
+                obj1!.Equals(obj2).Should().Be(expected, description);
+            }
+            if (obj2! != null!)
+            {
+                obj2.Equals(obj1).Should().Be(expected, description);
             }
         });
+    }
+
+    [Fact]
+    public void Equals_DifferenTypes_ReturnsFalse()
+    {
+        // Arrange
+        TestValueObject<int> entity1 = new(_value);
+        object entity2 = new();
+
+        // Act
+        bool result = entity1.Equals(entity2);
+
+        // Assert
+        result.Should().BeFalse();
     }
 
     [Fact]
@@ -57,6 +74,29 @@ public sealed class ValueObjectTests
 
         // Clean up
         ProxyTypeHelper.ResetGetUnproxiedTypeDelegate();
+    }
+
+    [Theory]
+    [MemberData(nameof(EqualsTestData))]
+    public void OperatorEqual<T>(string description, TestValueObject<T> obj1, TestValueObject<T> obj2, bool expected)
+    {
+        Assert.Multiple(() =>
+        {
+            (obj1! == obj2!).Should().Be(expected, description);
+            (obj2! == obj1!).Should().Be(expected, description);
+        });
+    }
+
+    [Theory]
+    [MemberData(nameof(EqualsTestData))]
+    public void OperatorNotEqual_IsInverseOfEqualOperator<T>(string description, TestValueObject<T> obj1, TestValueObject<T> obj2, bool expected)
+    {
+        string actualDescription = $"{description} - Inverse";
+        Assert.Multiple(() =>
+        {
+            (obj1 != obj2).Should().NotBe(expected, actualDescription);
+            (obj2 != obj1).Should().NotBe(expected, actualDescription);
+        });
     }
 
     [Fact]
@@ -165,14 +205,14 @@ public sealed class ValueObjectTests
         TestValueObject<int> testData1 = new(42);
         TestValueObject<int> equalTestData1 = new(testData1.Value);
         TestValueObject<int> notEqualTestData1 = new(24);
-        TestValueObject<string> nullTestValue = new(null!);
 
         // description, left, right, expected
+        yield return ["Both null", null!, null!, true];
+        yield return ["One null", testData1, null!, false];
         yield return ["Same components", testData1, equalTestData1, true];
         yield return ["Different components", testData1, notEqualTestData1, false];
-        yield return ["Null object", testData1, null!, false];
         yield return ["Reference object", testData1, testData1, true];
-        yield return ["Different types", testData1, new object(), false];
+        //yield return ["Different types", testData1, new object(), false];
     }
 
     public static IEnumerable<object[]> CompareToTestData()
@@ -182,7 +222,6 @@ public sealed class ValueObjectTests
         NonComparableObject nonComparableObject1 = new(value1);
         NonComparableObject nonComparableObject2 = new(value2);
 
-        TestValueObject<int> nullTestData = null!;
         TestValueObject<int> testData1 = new(value1);
         TestValueObject<int> testData2 = new(value2);
         TestValueObject<string> testData3 = new("Hello world");
@@ -191,7 +230,7 @@ public sealed class ValueObjectTests
         TestValueObject<string> nullTestValue = new(null!);
 
         // description, sut, obj, expected
-        yield return ["Null object", testData1, nullTestData, 1];
+        yield return ["Null object", testData1, null!, 1];
         yield return ["Different type", testData1, new object(), 1];
         yield return ["Both has null components", nullTestValue, nullTestValue, 0];
         yield return ["Right side has null component", testData3, nullTestValue, 1];
@@ -200,7 +239,7 @@ public sealed class ValueObjectTests
         yield return ["Non IComparable", testData4, testData5, -1];
     }
 
-    private class TestValueObject<T>(T value) : ValueObject
+    public sealed class TestValueObject<T>(T value) : ValueObject
     {
         public T Value { get; } = value;
 
