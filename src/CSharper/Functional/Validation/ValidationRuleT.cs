@@ -49,7 +49,7 @@ public sealed class ValidationRule<T>
     /// </remarks>
     /// <example>
     /// <code>
-    /// var rule = new ValidationRule<int>(x => x > 0, "Value must be positive", "POSITIVE", "value");
+    /// var rule = new ValidationRule&lt;int&gt;(x => x > 0, "Value must be positive", "POSITIVE", "value");
     /// </code>
     /// </example>
     public ValidationRule(
@@ -82,7 +82,7 @@ public sealed class ValidationRule<T>
     /// </remarks>
     /// <example>
     /// <code>
-    /// var rule = new ValidationRule<int>(async x => await Task.FromResult(x > 0), "Value must be positive", "POSITIVE", "value");
+    /// var rule = new ValidationRule&lt;int&gt;(async x => await Task.FromResult(x > 0), "Value must be positive", "POSITIVE", "value");
     /// </code>
     /// </example>
     public ValidationRule(

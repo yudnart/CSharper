@@ -108,7 +108,7 @@ public sealed class ResultValidator<T>
     /// <code>
     /// var validator = new ResultValidator&lt;int&gt;(Result.Ok(42))
     ///     .And(x => x > 0, "Value must be positive", "POSITIVE", "value")
-    ///     .And(async x => await Task.FromResult(x < 100), "Value too large", "LARGE", "value");
+    ///     .And(async x => await Task.FromResult(x &lt; 100), "Value too large", "LARGE", "value");
     /// Result&lt;int&gt; result = validator.Validate("Validation failed", "VAL_FAIL");
     /// </code>
     /// </example>

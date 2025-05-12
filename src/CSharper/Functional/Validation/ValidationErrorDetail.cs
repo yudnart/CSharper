@@ -41,10 +41,6 @@ public sealed class ValidationErrorDetail : ErrorDetail
     /// Returns a string representation of the validation error detail, including the message, code, and path.
     /// </summary>
     /// <returns>A formatted string describing the error detail.</returns>
-    /// <remarks>
-    /// The output includes the base <see cref="ErrorDetail.ToString"/> result (message and optional code),
-    /// followed by the path if it is not null or whitespace, in the format ", Path={Path}".
-    /// </remarks>
     /// <example>
     /// <code>
     /// var detail = new ValidationErrorDetail("Value must be positive", "POSITIVE", "value");

@@ -296,6 +296,7 @@ public static class AsyncResultExtensions
     /// <param name="onFailure">The asynchronous function to invoke with the error if the result is a failure.</param>
     /// <returns>The result of the appropriate handler.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> or <paramref name="onFailure"/> is null.</exception>
+    /// <example>
     /// <code>
     /// Task&lt;Result&gt; result = Task.FromResult(Result.Fail("Error"));
     /// async Task&lt;string&gt; OnSuccessAsync() => await Task.FromResult("Success");

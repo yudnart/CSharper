@@ -33,8 +33,8 @@ public static class ResultValidatorTExtensions
     /// </remarks>
     /// <example>
     /// <code>
-    /// Task<ResultValidator<int>> validator = Task.FromResult(new ResultValidator<int>(Result.Ok(42)));
-    /// Task<ResultValidator<int>> chained = validator.And(x => x > 0, "Value must be positive", "POSITIVE", "value");
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; validator = Task.FromResult(new ResultValidator&lt;int&gt;(Result.Ok(42)));
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; chained = validator.And(x => x > 0, "Value must be positive", "POSITIVE", "value");
     /// </code>
     /// </example>
     public static Task<ResultValidator<T>> And<T>(this Task<ResultValidator<T>> asyncValidator,
@@ -67,8 +67,8 @@ public static class ResultValidatorTExtensions
     /// </remarks>
     /// <example>
     /// <code>
-    /// Task<ResultValidator<int>> validator = Task.FromResult(new ResultValidator<int>(Result.Ok(42)));
-    /// Task<ResultValidator<int>> chained = validator.And(async x => await Task.FromResult(x > 0), "Value must be positive", "POSITIVE", "value");
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; validator = Task.FromResult(new ResultValidator&lt;int&gt;(Result.Ok(42)));
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; chained = validator.And(async x => await Task.FromResult(x > 0), "Value must be positive", "POSITIVE", "value");
     /// </code>
     /// </example>
     public static Task<ResultValidator<T>> And<T>(this Task<ResultValidator<T>> asyncValidator,
@@ -105,8 +105,8 @@ public static class ResultValidatorTExtensions
     /// </remarks>
     /// <example>
     /// <code>
-    /// Result<int> result = Result.Ok(42);
-    /// ResultValidator<int> validator = result.Ensure(x => x > 0, "Value must be positive", "POSITIVE", "value");
+    /// Result&lt;int&gt; result = Result.Ok(42);
+    /// ResultValidator&lt;int&gt; validator = result.Ensure(x => x > 0, "Value must be positive", "POSITIVE", "value");
     /// </code>
     /// </example>
     public static ResultValidator<T> Ensure<T>(this Result<T> result,
@@ -139,8 +139,8 @@ public static class ResultValidatorTExtensions
     /// </remarks>
     /// <example>
     /// <code>
-    /// Result<int> result = Result.Ok(42);
-    /// ResultValidator<int> validator = result.Ensure(async x => await Task.FromResult(x > 0), "Value must be positive", "POSITIVE", "value");
+    /// Result&lt;int&gt; result = Result.Ok(42);
+    /// ResultValidator&lt;int&gt; validator = result.Ensure(async x => await Task.FromResult(x > 0), "Value must be positive", "POSITIVE", "value");
     /// </code>
     /// </example>
     public static ResultValidator<T> Ensure<T>(
@@ -174,8 +174,8 @@ public static class ResultValidatorTExtensions
     /// </remarks>
     /// <example>
     /// <code>
-    /// Task<Result<int>> asyncResult = Task.FromResult(Result.Ok(42));
-    /// Task<ResultValidator<int>> validator = asyncResult.Ensure(x => x > 0, "Value must be positive", "POSITIVE", "value");
+    /// Task&lt;Result&lt;int&gt;&gt; asyncResult = Task.FromResult(Result.Ok(42));
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; validator = asyncResult.Ensure(x => x > 0, "Value must be positive", "POSITIVE", "value");
     /// </code>
     /// </example>
     public static Task<ResultValidator<T>> Ensure<T>(
@@ -209,8 +209,8 @@ public static class ResultValidatorTExtensions
     /// </remarks>
     /// <example>
     /// <code>
-    /// Task<Result<int>> asyncResult = Task.FromResult(Result.Ok(42));
-    /// Task<ResultValidator<int>> validator = asyncResult.Ensure(async x => await Task.FromResult(x > 0), "Value must be positive", "POSITIVE", "value");
+    /// Task&lt;Result&lt;int&gt;&gt; asyncResult = Task.FromResult(Result.Ok(42));
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; validator = asyncResult.Ensure(async x => await Task.FromResult(x > 0), "Value must be positive", "POSITIVE", "value");
     /// </code>
     /// </example>
     public static Task<ResultValidator<T>> Ensure<T>(
@@ -241,7 +241,7 @@ public static class ResultValidatorTExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
     /// <example>
     /// <code>
-    /// ResultValidator<int> validator = new ResultValidator<int>(Result.Ok(42));
+    /// ResultValidator&lt;int&gt; validator = new ResultValidator&lt;int&gt;(Result.Ok(42));
     /// Result Next(int value) => Result.Ok();
     /// Result final = validator.Bind(Next);
     /// </code>
@@ -263,9 +263,9 @@ public static class ResultValidatorTExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
     /// <example>
     /// <code>
-    /// ResultValidator<int> validator = new ResultValidator<int>(Result.Ok(42));
-    /// Result<string> Next(int value) => Result.Ok(value.ToString());
-    /// Result<string> final = validator.Bind(Next);
+    /// ResultValidator&lt;int&gt; validator = new ResultValidator&lt;int&gt;(Result.Ok(42));
+    /// Result&lt;string&gt; Next(int value) => Result.Ok(value.ToString());
+    /// Result&lt;string&gt; final = validator.Bind(Next);
     /// </code>
     /// </example>
     public static Result<U> Bind<T, U>(
@@ -285,9 +285,9 @@ public static class ResultValidatorTExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
     /// <example>
     /// <code>
-    /// ResultValidator<int> validator = new ResultValidator<int>(Result.Ok(42));
-    /// async Task<Result> Next(int value) => await Task.FromResult(Result.Ok());
-    /// Task<Result> final = validator.Bind(Next);
+    /// ResultValidator&lt;int&gt; validator = new ResultValidator&lt;int&gt;(Result.Ok(42));
+    /// async Task&lt;Result&gt; Next(int value) => await Task.FromResult(Result.Ok());
+    /// Task&lt;Result&gt; final = validator.Bind(Next);
     /// </code>
     /// </example>
     public static Task<Result> Bind<T>(
@@ -308,9 +308,9 @@ public static class ResultValidatorTExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="next"/> is null.</exception>
     /// <example>
     /// <code>
-    /// ResultValidator<int> validator = new ResultValidator<int>(Result.Ok(42));
-    /// async Task<Result<string>> Next(int value) => await Task.FromResult(Result.Ok(value.ToString()));
-    /// Task<Result<string>> final = validator.Bind(Next);
+    /// ResultValidator&lt;int&gt; validator = new ResultValidator&lt;int&gt;(Result.Ok(42));
+    /// async Task&lt;Result&lt;string&gt;&gt; Next(int value) => await Task.FromResult(Result.Ok(value.ToString()));
+    /// Task&lt;Result&lt;string&gt;&gt; final = validator.Bind(Next);
     /// </code>
     /// </example>
     public static Task<Result<U>> Bind<T, U>(
@@ -330,9 +330,9 @@ public static class ResultValidatorTExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncValidator"/> or <paramref name="next"/> is null.</exception>
     /// <example>
     /// <code>
-    /// Task<ResultValidator<int>> asyncValidator = Task.FromResult(new ResultValidator<int>(Result.Ok(42)));
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; asyncValidator = Task.FromResult(new ResultValidator&lt;int&gt;(Result.Ok(42)));
     /// Result Next(int value) => Result.Ok();
-    /// Task<Result> final = asyncValidator.Bind(Next);
+    /// Task&lt;Result&gt; final = asyncValidator.Bind(Next);
     /// </code>
     /// </example>
     public static Task<Result> Bind<T>(
@@ -354,9 +354,9 @@ public static class ResultValidatorTExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncValidator"/> or <paramref name="next"/> is null.</exception>
     /// <example>
     /// <code>
-    /// Task<ResultValidator<int>> asyncValidator = Task.FromResult(new ResultValidator<int>(Result.Ok(42)));
-    /// Result<string> Next(int value) => Result.Ok(value.ToString());
-    /// Task<Result<string>> final = asyncValidator.Bind(Next);
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; asyncValidator = Task.FromResult(new ResultValidator&lt;int&gt;(Result.Ok(42)));
+    /// Result&lt;string&gt; Next(int value) => Result.Ok(value.ToString());
+    /// Task&lt;Result&lt;string&gt;&gt; final = asyncValidator.Bind(Next);
     /// </code>
     /// </example>
     public static Task<Result<U>> Bind<T, U>(
@@ -375,14 +375,11 @@ public static class ResultValidatorTExtensions
     /// <param name="next">The asynchronous function to invoke with the validated value if validation succeeds.</param>
     /// <returns>A task containing the result of the chained operation, or a mapped error result if validation fails.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncValidator"/> or <paramref name="next"/> is null.</exception>
-    /// <remarks>
-    /// Uses <see cref="TaskExtensions.Unwrap{T}"/> to handle nested <see cref="Task{T}"/> results.
-    /// </remarks>
     /// <example>
     /// <code>
-    /// Task<ResultValidator<int>> asyncValidator = Task.FromResult(new ResultValidator<int>(Result.Ok(42)));
-    /// async Task<Result> Next(int value) => await Task.FromResult(Result.Ok());
-    /// Task<Result> final = asyncValidator.Bind(Next);
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; asyncValidator = Task.FromResult(new ResultValidator&lt;int&gt;(Result.Ok(42)));
+    /// async Task&lt;Result&gt; Next(int value) => await Task.FromResult(Result.Ok());
+    /// Task&lt;Result&gt; final = asyncValidator.Bind(Next);
     /// </code>
     /// </example>
     public static Task<Result> Bind<T>(
@@ -404,14 +401,11 @@ public static class ResultValidatorTExtensions
     /// <param name="next">The asynchronous function to invoke with the validated value if validation succeeds.</param>
     /// <returns>A task containing the typed result of the chained operation, or a mapped error result if validation fails.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncValidator"/> or <paramref name="next"/> is null.</exception>
-    /// <remarks>
-    /// Uses <see cref="TaskExtensions.Unwrap{T}"/> to handle nested <see cref="Task{T}"/> results.
-    /// </remarks>
     /// <example>
     /// <code>
-    /// Task<ResultValidator<int>> asyncValidator = Task.FromResult(new ResultValidator<int>(Result.Ok(42)));
-    /// async Task<Result<string>> Next(int value) => await Task.FromResult(Result.Ok(value.ToString()));
-    /// Task<Result<string>> final = asyncValidator.Bind(Next);
+    /// Task&lt;ResultValidator&lt;int&gt;&gt; asyncValidator = Task.FromResult(new ResultValidator&lt;int&gt;(Result.Ok(42)));
+    /// async Task&lt;Result&lt;string&gt; Next(int value) => await Task.FromResult(Result.Ok(value.ToString()));
+    /// Task&lt;Result&lt;string>> final = asyncValidator.Bind(Next);
     /// </code>
     /// </example>
     public static Task<Result<U>> Bind<T, U>(

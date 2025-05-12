@@ -44,8 +44,8 @@ public static class ResultExtensions
     /// <example>
     /// <code>
     /// Result initial = Result.Ok();
-    /// Result<int> Next() => Result.Ok(42);
-    /// Result<int> final = initial.Bind(Next);
+    /// Result&lt;int&gt; Next() => Result.Ok(42);
+    /// Result&lt;int&gt; final = initial.Bind(Next);
     /// </code>
     /// </example>
     public static Result<T> Bind<T>(this Result result, Func<Result<T>> next)
@@ -67,7 +67,7 @@ public static class ResultExtensions
     /// <example>
     /// <code>
     /// Result failed = Result.Fail("Error");
-    /// Result<int> final = failed.MapError<int>();
+    /// Result&lt;int&gt; final = failed.MapError&lt;int&gt;();
     /// </code>
     /// </example>
     public static Result<T> MapError<T>(this Result result)

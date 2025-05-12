@@ -11,8 +11,8 @@ namespace CSharper.Functional;
 /// Provides extension methods for handling asynchronous <see cref="Result{T}"/> 
 /// and <see cref="Task{T}"/> operations where T is <see cref="Result{T}"/> 
 /// in a functional programming style.
-[DebuggerStepThrough]
 /// </summary>
+[DebuggerStepThrough]
 public static class AsyncResultTExtensions
 {
     #region Bind

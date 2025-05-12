@@ -11,9 +11,7 @@ namespace CSharper.Tests.Types;
 [Trait("TestFor", nameof(ValueObject))]
 public sealed class ValueObjectTests
 {
-    private readonly string _name = "Test";
     private readonly int _value = 42;
-    private readonly string _differentName = "Different";
     private readonly int _differentValue = 99;
 
     public ValueObjectTests()
