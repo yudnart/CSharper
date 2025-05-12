@@ -1,4 +1,4 @@
-﻿using CSharper.Types.Utilities;
+﻿using CSharper.Types.Proxy;
 using System;
 using System.Collections.Generic;
 using System.Linq;

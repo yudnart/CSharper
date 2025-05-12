@@ -9,6 +9,7 @@ namespace CSharper.Results;
 
 public sealed partial class Result
 {
+    public static object IndentMarker { get; private set; }
     #region Result
 
     /// <summary>
@@ -18,7 +19,7 @@ public sealed partial class Result
     public static Result Ok() => _success;
 
     /// <summary>
-    /// Creates a failed <see cref="Result"/> instance with the specified errors.
+    /// Creates a failed <see cref="Result"/> instance with the specified error.
     /// </summary>
     /// <param name="error">The primary error causing the failure.</param>
     /// <returns>A new <see cref="Result"/> representing a failed operation.</returns>
@@ -26,11 +27,10 @@ public sealed partial class Result
     public static Result Fail(Error error) => new(error);
 
     /// <summary>
-    /// Creates a failed <see cref="Result"/> instance with an error constructed from the specified message, code, and path.
+    /// Creates a failed <see cref="Result"/> instance with an error constructed from the specified message and code.
     /// </summary>
     /// <param name="message">The descriptive message of the error.</param>
-    /// <param name="code">The optional error code for identification. Defaults to <c>null</c>.</param>
-    /// <param name="path">The optional path indicating the error's context. Defaults to <c>null</c>.</param>
+    /// <param name="code">The optional error code for identification. Defaults to null.</param>
     /// <returns>A new <see cref="Result"/> representing a failed operation.</returns>
     /// <exception cref="ArgumentException">Thrown if <paramref name="message"/> is null, empty, or whitespace.</exception>
     public static Result Fail(string message, string? code = null)
@@ -44,30 +44,29 @@ public sealed partial class Result
     #region Result<T>
 
     /// <summary>
-    /// Creates a successful <see cref="Result{TValue}"/> instance with the specified value.
+    /// Creates a successful <see cref="Result{T}"/> instance with the specified value.
     /// </summary>
     /// <typeparam name="T">The type of the result value.</typeparam>
     /// <param name="value">The value of the successful result.</param>
-    /// <returns>A new <see cref="Result{TValue}"/> representing a successful operation.</returns>
+    /// <returns>A new <see cref="Result{T}"/> representing a successful operation.</returns>
     public static Result<T> Ok<T>(T value) => Result<T>.Ok(value);
 
     /// <summary>
-    /// Creates a failed <see cref="Result{TValue}"/> instance with the specified errors.
+    /// Creates a failed <see cref="Result{T}"/> instance with the specified error.
     /// </summary>
     /// <typeparam name="TValue">The type of the result value.</typeparam>
     /// <param name="error">The primary error causing the failure.</param>
-    /// <returns>A new <see cref="Result{TValue}"/> representing a failed operation.</returns>
+    /// <returns>A new <see cref="Result{T}"/> representing a failed operation.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="error"/> is null.</exception>
     public static Result<TValue> Fail<TValue>(Error error) => Result<TValue>.Fail(error);
 
     /// <summary>
-    /// Creates a failed <see cref="Result{TValue}"/> instance with an error constructed from the specified message, code, and path.
+    /// Creates a failed <see cref="Result{T}"/> instance with an error constructed from the specified message and code.
     /// </summary>
     /// <typeparam name="TValue">The type of the result value.</typeparam>
     /// <param name="message">The descriptive message of the error.</param>
-    /// <param name="code">The optional error code for identification. Defaults to <c>null</c>.</param>
-    /// <param name="path">The optional path indicating the error's context. Defaults to <c>null</c>.</param>
-    /// <returns>A new <see cref="Result{TValue}"/> representing a failed operation.</returns>
+    /// <param name="code">The optional error code for identification. Defaults to null.</param>
+    /// <returns>A new <see cref="Result{T}"/> representing a failed operation.</returns>
     /// <exception cref="ArgumentException">Thrown if <paramref name="message"/> is null, empty, or whitespace.</exception>
     public static Result<TValue> Fail<TValue>(string message, string? code = null)
     {
@@ -85,14 +84,14 @@ public sealed partial class Result
     /// </summary>
     /// <param name="results">The sequence of results to aggregate, each wrapped as a <see cref="ResultLike"/>.</param>
     /// <param name="message">The message for the combined error if any failures occur.</param>
-    /// <param name="code">The optional code for the combined error. Defaults to <see langword="null"/>.</param>
+    /// <param name="code">The optional code for the combined error. Defaults to null.</param>
     /// <returns>
     /// A <see cref="Result"/> indicating success if all <paramref name="results"/> are successful;
     /// otherwise, a failure result with an <see cref="Error"/> containing all error details.
     /// </returns>
     /// <remarks>
     /// For each failed result, an <see cref="ErrorDetail"/> is added with the error's message and code (unindented),
-    /// followed by its error details with messages prefixed with "> ".
+    /// followed by its error details with messages prefixed with "&gt; ".
     /// The order of <see cref="Error.ErrorDetails"/> matches the order of <paramref name="results"/>,
     /// with each failed result contributing its error's details sequentially.
     /// <para>
@@ -109,7 +108,7 @@ public sealed partial class Result
     public static Result Sequence(
         IEnumerable<ResultLike> results, string message, string? code = null)
     {
-        if (results == null || results.Count() == 0)
+        if (results == null || !results.Any())
         {
             throw new ArgumentException(
                 "Collection cannot be null/empty.", nameof(results));
@@ -135,7 +134,7 @@ public sealed partial class Result
                 // Add Error's ErrorDetails with indented Message
                 foreach (ErrorDetail detail in error.ErrorDetails)
                 {
-                    errorDetails.Add(new($"> {detail.Message}", detail.Code));
+                    errorDetails.Add(new($"{Error.IndentMarker} {detail.Message}", detail.Code));
                 }
             }
         }

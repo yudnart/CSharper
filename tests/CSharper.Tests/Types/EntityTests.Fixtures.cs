@@ -1,6 +1,6 @@
-﻿using CSharper.Types.Entities;
+﻿using CSharper.Types;
 
-namespace CSharper.Tests.Types.Entities;
+namespace CSharper.Tests.Types;
 
 public sealed class TestEntity : Entity<string>
 {

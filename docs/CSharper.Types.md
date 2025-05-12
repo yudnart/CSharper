@@ -95,7 +95,7 @@ product.Delete("admin");
 Console.WriteLine(product.IsDeleted ? $"Deleted at {product.DeletedAt} by {product.DeletedBy}" : "Not deleted");
 ```
 
-### Custom ORM Type Resolution with `TypeHelper`
+### Custom ORM Type Resolution with `ProxyTypeHelper`
 
 Configure a custom delegate to resolve unproxied types for a hypothetical ORM:
 
@@ -118,7 +118,7 @@ var user2 = new UserEntity("user123", "system"); // Another proxied instance
 Console.WriteLine(user1.Equals(user2)); // True, as TypeHelper resolves unproxied type
 ```
 
-### EF Core Proxy Resolution with `TypeHelper`
+### EF Core Proxy Resolution with `ProxyTypeHelper`
 
 Use the built-in EF Core proxy resolution:
 
@@ -143,8 +143,8 @@ properties.
   - `IAuditUpdate`: Defines properties for modification auditing (`LastModifiedAt`, `LastModifiedBy`).
   - `IAuditable`: Combines `IAuditCreate` and `IAuditUpdate` for comprehensive auditing.
   - `ISoftDelete`: Extends `IAuditable` with soft deletion properties (`IsDeleted`, `DeletedAt`, `DeletedBy`).
-- **Type Resolution Utilities**:
-  - `TypeHelper`:
+- **Proxy Type Resolution Utilities**:
+  - `ProxyTypeHelper`:
     - `ConfigureGetUnproxiedTypeDelegate`: Sets a custom delegate to resolve the unproxied type of an object, crucial 
     for handling proxies created by ORMs (e.g., Entity Framework Core, NHibernate) or other frameworks. This allows 
     developers to define logic to identify and strip proxy layers, returning the original domain type for accurate 
@@ -170,7 +170,7 @@ supporting soft deletion.
 - Configure `TypeHelper` at application startup using `EFCoreProxyTypeHelper`, `NHibernateProxyTypeHelper`, or a custom 
 delegate for your ORM or proxying system to ensure correct type resolution for equality and comparison in `Entity<TId>` 
 and `ValueObject`.
-- Define custom `TypeHelper` delegates for non-standard ORMs by checking type names, namespaces, or metadata 
+- Define custom `ProxyTypeHelper` delegates for non-standard ORMs by checking type names, namespaces, or metadata 
 (e.g., `FullName.Contains("MyORM.Proxy")`) to resolve unproxied types accurately.
 - Combine with `CSharper.Results` to return `Result` or `Result<T>` for entity operations, handling errors explicitly.
 - Leverage `CSharper.Functional` extension methods (e.g., `Bind`, `Map`) for composing operations involving entities or 

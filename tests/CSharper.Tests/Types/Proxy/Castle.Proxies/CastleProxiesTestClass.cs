@@ -1,5 +1,5 @@
 ﻿// Namespace to simulate EF Core proxy types
-namespace CSharper.Tests.Types.Utilities.Castle.Proxies;
+namespace CSharper.Tests.Types.Proxy.Castle.Proxies;
 
 internal abstract class TestCastleProxyBase()
 {

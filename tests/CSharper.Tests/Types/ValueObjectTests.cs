@@ -1,6 +1,6 @@
 ﻿using CSharper.Results;
 using CSharper.Types;
-using CSharper.Types.Utilities;
+using CSharper.Types.Proxy;
 using FluentAssertions;
 using System.Diagnostics;
 

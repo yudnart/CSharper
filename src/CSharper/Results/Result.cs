@@ -19,7 +19,7 @@ public sealed partial class Result : ResultBase
     /// Initializes a new instance of the <see cref="Result"/> class as a success result.
     /// </summary>
     /// <remarks>
-    /// This constructor is private to encourage use of factory methods like <see cref="Ok"/> for creating success results.
+    /// This constructor is private to encourage use of factory methods like <see cref="Result.Ok"/> for creating success results.
     /// </remarks>
     private Result() : base()
     {
@@ -27,13 +27,12 @@ public sealed partial class Result : ResultBase
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Result"/> class as a failure result with errors.
+    /// Initializes a new instance of the <see cref="Result"/> class as a failure result with an error.
     /// </summary>
     /// <param name="error">The primary error causing the failure.</param>
-    /// <param name="details">Additional error details, if any.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="error"/> is null.</exception>
     /// <remarks>
-    /// This constructor is private to encourage use of factory methods like <see cref="Fail(Error, Error[])"/> for creating failure results.
+    /// This constructor is private to encourage use of factory methods like <see cref="Result.Fail(Error)"/> for creating failure results.
     /// </remarks>
     private Result(Error error) : base(error)
     {

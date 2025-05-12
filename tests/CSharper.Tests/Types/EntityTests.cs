@@ -1,10 +1,10 @@
-﻿using CSharper.Types.Entities;
-using CSharper.Types.Utilities;
+﻿using CSharper.Types;
+using CSharper.Types.Proxy;
 using FluentAssertions;
 using Moq;
 using System.Diagnostics;
 
-namespace CSharper.Tests.Types.Entities;
+namespace CSharper.Tests.Types;
 
 [Collection(nameof(SequentialTests))]
 [Trait("Category", "Unit")]

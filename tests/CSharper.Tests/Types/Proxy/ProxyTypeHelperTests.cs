@@ -1,7 +1,7 @@
-﻿using CSharper.Types.Utilities;
+﻿using CSharper.Types.Proxy;
 using FluentAssertions;
 
-namespace CSharper.Tests.Types.Utilities;
+namespace CSharper.Tests.Types.Proxy;
 
 [Collection(nameof(SequentialTests))]
 [Trait("Category", "Unit")]

@@ -1,9 +1,9 @@
 ﻿using CSharper.Extensions;
-using CSharper.Types.Utilities;
+using CSharper.Types.Proxy;
 using System;
 using System.Collections.Generic;
 
-namespace CSharper.Types.Entities;
+namespace CSharper.Types;
 
 /// <summary>
 /// Represents an entity with a string identifier.

@@ -1,7 +1,7 @@
 ﻿using CSharper.Extensions;
 using System;
 
-namespace CSharper.Types.Utilities;
+namespace CSharper.Types.Proxy;
 
 /// <summary>
 /// Provides helper methods for handling NHibernate proxy types.

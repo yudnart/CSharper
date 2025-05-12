@@ -1,48 +1,49 @@
 ﻿using CSharper.Results;
-using CSharper.Types.Utilities;
+using CSharper.Tests.Types.Proxy.Castle.Proxies;
+using CSharper.Types.Proxy;
 using FluentAssertions;
 
-namespace CSharper.Tests.Types.Utilities;
+namespace CSharper.Tests.Types.Proxy;
 
 [Collection(nameof(SequentialTests))]
 [Trait("Category", "Unit")]
-[Trait("TestFor", nameof(NHibernateProxyTypeHelper))]
-public sealed class NHibernateProxyTypeHelperTests : IDisposable
+[Trait("TestFor", nameof(EFCoreProxyTypeHelper))]
+public sealed class EFCoreProxyTypeHelperTests : IDisposable
 {
-    public NHibernateProxyTypeHelperTests()
+    public EFCoreProxyTypeHelperTests()
     {
-        NHibernateProxyTypeHelper.Configure();
+        EFCoreProxyTypeHelper.Configure();
     }
 
     public void Dispose()
     {
         ProxyTypeHelper.ResetGetUnproxiedTypeDelegate();
     }
-
+ 
     [Fact]
     public void GetUnproxiedTypeDelegate_ProxyTypeWithBase_ReturnsBaseType()
     {
         // Arrange
-        TestWithBaseProxy proxyObject = new();
+        TestCastleProxyWithBase proxyObject = new();
 
         // Act
         Type result = ProxyTypeHelper.GetUnproxiedType(proxyObject);
 
         // Assert
-        result.Should().Be(typeof(TestProxyBase));
+        result.Should().Be(typeof(TestCastleProxyBase));
     }
 
     [Fact]
     public void GetUnproxiedTypeDelegate_ProxyTypeNoBase_ReturnsOriginalType()
     {
         // Arrange
-        TestNoBaseProxy proxyObject = new();
+        TestCastleProxyNoBase proxyObject = new();
 
         // Act
         Type result = ProxyTypeHelper.GetUnproxiedType(proxyObject);
 
         // Assert
-        result.Should().Be(typeof(TestNoBaseProxy));
+        result.Should().Be(typeof(TestCastleProxyNoBase));
     }
 
     [Fact]
@@ -84,13 +85,4 @@ public sealed class NHibernateProxyTypeHelperTests : IDisposable
         act.Should().Throw<ArgumentNullException>()
             .And.ParamName.Should().NotBeNullOrWhiteSpace();
     }
-
-    // Helper class for non-proxy type
-    private class TestProxyBase { }
-
-    // Simulate an NHibernate proxy type with a valid base type
-    private class TestWithBaseProxy : TestProxyBase { }
-
-    // Simulate a proxy type with object as base type
-    public class TestNoBaseProxy { }
 }

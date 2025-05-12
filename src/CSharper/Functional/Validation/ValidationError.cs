@@ -89,7 +89,7 @@ public sealed class ValidationError : Error
     private static void AppendDetail(StringBuilder sb, ValidationErrorDetail detail)
     {
         string formattedMessage = detail.Message
-            .StartsWith(IndentMarker) ? $">{detail}" : $"> {detail}";
+            .StartsWith(IndentMarker) ? $"{IndentMarker}{detail}" : $"{IndentMarker} {detail}";
         sb.AppendLine();
         sb.Append(formattedMessage);
     }
