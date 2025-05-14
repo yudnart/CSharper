@@ -34,9 +34,9 @@ public sealed class ResultValidator<T>
     /// Adds a synchronous predicate and associated error to the validation chain.
     /// </summary>
     /// <param name="predicate">The condition to evaluate on the result's value, returning true if valid.</param>
-    /// <param name="errorMessage">The error message for the <see cref="ValidationErrorDetail"/> if <paramref name="predicate"/> returns false.</param>
-    /// <param name="errorCode">Optional error code for the <see cref="ValidationErrorDetail"/>.</param>
-    /// <param name="path">Optional path for the <see cref="ValidationErrorDetail"/>, indicating the error context (e.g., a field name).</param>
+    /// <param name="errorMessage">The error message for the <see cref="ValidationFailure"/> if <paramref name="predicate"/> returns false.</param>
+    /// <param name="errorCode">Optional error code for the <see cref="ValidationFailure"/>.</param>
+    /// <param name="path">Optional path for the <see cref="ValidationFailure"/>, indicating the error context (e.g., a field name).</param>
     /// <returns>The current <see cref="ResultValidator{T}"/> instance for method chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
@@ -66,9 +66,9 @@ public sealed class ResultValidator<T>
     /// Adds an asynchronous predicate and associated error to the validation chain.
     /// </summary>
     /// <param name="predicate">The asynchronous condition to evaluate on the result's value, returning true if valid.</param>
-    /// <param name="errorMessage">The error message for the <see cref="ValidationErrorDetail"/> if <paramref name="predicate"/> returns false.</param>
-    /// <param name="errorCode">Optional error code for the <see cref="ValidationErrorDetail"/>.</param>
-    /// <param name="path">Optional path for the <see cref="ValidationErrorDetail"/>, indicating the error context (e.g., a field name).</param>
+    /// <param name="errorMessage">The error message for the <see cref="ValidationFailure"/> if <paramref name="predicate"/> returns false.</param>
+    /// <param name="errorCode">Optional error code for the <see cref="ValidationFailure"/>.</param>
+    /// <param name="path">Optional path for the <see cref="ValidationFailure"/>, indicating the error context (e.g., a field name).</param>
     /// <returns>The current <see cref="ResultValidator{T}"/> instance for method chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
@@ -137,8 +137,8 @@ public sealed class ResultValidator<T>
             return _initialResult;
         }
 
-        ValidationErrorDetail[] errorDetails = errors
-            .Select(e => new ValidationErrorDetail(e.ErrorMessage, e.ErrorCode, e.Path))
+        ValidationFailure[] errorDetails = errors
+            .Select(e => new ValidationFailure(e.ErrorMessage, e.ErrorCode, e.Path))
             .ToArray();
 
         return Result.Fail<T>(new ValidationError(errorMessage, errorCode, errorDetails));

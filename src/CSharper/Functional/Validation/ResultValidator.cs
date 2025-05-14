@@ -136,8 +136,8 @@ public sealed class ResultValidator
             return _initialResult;
         }
 
-        ValidationErrorDetail[] errorDetails = [.. errors
-            .Select(e => new ValidationErrorDetail(e.ErrorMessage, e.ErrorCode, e.Path))];
+        ValidationFailure[] errorDetails = [.. errors
+            .Select(e => new ValidationFailure(e.ErrorMessage, e.ErrorCode, e.Path))];
 
         return Result.Fail(new ValidationError(errorMessage, errorCode, errorDetails));
     }

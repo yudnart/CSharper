@@ -6,7 +6,7 @@ namespace CSharper.Results.Validation;
 /// <summary>
 /// Represents a detailed validation error with a message, optional code, and optional path indicating the error's context.
 /// </summary>
-public sealed class ValidationErrorDetail : ErrorDetail
+public sealed class ValidationFailure : ErrorDetail
 {
     /// <summary>
     /// Gets the optional path indicating the context of the validation error (e.g., a field or property name).
@@ -14,7 +14,7 @@ public sealed class ValidationErrorDetail : ErrorDetail
     public string? Path { get; }
 
     /// <summary>
-    /// Initializes a new instance of <see cref="ValidationErrorDetail"/> with the specified message, code, and path.
+    /// Initializes a new instance of <see cref="ValidationFailure"/> with the specified message, code, and path.
     /// </summary>
     /// <inheritdoc cref="ErrorDetail.ErrorDetail(string, string?)"/>
     /// <param name="message">The error message describing the validation failure.</param>
@@ -29,7 +29,7 @@ public sealed class ValidationErrorDetail : ErrorDetail
     /// var detail = new ValidationErrorDetail("Value must be positive", "POSITIVE", "value");
     /// </code>
     /// </example>
-    public ValidationErrorDetail(
+    public ValidationFailure(
         string message,
         string? code = null,
         string? path = null) : base(message, code)

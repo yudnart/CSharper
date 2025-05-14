@@ -22,7 +22,7 @@ public sealed class ValidationErrorTests
     [Theory]
     [MemberData(nameof(CtorValidTestCases))]
     public void Ctor_ValidParams_Succeeds(
-        string message, string? code, ValidationErrorDetail[]? errorDetails)
+        string message, string? code, ValidationFailure[]? errorDetails)
     {
         // Act
         ValidationError result = new(message, code, errorDetails!);
@@ -45,11 +45,11 @@ public sealed class ValidationErrorTests
     [Fact]
     public void ErrorDetails_IsTypeOfValidationErrorDetail()
     {
-        ValidationErrorDetail[] errorDetails = [.. ValidationErrorDetailData()];
-        ValidationError sut = new(errorDetails: errorDetails);
+        ValidationFailure[] errorDetails = [.. ValidationErrorDetailData()];
+        ValidationError sut = new(validationFailures: errorDetails);
         Assert.Multiple(() =>
         {
-            sut.ErrorDetails.Should().AllBeOfType<ValidationErrorDetail>();
+            sut.ErrorDetails.Should().AllBeOfType<ValidationFailure>();
             sut.ErrorDetails.Should().ContainInOrder(errorDetails);
         });
     }
@@ -68,9 +68,9 @@ public sealed class ValidationErrorTests
         result.Should().Be(expected, because: description);
     }
 
-    public static TheoryData<string, string?, ValidationErrorDetail[]?> CtorValidTestCases()
+    public static TheoryData<string, string?, ValidationFailure[]?> CtorValidTestCases()
     {
-        return new TheoryData<string, string?, ValidationErrorDetail[]?>
+        return new TheoryData<string, string?, ValidationFailure[]?>
         {
             { ErrorTestData.Error.Message, ErrorTestData.Error.Code, null },
             { ErrorTestData.ErrorWithCode.Message, ErrorTestData.ErrorWithCode.Code, [] },
@@ -79,7 +79,7 @@ public sealed class ValidationErrorTests
                 ErrorTestData.ErrorWithDetails.Message,
                 ErrorTestData.ErrorWithDetails.Code,
                 [.. ErrorTestData.ErrorWithDetails.ErrorDetails.Select(e =>
-                    new ValidationErrorDetail(e.Message, e.Code))]
+                    new ValidationFailure(e.Message, e.Code))]
             }
         };
     }
@@ -98,7 +98,7 @@ public sealed class ValidationErrorTests
                     "Single detail with path",
                     new ValidationError(
                         "Validation failed", "VALIDATION_ERROR",
-                        new ValidationErrorDetail(
+                        new ValidationFailure(
                             "Invalid value", "ERR001", "User.Name")),
                     "Validation failed, Code=VALIDATION_ERROR\r\n"
                     + "> Invalid value, Code=ERR001, Path=User.Name"
@@ -107,7 +107,7 @@ public sealed class ValidationErrorTests
                     "Single detail without path",
                     new ValidationError(
                         "Validation failed", "VALIDATION_ERROR",
-                        new ValidationErrorDetail("Invalid value", "ERR001", null)),
+                        new ValidationFailure("Invalid value", "ERR001", null)),
                     "Validation failed, Code=VALIDATION_ERROR\r\n"
                     + "> Invalid value, Code=ERR001"
                 },
@@ -116,9 +116,9 @@ public sealed class ValidationErrorTests
                     new ValidationError(
                         "Validation failed",
                         "VALIDATION_ERROR",
-                        new ValidationErrorDetail("Invalid value", "ERR001", "User.Name"),
-                        new ValidationErrorDetail("Value too long", "ERR002", null),
-                        new ValidationErrorDetail("> Nested error", "ERR003", "User.Address")),
+                        new ValidationFailure("Invalid value", "ERR001", "User.Name"),
+                        new ValidationFailure("Value too long", "ERR002", null),
+                        new ValidationFailure("> Nested error", "ERR003", "User.Address")),
                     "Validation failed, Code=VALIDATION_ERROR\r\n"
                     + "> Invalid value, Code=ERR001, Path=User.Name\r\n"
                     + "> Value too long, Code=ERR002\r\n"
@@ -129,7 +129,7 @@ public sealed class ValidationErrorTests
                     new ValidationError(
                         "Validation failed",
                         "VALIDATION_ERROR",
-                        new ValidationErrorDetail("Invalid value", "ERR001", "")),
+                        new ValidationFailure("Invalid value", "ERR001", "")),
                     "Validation failed, Code=VALIDATION_ERROR\r\n"
                     + "> Invalid value, Code=ERR001"
                 },
@@ -138,14 +138,14 @@ public sealed class ValidationErrorTests
                     new ValidationError(
                         "Validation failed",
                         "VALIDATION_ERROR",
-                        new ValidationErrorDetail("> Nested error", "ERR001", "User.Name")),
+                        new ValidationFailure("> Nested error", "ERR001", "User.Name")),
                     "Validation failed, Code=VALIDATION_ERROR\r\n"
                     + ">> Nested error, Code=ERR001, Path=User.Name"
                 }
             };
     }
 
-    public static IEnumerable<ValidationErrorDetail> ValidationErrorDetailData()
+    public static IEnumerable<ValidationFailure> ValidationErrorDetailData()
     {
         yield return new("Value must be less than 100.", "OUT_OF_RANGE");
         yield return new("Value cannot be null/empty.", "INVALID", "Username");

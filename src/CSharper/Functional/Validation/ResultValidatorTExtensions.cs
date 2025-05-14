@@ -22,9 +22,9 @@ public static class ResultValidatorTExtensions
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <param name="asyncValidator">The asynchronous <see cref="ResultValidator{T}"/> containing the validation chain.</param>
     /// <param name="predicate">The synchronous condition to evaluate on the result's value, returning true if valid.</param>
-    /// <param name="errorMessage">The error message for the <see cref="ValidationErrorDetail"/> if <paramref name="predicate"/> returns false.</param>
-    /// <param name="errorCode">Optional error code for the <see cref="ValidationErrorDetail"/>.</param>
-    /// <param name="path">Optional path for the <see cref="ValidationErrorDetail"/>, indicating the error context (e.g., a field name).</param>
+    /// <param name="errorMessage">The error message for the <see cref="ValidationFailure"/> if <paramref name="predicate"/> returns false.</param>
+    /// <param name="errorCode">Optional error code for the <see cref="ValidationFailure"/>.</param>
+    /// <param name="path">Optional path for the <see cref="ValidationFailure"/>, indicating the error context (e.g., a field name).</param>
     /// <returns>A task containing the <see cref="ResultValidator{T}"/> for further chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncValidator"/> or <paramref name="predicate"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
@@ -56,9 +56,9 @@ public static class ResultValidatorTExtensions
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <param name="asyncValidator">The asynchronous <see cref="ResultValidator{T}"/> containing the validation chain.</param>
     /// <param name="predicate">The asynchronous condition to evaluate on the result's value, returning true if valid.</param>
-    /// <param name="errorMessage">The error message for the <see cref="ValidationErrorDetail"/> if <paramref name="predicate"/> returns false.</param>
-    /// <param name="errorCode">Optional error code for the <see cref="ValidationErrorDetail"/>.</param>
-    /// <param name="path">Optional path for the <see cref="ValidationErrorDetail"/>, indicating the error context (e.g., a field name).</param>
+    /// <param name="errorMessage">The error message for the <see cref="ValidationFailure"/> if <paramref name="predicate"/> returns false.</param>
+    /// <param name="errorCode">Optional error code for the <see cref="ValidationFailure"/>.</param>
+    /// <param name="path">Optional path for the <see cref="ValidationFailure"/>, indicating the error context (e.g., a field name).</param>
     /// <returns>A task containing the <see cref="ResultValidator{T}"/> for further chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncValidator"/> or <paramref name="predicate"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
@@ -94,9 +94,9 @@ public static class ResultValidatorTExtensions
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <param name="result">The initial <see cref="Result{T}"/> to validate.</param>
     /// <param name="predicate">The synchronous condition to evaluate on the result's value, returning true if valid.</param>
-    /// <param name="errorMessage">The error message for the <see cref="ValidationErrorDetail"/> if <paramref name="predicate"/> returns false.</param>
-    /// <param name="errorCode">Optional error code for the <see cref="ValidationErrorDetail"/>.</param>
-    /// <param name="path">Optional path for the <see cref="ValidationErrorDetail"/>, indicating the error context (e.g., a field name).</param>
+    /// <param name="errorMessage">The error message for the <see cref="ValidationFailure"/> if <paramref name="predicate"/> returns false.</param>
+    /// <param name="errorCode">Optional error code for the <see cref="ValidationFailure"/>.</param>
+    /// <param name="path">Optional path for the <see cref="ValidationFailure"/>, indicating the error context (e.g., a field name).</param>
     /// <returns>A new <see cref="ResultValidator{T}"/> for chaining validation rules.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="result"/> or <paramref name="predicate"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
@@ -128,9 +128,9 @@ public static class ResultValidatorTExtensions
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <param name="result">The initial <see cref="Result{T}"/> to validate.</param>
     /// <param name="predicate">The asynchronous condition to evaluate on the result's value, returning true if valid.</param>
-    /// <param name="errorMessage">The error message for the <see cref="ValidationErrorDetail"/> if <paramref name="predicate"/> returns false.</param>
-    /// <param name="errorCode">Optional error code for the <see cref="ValidationErrorDetail"/>.</param>
-    /// <param name="path">Optional path for the <see cref="ValidationErrorDetail"/>, indicating the error context (e.g., a field name).</param>
+    /// <param name="errorMessage">The error message for the <see cref="ValidationFailure"/> if <paramref name="predicate"/> returns false.</param>
+    /// <param name="errorCode">Optional error code for the <see cref="ValidationFailure"/>.</param>
+    /// <param name="path">Optional path for the <see cref="ValidationFailure"/>, indicating the error context (e.g., a field name).</param>
     /// <returns>A new <see cref="ResultValidator{T}"/> for chaining validation rules.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="result"/> or <paramref name="predicate"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
@@ -163,9 +163,9 @@ public static class ResultValidatorTExtensions
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <param name="asyncResult">The asynchronous <see cref="Result{T}"/> to validate.</param>
     /// <param name="predicate">The synchronous condition to evaluate on the result's value, returning true if valid.</param>
-    /// <param name="errorMessage">The error message for the <see cref="ValidationErrorDetail"/> if <paramref name="predicate"/> returns false.</param>
-    /// <param name="errorCode">Optional error code for the <see cref="ValidationErrorDetail"/>.</param>
-    /// <param name="path">Optional path for the <see cref="ValidationErrorDetail"/>, indicating the error context (e.g., a field name).</param>
+    /// <param name="errorMessage">The error message for the <see cref="ValidationFailure"/> if <paramref name="predicate"/> returns false.</param>
+    /// <param name="errorCode">Optional error code for the <see cref="ValidationFailure"/>.</param>
+    /// <param name="path">Optional path for the <see cref="ValidationFailure"/>, indicating the error context (e.g., a field name).</param>
     /// <returns>A task containing a new <see cref="ResultValidator{T}"/> for chaining validation rules.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncResult"/> or <paramref name="predicate"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
@@ -198,9 +198,9 @@ public static class ResultValidatorTExtensions
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <param name="asyncResult">The asynchronous <see cref="Result{T}"/> to validate.</param>
     /// <param name="predicate">The asynchronous condition to evaluate on the result's value, returning true if valid.</param>
-    /// <param name="errorMessage">The error message for the <see cref="ValidationErrorDetail"/> if <paramref name="predicate"/> returns false.</param>
-    /// <param name="errorCode">Optional error code for the <see cref="ValidationErrorDetail"/>.</param>
-    /// <param name="path">Optional path for the <see cref="ValidationErrorDetail"/>, indicating the error context (e.g., a field name).</param>
+    /// <param name="errorMessage">The error message for the <see cref="ValidationFailure"/> if <paramref name="predicate"/> returns false.</param>
+    /// <param name="errorCode">Optional error code for the <see cref="ValidationFailure"/>.</param>
+    /// <param name="path">Optional path for the <see cref="ValidationFailure"/>, indicating the error context (e.g., a field name).</param>
     /// <returns>A task containing a new <see cref="ResultValidator{T}"/> for chaining validation rules.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="asyncResult"/> or <paramref name="predicate"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if <paramref name="errorMessage"/> is null or whitespace.</exception>
