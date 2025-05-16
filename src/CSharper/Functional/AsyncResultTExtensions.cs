@@ -281,54 +281,6 @@ public static class AsyncResultTExtensions
     }
 
     /// <summary>
-    /// Executes a synchronous success handler for an asynchronous <see cref="Result{T}"/> if successful; otherwise, returns the default value.
-    /// </summary>
-    /// <typeparam name="T">The type of the successful result value.</typeparam>
-    /// <typeparam name="U">The type of the value returned by the success handler.</typeparam>
-    /// <param name="asyncResult">The asynchronous result to evaluate.</param>
-    /// <param name="onSuccess">The synchronous function to invoke with the value if the result is successful.</param>
-    /// <returns>The result of the success handler or <c>default(U)</c> if failed.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> is null.</exception>
-    /// <example>
-    /// <code>
-    /// Task&lt;Result&lt;int&gt;&gt; asyncResult = Task.FromResult(Result.Ok(42));
-    /// string OnSuccess(int value) => value.ToString();
-    /// Task&lt;string?&gt; final = asyncResult.Match(OnSuccess);
-    /// </code>
-    /// </example>
-    public static Task<U?> Match<T, U>(this Task<Result<T>> asyncResult, Func<T, U> onSuccess)
-    {
-        onSuccess.ThrowIfNull(nameof(onSuccess));
-        return asyncResult.Then(r => r.Match(onSuccess));
-    }
-
-    /// <summary>
-    /// Executes a synchronous handler based on the asynchronous <see cref="Result{T}"/> state (success or failure).
-    /// </summary>
-    /// <typeparam name="T">The type of the successful result value.</typeparam>
-    /// <typeparam name="U">The type of the value returned by the handlers.</typeparam>
-    /// <param name="asyncResult">The asynchronous result to evaluate.</param>
-    /// <param name="onSuccess">The synchronous function to invoke with the value if the result is successful.</param>
-    /// <param name="onFailure">The synchronous function to invoke with the error if the result is a failure.</param>
-    /// <returns>The result of the appropriate handler.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> or <paramref name="onFailure"/> is null.</exception>
-    /// <example>
-    /// <code>
-    /// Task&lt;Result&lt;int&gt;&gt; asyncResult = Task.FromResult(Result.Fail&lt;int&gt;("Error"));
-    /// string OnSuccess(int value) => value.ToString();
-    /// string OnFailure(Error e) => e.ToString();
-    /// Task&lt;string&gt; final = asyncResult.Match(OnSuccess, OnFailure);
-    /// </code>
-    /// </example>
-    public static Task<U> Match<T, U>(this Task<Result<T>> asyncResult,
-        Func<T, U> onSuccess, Func<Error, U> onFailure)
-    {
-        onSuccess.ThrowIfNull(nameof(onSuccess));
-        onFailure.ThrowIfNull(nameof(onFailure));
-        return asyncResult.Then(r => r.Match(onSuccess, onFailure));
-    }
-
-    /// <summary>
     /// Executes an asynchronous success handler for an asynchronous <see cref="Result{T}"/> if successful; otherwise, returns the default value.
     /// </summary>
     /// <typeparam name="T">The type of the successful result value.</typeparam>
@@ -378,6 +330,54 @@ public static class AsyncResultTExtensions
         return asyncResult
             .Then(r => r.Match(onSuccess, onFailure))
             .Unwrap();
+    }
+
+    /// <summary>
+    /// Executes a synchronous success handler for an asynchronous <see cref="Result{T}"/> if successful; otherwise, returns the default value.
+    /// </summary>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
+    /// <typeparam name="U">The type of the value returned by the success handler.</typeparam>
+    /// <param name="asyncResult">The asynchronous result to evaluate.</param>
+    /// <param name="onSuccess">The synchronous function to invoke with the value if the result is successful.</param>
+    /// <returns>The result of the success handler or <c>default(U)</c> if failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Task&lt;Result&lt;int&gt;&gt; asyncResult = Task.FromResult(Result.Ok(42));
+    /// string OnSuccess(int value) => value.ToString();
+    /// Task&lt;string?&gt; final = asyncResult.Match(OnSuccess);
+    /// </code>
+    /// </example>
+    public static Task<U?> Match<T, U>(this Task<Result<T>> asyncResult, Func<T, U> onSuccess)
+    {
+        onSuccess.ThrowIfNull(nameof(onSuccess));
+        return asyncResult.Then(r => r.Match(onSuccess));
+    }
+
+    /// <summary>
+    /// Executes a synchronous handler based on the asynchronous <see cref="Result{T}"/> state (success or failure).
+    /// </summary>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
+    /// <typeparam name="U">The type of the value returned by the handlers.</typeparam>
+    /// <param name="asyncResult">The asynchronous result to evaluate.</param>
+    /// <param name="onSuccess">The synchronous function to invoke with the value if the result is successful.</param>
+    /// <param name="onFailure">The synchronous function to invoke with the error if the result is a failure.</param>
+    /// <returns>The result of the appropriate handler.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="onSuccess"/> or <paramref name="onFailure"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Task&lt;Result&lt;int&gt;&gt; asyncResult = Task.FromResult(Result.Fail&lt;int&gt;("Error"));
+    /// string OnSuccess(int value) => value.ToString();
+    /// string OnFailure(Error e) => e.ToString();
+    /// Task&lt;string&gt; final = asyncResult.Match(OnSuccess, OnFailure);
+    /// </code>
+    /// </example>
+    public static Task<U> Match<T, U>(this Task<Result<T>> asyncResult,
+        Func<T, U> onSuccess, Func<Error, U> onFailure)
+    {
+        onSuccess.ThrowIfNull(nameof(onSuccess));
+        onFailure.ThrowIfNull(nameof(onFailure));
+        return asyncResult.Then(r => r.Match(onSuccess, onFailure));
     }
 
     #endregion

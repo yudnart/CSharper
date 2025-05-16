@@ -1,7 +1,7 @@
 ﻿using CSharper.Errors;
 using CSharper.Functional;
+using CSharper.Functional.Validation;
 using CSharper.Results;
-using CSharper.Results.Validation;
 using CSharper.Tests.Errors;
 using FluentAssertions;
 using TestData = CSharper.Tests.Functional.FunctionalResultTestData;

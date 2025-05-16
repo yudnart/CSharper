@@ -68,7 +68,7 @@ public static class TaskExtensions
     /// </code>
     /// </example>
     [DebuggerStepThrough]
-    internal static Task<U> Then<T, U>(this Task<T> task, Func<T, U> next)
+    public static Task<U> Then<T, U>(this Task<T> task, Func<T, U> next)
     {
         task.ThrowIfNull(nameof(task));
         next.ThrowIfNull(nameof(next));
