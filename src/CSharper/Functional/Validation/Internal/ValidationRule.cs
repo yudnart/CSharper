@@ -1,20 +1,20 @@
 ﻿using CSharper.Extensions;
 using System;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace CSharper.Results.Validation;
+namespace CSharper.Functional.Validation.Internal;
 
 /// <summary>
 /// Represents a validation rule with a predicate and error details for use in <see cref="ResultValidator"/> workflows.
 /// </summary>
-public sealed class ValidationRule
+internal sealed class ValidationRule
 {
     /// <summary>
     /// Gets the asynchronous predicate that determines if the validation passes.
     /// </summary>
-    /// <value>A function that asynchronously evaluates to <c>true</c> if the validation passes, otherwise <c>false</c>.</value>
-    public Func<Task<bool>> Predicate { get; }
+    /// <value>A function that asynchronously evaluates to <c>true</c> if the validation passes, 
+    /// otherwise <c>false</c>.</value>
+    public Func<ValueTask<bool>> Predicate { get; }
 
     /// <summary>
     /// Gets the error message to return if the predicate fails.
@@ -53,16 +53,14 @@ public sealed class ValidationRule
     /// </code>
     /// </example>
     public ValidationRule(
-        Func<bool> predicate, string errorMessage, string? errorCode = default, string? path = default)
-        : this(() => Task.FromResult(predicate()), errorMessage, errorCode, path)
+        Func<bool> predicate, 
+        string errorMessage, 
+        string? errorCode = default, 
+        string? path = default)
+        : this(errorMessage, errorCode, path)
     {
         predicate.ThrowIfNull(nameof(predicate));
-        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
-
-        Predicate = () => Task.FromResult(predicate());
-        ErrorMessage = errorMessage;
-        ErrorCode = errorCode;
-        Path = path;
+        Predicate = () => new ValueTask<bool>(predicate());
     }
 
     /// <summary>
@@ -84,12 +82,21 @@ public sealed class ValidationRule
     /// </code>
     /// </example>
     public ValidationRule(
-        Func<Task<bool>> predicate, string errorMessage, string? errorCode = default, string? path = default)
+        Func<Task<bool>> predicate, 
+        string errorMessage, 
+        string? errorCode = default, 
+        string? path = default)
+        : this(errorMessage, errorCode, path)
     {
         predicate.ThrowIfNull(nameof(predicate));
-        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
+        Predicate = () => new ValueTask<bool>(predicate());
+    }
 
-        Predicate = predicate;
+    private ValidationRule(
+        string errorMessage, string? errorCode, string? path)
+    {
+        errorMessage.ThrowIfNullOrWhitespace(nameof(errorMessage));
+        Predicate = default!;
         ErrorMessage = errorMessage;
         ErrorCode = errorCode;
         Path = path;

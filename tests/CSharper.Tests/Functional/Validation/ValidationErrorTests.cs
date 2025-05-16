@@ -1,4 +1,4 @@
-﻿using CSharper.Results.Validation;
+﻿using CSharper.Functional.Validation;
 using CSharper.Tests.Errors;
 using FluentAssertions;
 using TestUtility = CSharper.Tests.Errors.ErrorTestUtility;

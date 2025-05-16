@@ -1,4 +1,4 @@
-﻿using CSharper.Results.Validation;
+﻿using CSharper.Functional.Validation.Internal;
 using FluentAssertions;
 
 namespace CSharper.Tests.Results.Validation;

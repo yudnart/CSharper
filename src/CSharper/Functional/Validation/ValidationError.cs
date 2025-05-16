@@ -1,8 +1,9 @@
 ﻿using CSharper.Errors;
+using CSharper.Functional.Validation;
 using System.Linq;
 using System.Text;
 
-namespace CSharper.Results.Validation;
+namespace CSharper.Functional.Validation;
 
 /// <summary>
 /// Represents a validation-specific <see cref="Error"/> with detailed error information, including an optional path.

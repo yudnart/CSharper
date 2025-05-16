@@ -1,4 +1,5 @@
 ﻿using CSharper.Extensions;
+using CSharper.Extensions.Internal;
 using CSharper.Types.Proxy;
 using System;
 using System.Collections.Generic;

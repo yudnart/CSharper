@@ -1,11 +1,10 @@
 ﻿using CSharper.Extensions;
-using CSharper.Functional;
-using CSharper.Results.Validation;
+using CSharper.Results;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 
-namespace CSharper.Results.Validation;
+namespace CSharper.Functional.Validation;
 
 /// <summary>
 /// Provides extension methods for handling synchronous and asynchronous <see cref="ResultValidator{T}"/> operations
@@ -294,7 +293,7 @@ public static class ResultValidatorTExtensions
         this ResultValidator<T> validator, Func<T, Task<Result>> next)
     {
         next.ThrowIfNull(nameof(next));
-        return validator.Validate().Bind(next);
+        return validator.ValidateAsync().Bind(next);
     }
 
     /// <summary>
@@ -317,7 +316,7 @@ public static class ResultValidatorTExtensions
         this ResultValidator<T> validator, Func<T, Task<Result<U>>> next)
     {
         next.ThrowIfNull(nameof(next));
-        return validator.Validate().Bind(next);
+        return validator.ValidateAsync().Bind(next);
     }
 
     /// <summary>
