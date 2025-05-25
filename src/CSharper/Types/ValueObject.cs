@@ -167,7 +167,7 @@ public abstract class ValueObject : IComparable, IComparable<ValueObject>
     /// <returns>
     /// <c>true</c> if the value of <paramref name="a"/> is the same as the value of <paramref name="b"/>; otherwise, <c>false</c>.
     /// </returns>
-    public static bool operator ==(ValueObject a, ValueObject b)
+    public static bool operator ==(ValueObject? a, ValueObject? b)
     {
         if (a is null && b is null)
         {
@@ -190,7 +190,7 @@ public abstract class ValueObject : IComparable, IComparable<ValueObject>
     /// <returns>
     /// <c>true</c> if the value of <paramref name="a"/> is different from the value of <paramref name="b"/>; otherwise, <c>false</c>.
     /// </returns>
-    public static bool operator !=(ValueObject a, ValueObject b)
+    public static bool operator !=(ValueObject? a, ValueObject? b)
     {
         return !(a == b);
     }

@@ -7,9 +7,9 @@ using System.Collections.Generic;
 namespace CSharper.Types;
 
 /// <summary>
-/// Represents an entity with a string identifier.
+/// Base type for entity.
 /// </summary>
-public abstract class Entity : Entity<string>
+public abstract class Entity
 {
     // Intentionally blank
 }
@@ -19,7 +19,7 @@ public abstract class Entity : Entity<string>
 /// that are defined by its identity and has a lifecycle.
 /// </summary>
 /// <typeparam name="TId">The type of the identifier.</typeparam>
-public abstract class Entity<TId>
+public abstract class Entity<TId> : Entity
 {
     private int? _cachedHashCode = null;
 
@@ -125,7 +125,7 @@ public abstract class Entity<TId>
     /// <returns>
     /// <c>true</c> if the value of <paramref name="a"/> is the same as the value of <paramref name="b"/>; otherwise, <c>false</c>.
     /// </returns>
-    public static bool operator ==(Entity<TId> a, Entity<TId> b)
+    public static bool operator ==(Entity<TId>? a, Entity<TId>? b)
     {
         if (a is null && b is null)
         {
@@ -148,7 +148,7 @@ public abstract class Entity<TId>
     /// <returns>
     /// <c>true</c> if the value of <paramref name="a"/> is different from the value of <paramref name="b"/>; otherwise, <c>false</c>.
     /// </returns>
-    public static bool operator !=(Entity<TId> a, Entity<TId> b)
+    public static bool operator !=(Entity<TId>? a, Entity<TId>? b)
     {
         return !(a == b);
     }
