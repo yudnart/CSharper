@@ -4,7 +4,7 @@ using FluentAssertions;
 namespace CSharper.Tests.Types;
 
 [Trait("Category", "Unit")]
-[Trait("TestFor", nameof(AuditableEntity))]
+[Trait("TestFor", "AuditableEntity<>")]
 public class AuditableEntityTests
 {
     private readonly string _id = "TestId";
@@ -107,16 +107,5 @@ public class AuditableEntityTests
             entity.LastModifiedAt.Should().BeNull();
             entity.LastModifiedBy.Should().BeNull();
         });
-    }
-
-    [Fact]
-    public void Inheritance_AuditableEntity_InheritsFromAuditableEntityString()
-    {
-        // Arrange
-        Type auditableEntityType = typeof(AuditableEntity);
-        Type auditableEntityStringType = typeof(AuditableEntity<string>);
-
-        // Assert
-        auditableEntityType.BaseType.Should().Be(auditableEntityStringType);
     }
 }

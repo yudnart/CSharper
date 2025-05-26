@@ -7,19 +7,11 @@ using System.Collections.Generic;
 namespace CSharper.Types;
 
 /// <summary>
-/// Base type for entity.
-/// </summary>
-public abstract class Entity
-{
-    // Intentionally blank
-}
-
-/// <summary>
 /// Represents a base class for entities, which are objects
 /// that are defined by its identity and has a lifecycle.
 /// </summary>
 /// <typeparam name="TId">The type of the identifier.</typeparam>
-public abstract class Entity<TId> : Entity
+public abstract class Entity<TId> : IEntity
 {
     private int? _cachedHashCode = null;
 
