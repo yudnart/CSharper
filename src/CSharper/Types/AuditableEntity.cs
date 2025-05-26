@@ -3,18 +3,12 @@
 namespace CSharper.Types;
 
 /// <summary>
-/// Represents an auditable entity with a string identifier.
-/// </summary>
-public abstract class AuditableEntity : AuditableEntity<string>, IAuditable
-{
-    // Intentionally blank
-}
-
-/// <summary>
 /// Represents an auditable entity with audit metadata such as creation and modification details.
 /// </summary>
 /// <typeparam name="TId">The type of the entity's identifier.</typeparam>
-public abstract class AuditableEntity<TId> : Entity<TId>, IAuditable
+public abstract class AuditableEntity<TId> : 
+    Entity<TId>,
+    IAuditable
 {
     /// <summary>
     /// Gets or sets the date and time when the entity was created.
@@ -42,18 +36,12 @@ public abstract class AuditableEntity<TId> : Entity<TId>, IAuditable
 }
 
 /// <summary>
-/// Represents a soft-deletable entity with a string identifier.
-/// </summary>
-public abstract class SoftDeleteEntity : SoftDeleteEntity<string>
-{
-    // Intentionally blank
-}
-
-/// <summary>
 /// Represents a soft-deletable entity with audit and deletion metadata.
 /// </summary>
 /// <typeparam name="TId">The type of the entity's identifier.</typeparam>
-public abstract class SoftDeleteEntity<TId> : AuditableEntity<TId>, ISoftDelete
+public abstract class SoftDeleteEntity<TId> : 
+    AuditableEntity<TId>,
+    ISoftDelete
 {
     /// <summary>
     /// Gets or sets a value indicating whether the entity is marked as deleted.

@@ -1,10 +1,9 @@
-﻿using CSharper.Types;
-using FluentAssertions;
+﻿using FluentAssertions;
 
 namespace CSharper.Tests.Types;
 
 [Trait("Category", "Unit")]
-[Trait("TestFor", nameof(SoftDeleteEntity))]
+[Trait("TestFor", "SoftDeleteEntity<>")]
 public class SoftDeleteEntityTests
 {
     private readonly string _id = "TestId";
@@ -27,7 +26,10 @@ public class SoftDeleteEntityTests
         {
             entity.IsDeleted.Should().BeTrue();
             entity.DeletedBy.Should().Be(_user1);
-            entity.DeletedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
+            entity.DeletedAt.Should().BeCloseTo(
+                DateTimeOffset.UtcNow, 
+                TimeSpan.FromSeconds(1)
+            );
         });
     }
 }

@@ -8,7 +8,7 @@ namespace CSharper.Tests.Types;
 
 [Collection(nameof(SequentialTests))]
 [Trait("Category", "Unit")]
-[Trait("TestFor", nameof(Entity))]
+[Trait("TestFor", "Entity<>")]
 public sealed class EntityTests
 {
     public EntityTests()
