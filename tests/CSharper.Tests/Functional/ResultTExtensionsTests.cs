@@ -1,4 +1,4 @@
-﻿using CSharper.Errors;
+using CSharper.Errors;
 using CSharper.Functional;
 using CSharper.Results;
 using FluentAssertions;
@@ -308,7 +308,7 @@ public sealed class ResultTExtensionsTests
         Result<T> result = sut.Recover(sutError =>
         {
             error = sutError;
-            return fallbackValue;
+            return Result.Ok(fallbackValue);
         });
 
         // Assert
