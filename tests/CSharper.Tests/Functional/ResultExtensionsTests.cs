@@ -8,46 +8,37 @@ using TestUtility = CSharper.Tests.Results.ResultTestUtility;
 namespace CSharper.Tests.Functional;
 
 [Trait("Category", "Unit")]
-[Trait("TestFor", nameof(ResultTExtensions))]
-public sealed class ResultTExtensionsTests
+[Trait("TestFor", nameof(ResultExtensions))]
+public sealed class ResultExtensionsTests
 {
     [Theory]
     [MemberData(
-        nameof(TestData.ResultTBindTestData),
+        nameof(TestData.ResultBindTestData),
         MemberType = typeof(TestData)
     )]
-    public void Bind<T>(Result<T> sut, Result nextResult)
+    public void Bind(Result sut, Result nextResult)
     {
         // Act
-        T? bindValue = default!;
-        Result result = sut.Bind(sutValue =>
-        {
-            bindValue = sutValue;
-            return nextResult;
-        });
+        Result result = sut.Bind(() => nextResult);
 
         // Assert
-        if (sut.IsSuccess)
+        Assert.Multiple(() =>
         {
-            result.Should().Be(nextResult);
-            bindValue.Should().Be(sut.Value);
-        }
-        else
-        {
-            TestUtility.AssertFailureResult(result, sut.Error);
-        }
+            result.Should().Be(
+                sut.IsSuccess ? nextResult : sut);
+        });
     }
 
     [Theory]
     [MemberData(
-        nameof(TestData.ResultTBindTestData),
+        nameof(TestData.ResultBindTestData),
         MemberType = typeof(TestData)
     )]
-    public void Bind_Chain<T>(Result<T> sut, Result final)
+    public void Bind_Chain(Result sut, Result final)
     {
         // Act
         Result result = sut
-            .Bind(_ => Result.Ok(42))
+            .Bind(NextValue)
             .Bind(_ => Result.Ok())
             .Bind(() => Result.Ok("Hello world!"))
             .Bind(_ => Result.Ok(false))
@@ -63,135 +54,22 @@ public sealed class ResultTExtensionsTests
             TestUtility.AssertFailureResult(result, sut.Error);
         }
     }
+    public Result<int> NextValue()
+    {
+        return Result.Ok(42); // Debugger steps here
+    }
 
     [Theory]
     [MemberData(
-        nameof(TestData.ResultTData),
+        nameof(TestData.ResultData),
         MemberType = typeof(TestData)
     )]
-    public void Bind_WithNullNext_ThrowsArgumentNullException<T>(
-        Result<T> sut)
+    public void Bind_WithNullNext_ThrowsArgumentNullException(
+        Result sut)
     {
         // Arrange
-        Func<T, Result> next = null!;
+        Func<Result> next = null!;
         Action act = () => sut.Bind(next);
-
-        // Act & Assert
-        act.Should().Throw<ArgumentNullException>()
-            .And.ParamName.Should().Be(nameof(next));
-    }
-
-    [Theory]
-    [MemberData(
-        nameof(TestData.ResultTBindTTestData),
-        MemberType = typeof(TestData)
-    )]
-    public void BindT<T, U>(Result<T> sut, Result<U> nextResult)
-    {
-        // Act
-        T? bindParam = default!;
-        Result<U> result = sut.Bind(_value =>
-        {
-            bindParam = _value;
-            return nextResult;
-        });
-
-        // Assert
-        if (sut.IsSuccess)
-        {
-            result.Should().Be(nextResult);
-            bindParam.Should().Be(sut.Value);
-        }
-        else
-        {
-            TestUtility.AssertFailureResult(result, sut.Error);
-        }
-    }
-
-    [Theory]
-    [MemberData(
-        nameof(TestData.ResultTBindTTestData),
-        MemberType = typeof(TestData)
-    )]
-    public void BindT_Chain<T, U>(Result<T> sut, Result<U> final)
-    {
-        // Act
-        Result<U> result = sut
-            .Bind(_ => Result.Ok(42))
-            .Bind(_ => Result.Ok())
-            .Bind(() => Result.Ok("Hello world!"))
-            .Bind(_ => Result.Ok(false))
-            .Bind(_ => final);
-
-        // Assert
-        if (sut.IsSuccess)
-        {
-            result.Should().Be(final);
-        }
-        else
-        {
-            TestUtility.AssertFailureResult(result, sut.Error);
-        }
-    }
-
-    [Theory]
-    [MemberData(
-        nameof(TestData.ResultTData),
-        MemberType = typeof(TestData)
-    )]
-    public void BindT_WithNullNext_ThrowsArgumentNullException<T>(
-        Result<T> sut)
-    {
-        // Arrange
-        Func<T, Result<string>> next = null!;
-        Action act = () => sut.Bind(next);
-
-        // Act & Assert
-        act.Should().Throw<ArgumentNullException>()
-            .And.ParamName.Should().Be(nameof(next));
-    }
-
-    [Theory]
-    [MemberData(
-        nameof(TestData.ResultTMapTestCases),
-        MemberType = typeof(TestData)
-    )]
-    public void Map<T, U>(Result<T> sut, U value)
-    {
-        // Arrange
-        T? mapParam = default!;
-        U mapDelegate(T _value)
-        {
-            mapParam = _value;
-            return value;
-        }
-
-        // Act
-        Result<U> result = sut.Map(mapDelegate);
-
-        // Assert
-        if (sut.IsSuccess)
-        {
-            TestUtility.AssertSuccessResult(result, value);
-            mapParam.Should().Be(sut.Value);
-        }
-        else
-        {
-            TestUtility.AssertFailureResult(result, sut.Error);
-        }
-    }
-
-    [Theory]
-    [MemberData(
-        nameof(TestData.ResultTData),
-        MemberType = typeof(TestData)
-    )]
-    public void Map_WithNullMap_ThrowsArgumentNullException<T>(
-        Result<T> sut)
-    {
-        // Arrange
-        Func<T, string> map = null!;
-        Func<Result<string>> act = () => sut.Map(map);
 
         // Act & Assert
         act.Should().Throw<ArgumentNullException>()
@@ -200,95 +78,131 @@ public sealed class ResultTExtensionsTests
 
     [Theory]
     [MemberData(
-        nameof(TestData.ResultTData),
+        nameof(TestData.ResultBindTTestData),
         MemberType = typeof(TestData)
     )]
-    public void MapError<T>(Result<T> sut)
+    public void BindT<T>(Result sut, Result<T> nextResult)
     {
-        // Arrange
-        Func<Result> act = () => sut.MapError();
+        // Act
+        Result<T> result = sut.Bind(() => nextResult);
 
-        // Act & Assert
+        // Assert
         if (sut.IsSuccess)
         {
-            act.Should().ThrowExactly<InvalidOperationException>()
-                .And.Message.Should().NotBeNullOrWhiteSpace();
+            result.Should().Be(nextResult);
         }
         else
         {
-            Result result = act();
             TestUtility.AssertFailureResult(result, sut.Error);
         }
     }
 
     [Theory]
     [MemberData(
-        nameof(TestData.ResultTData),
+        nameof(TestData.ResultBindTTestData),
         MemberType = typeof(TestData)
     )]
-    public void MapErrorT<T>(Result<T> sut)
+    public void BindT_Chain<T>(Result sut, Result<T> final)
     {
-        // Arrange
-        Func<Result<int>> act = sut.MapError<T, int>;
+        // Act
+        Result<T> result = sut
+            .Bind(() => Result.Ok(42))
+            .Bind(_ => Result.Ok())
+            .Bind(() => Result.Ok("Hello world!"))
+            .Bind(_ => Result.Ok(false))
+            .Bind(_ => final);
 
-        // Act & Assert
+        // Assert
         if (sut.IsSuccess)
         {
-            act.Should().ThrowExactly<InvalidOperationException>()
-            .And.Message.Should().NotBeNullOrWhiteSpace();
+            result.Should().Be(final);
         }
         else
         {
-            Result<int> result = act();
             TestUtility.AssertFailureResult(result, sut.Error);
         }
     }
 
     [Theory]
     [MemberData(
-        nameof(TestData.ResultTMatchTestCases),
+        nameof(TestData.ResultData),
         MemberType = typeof(TestData)
     )]
-    public void Match<T, U>(Result<T> sut, U successValue, U errorValue)
+    public void BindT_WithNullNext_ThrowsArgumentNullException<T>(
+        Result sut)
     {
         // Arrange
-        T onSuccessParam = default!;
-        U onSuccess(T value)
-        {
-            onSuccessParam = value;
-            return successValue;
-        }
+        Func<Result<int>> next = null!;
+        Action act = () => sut.Bind(next);
 
-        Error onFailureParam = default!;
-        U onFailure(Error error)
+        // Act & Assert
+        act.Should().Throw<ArgumentNullException>()
+            .And.ParamName.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultData),
+        MemberType = typeof(TestData)
+    )]
+    public void MapError(Result sut)
+    {
+        // Arrange
+        Func<Result<string>> act = sut.MapError<string>;
+
+        // Act & Assert
+        Assert.Multiple(() =>
         {
-            onFailureParam = error;
+            if (sut.IsSuccess)
+            {
+                act.Should()
+                    .ThrowExactly<InvalidOperationException>()
+                    .And.Message.Should().NotBeNullOrWhiteSpace();
+            }
+            else
+            {
+                Result<string> result = act();
+                TestUtility.AssertFailureResult(result, sut.Error);
+            }
+        });
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultMatchTestCases),
+        MemberType = typeof(TestData)
+    )]
+    public void Match<T>(Result sut, T successValue, T errorValue)
+    {
+        // Arrange
+        T onSuccess() => successValue;
+
+        Error onFailureError = default!;
+        T onFailure(Error error)
+        {
+            onFailureError = error;
             return errorValue;
         }
 
         // Act
-        U? result1 = sut.Match(onSuccess);
-        U result2 = sut.Match(onSuccess, onFailure);
+        T? result1 = sut.Match(onSuccess);
+        T result2 = sut.Match(onSuccess, onFailure);
 
         // Assert
         Assert.Multiple(() =>
         {
             if (sut.IsSuccess)
             {
-                onSuccessParam.Should().Be(sut.Value);
-
-                onFailureParam.Should().Be(default);
+                onFailureError.Should().Be(default(Error));
 
                 result1.Should().Be(successValue);
                 result2.Should().Be(successValue);
             }
             else
             {
-                onSuccessParam.Should().Be(default(T));
+                onFailureError.Should().Be(sut.Error);
 
-                onFailureParam.Should().Be(sut.Error);
-
-                result1.Should().Be(default(U));
+                result1.Should().Be(default(T));
                 result2.Should().Be(errorValue);
             }
         });
@@ -296,27 +210,22 @@ public sealed class ResultTExtensionsTests
 
     [Theory]
     [MemberData(
-        nameof(TestData.ResultTRecoverTestCases),
+        nameof(TestData.ResultData),
         MemberType = typeof(TestData)
     )]
-    public void Recover<T>(Result<T> sut, T fallbackValue)
+    public void Recover(Result sut)
     {
         // Arrange
         Error error = default!;
-
-        // Act
-        Result<T> result = sut.Recover(sutError =>
+        Result result = sut.Recover(sutError =>
         {
             error = sutError;
-            return Result.Ok(fallbackValue);
         });
 
         // Assert
         Assert.Multiple(() =>
         {
-            T value = sut.IsSuccess
-                ? sut.Value : result.Value;
-            TestUtility.AssertSuccessResult(result, value);
+            TestUtility.AssertSuccessResult(result);
             if (sut.IsSuccess)
             {
                 result.Should().Be(sut);
@@ -332,47 +241,41 @@ public sealed class ResultTExtensionsTests
 
     [Theory]
     [MemberData(
-        nameof(TestData.ResultTData),
+        nameof(TestData.ResultData),
         MemberType = typeof(TestData)
     )]
-    public void Tap<T>(Result<T> sut)
+    public void Tap(Result sut)
     {
         // Arrange
         bool tapCalled = false;
-        T actionParam = default!;
-        void action(T value)
+        void action()
         {
             tapCalled = true;
-            actionParam = value;
         }
 
         // Act
-        Result<T> result = sut.Tap(action);
+        Result result = sut.Tap(action);
 
         // Assert
         Assert.Multiple(() =>
         {
             result.Should().Be(sut);
-            tapCalled.Should().Be(sut.IsSuccess);
-            if (sut.IsSuccess)
-            {
-                actionParam.Should().Be(sut.Value);
-            }
+            tapCalled.Should().Be(sut.IsSuccess ? true : false);
         });
     }
 
     [Theory]
     [MemberData(
-        nameof(TestData.ResultTData),
+        nameof(TestData.ResultData),
         MemberType = typeof(TestData)
     )]
-    public void TapError<T>(Result<T> sut)
+    public void TapError(Result sut)
     {
         // Arrange
         Error error = default!;
 
         // Act
-        Result<T> result = sut.TapError(sutError =>
+        Result result = sut.TapError(sutError =>
         {
             error = sutError;
         });
