@@ -192,14 +192,14 @@ public static class ResultTExtensions
     /// <example>
     /// <code>
     /// Result&lt;int&gt; failed = Result.Fail&lt;int&gt;("Error");
-    /// int Fallback(Error e) => 0;
+    /// Result&lt;int&gt; Fallback(Error e) => Result.Ok(0);
     /// Result&lt;int&gt; final = failed.Recover(Fallback);
     /// </code>
     /// </example>
-    public static Result<T> Recover<T>(this Result<T> result, Func<Error, T> fallback)
+    public static Result<T> Recover<T>(this Result<T> result, Func<Error, Result<T>> fallback)
     {
         fallback.ThrowIfNull(nameof(fallback));
-        return result.IsSuccess ? result : Result.Ok(fallback(result.Error!));
+        return result.IsSuccess ? result : fallback(result.Error!);
     }
 
     /// <summary>

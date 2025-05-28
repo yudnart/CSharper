@@ -1,4 +1,4 @@
-﻿using CSharper.Errors;
+using CSharper.Errors;
 using CSharper.Functional;
 using CSharper.Results;
 using FluentAssertions;
@@ -427,13 +427,13 @@ public sealed class AsyncResultTExtensionsTests
         List<Result<T>> results = [];
         List<Error> fallbackParams = [];
 
-        T fallback(Error error)
+        Result<T> fallback(Error error)
         {
             fallbackParams.Add(error);
-            return fallbackValue;
+            return Result.Ok(fallbackValue);
         }
 
-        Task<T> fallbackAsync(Error error)
+        Task<Result<T>> fallbackAsync(Error error)
             => Task.FromResult(fallback(error));
 
         // Test 1:

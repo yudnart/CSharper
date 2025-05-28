@@ -1,4 +1,4 @@
-﻿using CSharper.Errors;
+using CSharper.Errors;
 using CSharper.Extensions;
 using CSharper.Results;
 using System;
@@ -395,17 +395,17 @@ public static class AsyncResultTExtensions
     /// <example>
     /// <code>
     /// Result&lt;int&gt; failed = Result.Fail&lt;int&gt;("Error");
-    /// async Task&lt;int&gt; FallbackAsync(Error e) => await Task.FromResult(0);
+    /// Task&lt;Result&lt;int&gt&gt; FallbackAsync(Error e) => Task.FromResult(Result.Ok(0));
     /// Task&lt;Result&lt;int&gt;&gt; final = failed.Recover(FallbackAsync);
     /// </code>
     /// </example>
     public static Task<Result<T>> Recover<T>(this Result<T> result,
-        Func<Error, Task<T>> fallback)
+        Func<Error, Task<Result<T>>> fallback)
     {
         fallback.ThrowIfNull(nameof(fallback));
         return result.IsSuccess
             ? Task.FromResult(result)
-            : fallback(result.Error!).Then(Result.Ok);
+            : fallback(result.Error!);
     }
 
     /// <summary>
@@ -419,12 +419,12 @@ public static class AsyncResultTExtensions
     /// <example>
     /// <code>
     /// Task&lt;Result&lt;int&gt;&gt; failed = Task.FromResult(Result.Fail&lt;int&gt;("Error"));
-    /// int Fallback(Error e) => 0;
+    /// Result&lt;int&gt Fallback(Error e) => Result.Ok(0);
     /// Task&lt;Result&lt;int&gt;&gt; final = failed.Recover(Fallback);
     /// </code>
     /// </example>
     public static Task<Result<T>> Recover<T>(this Task<Result<T>> asyncResult,
-        Func<Error, T> fallback)
+        Func<Error, Result<T>> fallback)
     {
         fallback.ThrowIfNull(nameof(fallback));
         return asyncResult.Then(r => r.Recover(fallback));
@@ -441,12 +441,12 @@ public static class AsyncResultTExtensions
     /// <example>
     /// <code>
     /// Task&lt;Result&lt;int&gt;&gt; failed = Task.FromResult(Result.Fail&lt;int&gt;("Error"));
-    /// async Task&lt;int&gt; FallbackAsync(Error e) => await Task.FromResult(0);
+    /// Task&lt;Result&lt;int&gt&gt; FallbackAsync(Error e) => Task.FromResult(Result.Ok(0));
     /// Task&lt;Result&lt;int&gt;&gt; final = failed.Recover(FallbackAsync);
     /// </code>
     /// </example>
     public static Task<Result<T>> Recover<T>(this Task<Result<T>> asyncResult,
-        Func<Error, Task<T>> fallback)
+        Func<Error, Task<Result<T>>> fallback)
     {
         fallback.ThrowIfNull(nameof(fallback));
         return asyncResult
