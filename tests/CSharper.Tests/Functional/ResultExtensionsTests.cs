@@ -1,4 +1,4 @@
-﻿using CSharper.Errors;
+using CSharper.Errors;
 using CSharper.Functional;
 using CSharper.Results;
 using FluentAssertions;
