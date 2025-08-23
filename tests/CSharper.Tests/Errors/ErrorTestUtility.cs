@@ -5,7 +5,7 @@ namespace CSharper.Tests.Errors;
 
 public static class ErrorTestUtility
 {
-    public static void AssertError(ErrorBase error, string message, string? code)
+    public static void AssertError(Error error, string message, string? code)
     {
         Assert.Multiple(() =>
         {
@@ -13,7 +13,7 @@ public static class ErrorTestUtility
         });
     }
 
-    private static void AssertErrorInternal(ErrorBase error, string message, string? code)
+    private static void AssertErrorInternal(Error error, string message, string? code)
     {
         error.Should().NotBeNull();
         error.Message.Should().Be(message);

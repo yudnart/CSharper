@@ -29,7 +29,7 @@ public static class ResultTestData
 
     public static TheoryData<string, Result, string> ToStringTestCases()
     {
-        Error error = ErrorTestData.ErrorWithDetails;
+        Error error = ErrorTestData.DetailedError;
 
         return new TheoryData<string, Result, string>
             {
@@ -66,16 +66,21 @@ public static class ResultTestData
 
     private static string MapErrorToExpectedString(Error error)
     {
-        StringBuilder sb = new($"Error: {error.Message}");
-        if (!string.IsNullOrWhiteSpace(error.Code))
+        StringBuilder sb = new($"Code={error.Code}");
+        if (!string.IsNullOrWhiteSpace(error.Message))
         {
-            sb.Append($", Code={error.Code}");
+            sb.Append($", Message={error.Message}");
         }
 
-        foreach (ErrorDetail detail in error.ErrorDetails)
+        if (error is DetailedError detailedError)
         {
-            sb.AppendLine();
-            sb.Append($"> {detail}");
+            foreach (Error detail in detailedError.Details)
+            {
+                sb.AppendLine();
+                sb.Append(DetailedError.IndentMarker)
+                    .Append(' ')
+                    .Append(detail.ToString());
+            }
         }
 
         return sb.ToString();

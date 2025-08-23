@@ -3,7 +3,6 @@ using CSharper.Extensions;
 using CSharper.Results.Abstractions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace CSharper.Results;
 
@@ -28,14 +27,14 @@ public sealed partial class Result
     /// <summary>
     /// Creates a failed <see cref="Result"/> instance with an error constructed from the specified message and code.
     /// </summary>
-    /// <param name="message">The descriptive message of the error.</param>
-    /// <param name="code">The optional error code for identification. Defaults to null.</param>
+    /// <param name="code">The descriptive message of the error.</param>
+    /// <param name="message">The optional error code for identification. Defaults to null.</param>
     /// <returns>A new <see cref="Result"/> representing a failed operation.</returns>
-    /// <exception cref="ArgumentException">Thrown if <paramref name="message"/> is null, empty, or whitespace.</exception>
-    public static Result Fail(string message, string? code = null)
+    /// <exception cref="ArgumentException">Thrown if <paramref name="code"/> is null, empty, or whitespace.</exception>
+    public static Result Fail(string code, string? message = null)
     {
-        message.ThrowIfNullOrWhitespace(nameof(message));
-        return Fail(new Error(message, code));
+        code.ThrowIfNullOrWhitespace(nameof(code));
+        return Fail(new Error(code, message));
     }
 
     #endregion
@@ -63,14 +62,14 @@ public sealed partial class Result
     /// Creates a failed <see cref="Result{T}"/> instance with an error constructed from the specified message and code.
     /// </summary>
     /// <typeparam name="TValue">The type of the result value.</typeparam>
-    /// <param name="message">The descriptive message of the error.</param>
     /// <param name="code">The optional error code for identification. Defaults to null.</param>
+    /// <param name="message">The descriptive message of the error.</param>
     /// <returns>A new <see cref="Result{T}"/> representing a failed operation.</returns>
     /// <exception cref="ArgumentException">Thrown if <paramref name="message"/> is null, empty, or whitespace.</exception>
-    public static Result<TValue> Fail<TValue>(string message, string? code = null)
+    public static Result<TValue> Fail<TValue>(string code, string? message = null)
     {
-        message.ThrowIfNullOrWhitespace(nameof(message));
-        return Fail<TValue>(new Error(message, code));
+        code.ThrowIfNullOrWhitespace(nameof(code));
+        return Fail<TValue>(new Error(code, message));
     }
 
     #endregion
@@ -78,68 +77,52 @@ public sealed partial class Result
     #region Sequence
 
     /// <summary>
-    /// Aggregates a sequence of results, returning a success result if all are successful,
-    /// or a failure result with combined error details if any fail.
+    /// Evaluates a sequence of results and aggregates their errors.
+    /// Returns Ok if all results are successful; otherwise, returns Fail with a single error
+    /// if only one error exists, or a DetailedError with all errors if multiple errors exist.
     /// </summary>
-    /// <param name="results">The sequence of results to aggregate, each wrapped as a <see cref="ResultLike"/>.</param>
-    /// <param name="message">The message for the combined error if any failures occur.</param>
-    /// <param name="code">The optional code for the combined error. Defaults to null.</param>
-    /// <returns>
-    /// A <see cref="Result"/> indicating success if all <paramref name="results"/> are successful;
-    /// otherwise, a failure result with an <see cref="Error"/> containing all error details.
-    /// </returns>
-    /// <remarks>
-    /// For each failed result, an <see cref="ErrorDetail"/> is added with the error's message and code (unindented),
-    /// followed by its error details with messages prefixed with "&gt; ".
-    /// The order of <see cref="Error.ErrorDetails"/> matches the order of <paramref name="results"/>,
-    /// with each failed result contributing its error's details sequentially.
-    /// <para>
-    /// The <paramref name="results"/> parameter accepts <see cref="ResultLike"/> objects, which can wrap
-    /// <see cref="Result"/>, <see cref="Result{T}"/>, or factory methods producing such results.
-    /// </para>
-    /// </remarks>
-    /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="results"/> is null or empty, or when <paramref name="message"/> is null, empty, or whitespace.
-    /// </exception>
-    /// <exception cref="NotSupportedException">
-    /// Thrown when a <see cref="ResultLike"/> contains an invalid result type or factory.
-    /// </exception>
-    public static Result Sequence(
-        IEnumerable<ResultLike> results, string message, string? code = null)
+    /// <param name="results">The collection of results to evaluate.</param>
+    /// <returns>A Result representing the aggregated outcome.</returns>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="results"/> is null or empty.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if any <see cref="ResultLike.Value"/> is null.</exception>
+    public static Result Sequence(IEnumerable<ResultLike> results)
     {
-        if (results == null || !results.Any())
-        {
-            throw new ArgumentException(
-                "Collection cannot be null/empty.", nameof(results));
-        }
+        results.ThrowIfNullOrEmpty(nameof(results));
 
-        message.ThrowIfNullOrWhitespace(nameof(message));
-
-        List<ErrorDetail> errorDetails = [];
+        List<Error> errors = [];
 
         foreach (ResultLike result in results)
         {
             ResultBase actual = result.Value;
-            if (actual.IsSuccess)
+            if (actual.IsFailure)
             {
-                continue;
-            }
-
-            Error? error = actual.Error;
-            if (error != null)
-            {
-                // Add Error as an ErrorDetail (no indentation)
-                errorDetails.Add(new(error.Message, error.Code));
-                // Add Error's ErrorDetails with indented Message
-                foreach (ErrorDetail detail in error.ErrorDetails)
-                {
-                    errorDetails.Add(new($"{Error.IndentMarker} {detail.Message}", detail.Code));
-                }
+                errors.Add(actual.Error!);
             }
         }
 
-        return errorDetails.Count == 0
-            ? Ok() : Fail(new(message, code, [.. errorDetails]));
+
+        return errors.Count switch
+        {
+            0 => Ok(),
+            1 => Fail(errors[0]),
+            _ => Fail(AggregateError(errors))
+        };
+    }
+
+    /// <summary>
+    /// Creates a DetailedError aggregating multiple errors.
+    /// </summary>
+    /// <param name="errors">The errors to aggregate.</param>
+    /// <param name="code">The error code for the aggregated error. Defaults to "AggregateError".</param>
+    /// <param name="message">The optional message for the aggregated error. Defaults to "One or more operations failed."</param>
+    /// <returns>A DetailedError containing the aggregated errors.</returns>
+    public static DetailedError AggregateError(
+        IEnumerable<Error> errors, 
+        string code = "AggregateError", 
+        string message = "One or more operations failed.")
+    {
+        code.ThrowIfNullOrWhitespace(nameof(code));
+        return new DetailedError(code, message, [.. errors]);
     }
 
     #endregion

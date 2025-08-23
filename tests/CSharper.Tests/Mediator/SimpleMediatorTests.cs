@@ -1,6 +1,5 @@
 ﻿using CSharper.Mediator;
 using CSharper.Results;
-using CSharper.Tests.Results;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;

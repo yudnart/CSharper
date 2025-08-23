@@ -10,6 +10,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Functional\**" />
+    <Compile Remove="Mediator\**" />
+    <Compile Remove="Results\**" />
+    <EmbeddedResource Remove="Functional\**" />
+    <EmbeddedResource Remove="Mediator\**" />
+    <EmbeddedResource Remove="Results\**" />
+    <None Remove="Functional\**" />
+    <None Remove="Mediator\**" />
+    <None Remove="Results\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

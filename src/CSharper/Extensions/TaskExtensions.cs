@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace CSharper.Extensions;
@@ -23,8 +22,8 @@ public static class TaskExtensions
     /// <example>
     /// <code>
     /// Task initial = Task.CompletedTask;
-    /// string Next() => "Success";
-    /// Task&lt;string&gt; result = initial.Then(Next);
+    /// string next() => "Success";
+    /// Task&lt;string&gt; result = initial.Then(next);
     /// </code>
     /// </example>
     [DebuggerStepThrough]
@@ -34,14 +33,8 @@ public static class TaskExtensions
         next.ThrowIfNull(nameof(next));
         return task.ContinueWith(t =>
         {
-            if (t.IsCanceled)
-            {
-                CancelTask(t);
-            }
-            if (t.IsFaulted)
-            {
-                ThrowTaskException(t);
-            }
+            if (t.IsCanceled) throw new TaskCanceledException();
+            if (t.IsFaulted) throw t.Exception!;
             return next();
         });
     }
@@ -57,14 +50,11 @@ public static class TaskExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="task"/> or <paramref name="next"/> is null.</exception>
     /// <exception cref="TaskCanceledException">Thrown if the task is canceled.</exception>
     /// <exception cref="AggregateException">Thrown if the task faults, containing the inner exception(s).</exception>
-    /// <remarks>
-    /// This method is internal and intended for use within the CSharper library.
-    /// </remarks>
     /// <example>
     /// <code>
     /// Task&lt;int&gt; initial = Task.FromResult(42);
-    /// string Next(int value) => $"Value: {value}";
-    /// Task&lt;string&gt; result = initial.Then(Next);
+    /// string next(int value) => $"Value: {value}";
+    /// Task&lt;string&gt; result = initial.Then(next);
     /// </code>
     /// </example>
     [DebuggerStepThrough]
@@ -74,46 +64,9 @@ public static class TaskExtensions
         next.ThrowIfNull(nameof(next));
         return task.ContinueWith(t =>
         {
-            if (t.IsCanceled)
-            {
-                CancelTask(t);
-            }
-            if (t.IsFaulted)
-            {
-                ThrowTaskException(t);
-            }
+            if (t.IsCanceled) throw new TaskCanceledException();
+            if (t.IsFaulted) throw t.Exception!;
             return next(t.Result);
         });
-    }
-
-    /// <summary>
-    /// Throws a <see cref="TaskCanceledException"/> for a canceled task, including task details.
-    /// </summary>
-    /// <param name="t">The canceled task.</param>
-    /// <exception cref="TaskCanceledException">Always thrown with details about the canceled task.</exception>
-    private static void CancelTask(Task t)
-    {
-        throw new TaskCanceledException(
-            $@"Task canceled. TaskID={t.Id}, Status={t.Status}.");
-    }
-
-    /// <summary>
-    /// Throws an exception for a faulted task, extracting the inner exception if singular or the <see cref="AggregateException"/> if multiple.
-    /// </summary>
-    /// <param name="task">The faulted task.</param>
-    /// <exception cref="AggregateException">Thrown if the task has multiple inner exceptions.</exception>
-    /// <exception cref="Exception">Thrown if the task has a single inner exception.</exception>
-    /// <exception cref="ApplicationException">Thrown if the task's exception is null.</exception>
-    [ExcludeFromCodeCoverage
-#if NET8_0_OR_GREATER
-        (Justification = "Defensive code unreachable.")
-#endif
-    ]
-    private static void ThrowTaskException(Task task)
-    {
-        AggregateException ex = task.Exception
-            ?? throw new ApplicationException("Task failed without providing an exception.");
-        throw ex.InnerExceptions.Count == 1
-            ? ex.InnerExceptions[0] : ex;
     }
 }

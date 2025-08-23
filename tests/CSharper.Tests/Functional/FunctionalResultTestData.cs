@@ -102,7 +102,7 @@ public static class FunctionalResultTestData
 
     public static Error GetError(int detailSize = 1)
     {
-        return new Error("Someting went wrong.",
+        return new Error(message: "Someting went wrong.",
             errorDetails: [.. GetErrorDetails(detailSize)]);
     }
 
@@ -114,13 +114,13 @@ public static class FunctionalResultTestData
         }
     }
 
-    public static Result GetFailureResult(params ErrorDetail[] errorDetails)
+    public static Result GetFailureResult(params Error[] errorDetails)
     {
         if (errorDetails == null || errorDetails.Length == 0)
         {
             errorDetails = [.. GetErrorDetails(1)];
         }
-        return Result.Fail(new("Something wrong.", errorDetails: errorDetails));
+        return Result.Fail(new DetailedError("Something wrong.", errorDetails: errorDetails));
     }
 
     public static Result<T> GetFailureResult<T>(params ErrorDetail[] errorDetails)

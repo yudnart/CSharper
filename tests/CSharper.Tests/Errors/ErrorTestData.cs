@@ -4,44 +4,44 @@ namespace CSharper.Tests.Errors;
 
 public abstract class ErrorTestData
 {
-    public static Error Error = new("Test error");
-    public static Error ErrorWithCode = new("Error with code", "ERR001");
-    public static Error ErrorNoCode = new("Minimal", "");
-    public static Error ErrorWithDetails = new(
-        "Error with details", "ERR001",
-        new ErrorDetail("Error detail 1", "ERR001-1"),
-        new ErrorDetail("Error detail 2", "ERR001-2"));
+    public static readonly Error Error = new("ERR001");
+    public static readonly Error ErrorWithMessage = new("ERR002", "Error with code");
+    public static readonly Error ErrorNoMessage = new("ERR002");
+    public static readonly DetailedError DetailedError = new(
+        "ERR001", "Error with details",
+        new Error("Error detail 1", "ERR001-1"),
+        new Error("Error detail 2", "ERR001-2"));
 
-    public static TheoryData<string, string?> ErrorBaseCtorValidTestCases()
+    public static TheoryData<string, string?> ErrorCtorValidTestCases()
     {
         return new TheoryData<string, string?>
         {
-            { Error.Message, Error.Code },
-            { ErrorWithCode.Message, ErrorWithCode.Code },
-            { ErrorNoCode.Message, ErrorNoCode.Code },
+            { Error.Code, Error.Message },
+            { ErrorWithMessage.Code, ErrorWithMessage.Message },
+            { ErrorNoMessage.Code, ErrorNoMessage.Message },
             {
-                ErrorWithDetails.Message,
-                ErrorWithDetails.Code
+                DetailedError.Code,
+                DetailedError.Message
             }
         };
     }
 
-    public static TheoryData<string, string?, ErrorDetail[]?> ErrorCtorValidTestCases()
+    public static TheoryData<string, string?, Error[]?> DetailedErrorCtorValidTestCases()
     {
-        return new TheoryData<string, string?, ErrorDetail[]?>
+        return new TheoryData<string, string?, Error[]?>
         {
-            { Error.Message, Error.Code, null },
-            { ErrorWithCode.Message, ErrorWithCode.Code, [] },
-            { ErrorNoCode.Message, ErrorNoCode.Code, [] },
+            { Error.Code, Error.Message, null },
+            { ErrorWithMessage.Code, ErrorWithMessage.Message, [] },
+            { ErrorNoMessage.Code, ErrorNoMessage.Message, [] },
             {
-                ErrorWithDetails.Message,
-                ErrorWithDetails.Code,
-                [.. ErrorWithDetails.ErrorDetails]
+                DetailedError.Code,
+                DetailedError.Message,
+                [.. DetailedError.Details]
             }
         };
     }
 
-    public static TheoryData<string> CtorInvalidMessageTestCases()
+    public static TheoryData<string> CtorNullOrEmptyCode()
     {
         return new TheoryData<string>
         {
@@ -51,34 +51,17 @@ public abstract class ErrorTestData
         };
     }
 
-    public static TheoryData<string, ErrorBase, string> ErrorBaseToStringTestCases()
-    {
-        return new TheoryData<string, ErrorBase, string>
-        {
-            { "Error", Error, "Test error" },
-            { "Error with code", ErrorWithCode, "Error with code, Code=ERR001" },
-            { "Error no code", ErrorNoCode, "Minimal" }
-        };
-    }
-
-    public static TheoryData<string, Error, string> ErrorToStringTestCases()
+    public static TheoryData<string, Error, string> DetailedErrorToStringTestCases()
     {
         return new TheoryData<string, Error, string>
         {
-            { "Error", Error, "Test error" },
-            {
-                "Error with code",
-                ErrorWithCode,
-                "Error with code, Code=ERR001"
+            { "Error", Error, $"Code={Error.Code}" },
+            { 
+                "Error with message", 
+                ErrorWithMessage, 
+                $"Code={ErrorWithMessage.Code}; Message={ErrorWithMessage.Message}" 
             },
-            { "Error node code", ErrorNoCode, "Minimal" },
-            {
-                "Error with details",
-                ErrorWithDetails,
-                "Error with details, Code=ERR001"
-                + "\r\n> Error detail 1, Code=ERR001-1"
-                + "\r\n> Error detail 2, Code=ERR001-2"
-            }
+            { "Error no message", ErrorNoMessage, $"Code={ErrorNoMessage.Code}" }
         };
     }
 }

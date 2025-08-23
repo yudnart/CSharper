@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Security.Claims;
 
-namespace CSharper.AppContext;
+namespace CSharper.RequestContext;
 
 /// <summary>
 /// Defines the contract for accessing information about the current user in a request context.

@@ -1,6 +1,5 @@
 ﻿using CSharper.Errors;
 using CSharper.Functional;
-using CSharper.Functional.Validation;
 using CSharper.Results;
 using CSharper.Tests.Errors;
 using FluentAssertions;
@@ -204,66 +203,6 @@ public sealed class AsyncResultExtensionsTests
             {
                 await act.Should()
                     .ThrowExactlyAsync<ArgumentNullException>()
-                    .Where(ex => !string.IsNullOrWhiteSpace(ex.ParamName));
-            }
-        });
-    }
-
-    [Theory]
-    [MemberData(
-        nameof(TestData.ResultData),
-        MemberType = typeof(TestData)
-    )]
-    public void Ensure_WithNullPredicate_ThrowsArgumentNullException<T>(
-        Result initial)
-    {
-        // Arrange
-        string message = ErrorTestData.Error.Message;
-        Func<bool> predicate = null!;
-        Func<Task<bool>> asyncPredicate = null!;
-
-        List<Func<Task>> acts = [
-            () => Task.FromResult(initial).Ensure(asyncPredicate, message),
-            () => Task.FromResult(initial).Ensure(predicate, message),
-            () => Task.FromResult(initial.Ensure(asyncPredicate, message))
-        ];
-
-        // Act & Assert
-        Assert.Multiple(async () =>
-        {
-            foreach (Func<Task> act in acts)
-            {
-                await act.Should()
-                    .ThrowExactlyAsync<ArgumentNullException>()
-                    .Where(ex => !string.IsNullOrWhiteSpace(ex.ParamName));
-            }
-        });
-    }
-
-    [Theory]
-    [MemberData(
-        nameof(TestData.ResultInvalidErrorMessages),
-        MemberType = typeof(TestData)
-    )]
-    public void Ensure_InvalidParams_ThrowsArgumentNullException<T>(
-        Result sut, string message)
-    {
-        // Arrange
-        static bool predicate() => true;
-
-        List<Func<Task>> acts = [
-            () => Task.FromResult(sut).Ensure(predicate, message),
-            () => Task.FromResult(sut).Ensure(() => false, message),
-            () => Task.FromResult(sut.Ensure(() => Task.FromResult(true), message))
-        ];
-
-        // Act & Assert
-        Assert.Multiple(async () =>
-        {
-            foreach (Func<Task> act in acts)
-            {
-                await act.Should()
-                    .ThrowExactlyAsync<ArgumentException>()
                     .Where(ex => !string.IsNullOrWhiteSpace(ex.ParamName));
             }
         });

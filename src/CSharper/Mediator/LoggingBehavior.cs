@@ -1,4 +1,4 @@
-﻿using CSharper.AppContext;
+﻿using CSharper.RequestContext;
 using CSharper.Errors;
 using CSharper.Extensions;
 using CSharper.Functional;
@@ -54,7 +54,7 @@ internal sealed class LoggingBehavior : IBehavior
     /// <summary>
     /// The optional application context providing metadata like user details and request IDs.
     /// </summary>
-    private readonly IAppContext? _appContext;
+    private readonly IRequestContext? _appContext;
 
     /// <summary>
     /// A generated correlation ID used when no application context is available.
@@ -70,7 +70,7 @@ internal sealed class LoggingBehavior : IBehavior
     public LoggingBehavior(ILogger<LoggingBehavior> logger, IServiceProvider serviceProvider)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _appContext = serviceProvider.GetService<IAppContext>();
+        _appContext = serviceProvider.GetService<IRequestContext>();
     }
 
     /// <summary>
@@ -160,16 +160,16 @@ internal sealed class LoggingBehavior : IBehavior
         // Add app context properties or generate correlation ID
         if (_appContext is not null)
         {
-            logProperties.Add(nameof(IAppContext.RequestId), _appContext.RequestId);
-            logProperties.Add(nameof(IAppContext.CorrelationId), _appContext.CorrelationId);
-            logProperties.Add(nameof(IAppContext.CurrentUser.UserId), _appContext.CurrentUser?.UserId ?? _anonymousUserId);
-            logProperties.Add(nameof(IAppContext.ClientIpAddress), _appContext.ClientIpAddress ?? _notApplicable);
-            logProperties.Add(nameof(IAppContext.UserAgent), _appContext.UserAgent ?? _notApplicable);
-            logProperties.Add(nameof(IAppContext.RequestPath), _appContext.RequestPath ?? _notApplicable);
+            logProperties.Add(nameof(IRequestContext.RequestId), _appContext.RequestId);
+            logProperties.Add(nameof(IRequestContext.CorrelationId), _appContext.CorrelationId);
+            logProperties.Add(nameof(IRequestContext.CurrentUser.UserId), _appContext.CurrentUser?.UserId ?? _anonymousUserId);
+            logProperties.Add(nameof(IRequestContext.ClientIpAddress), _appContext.ClientIpAddress ?? _notApplicable);
+            logProperties.Add(nameof(IRequestContext.UserAgent), _appContext.UserAgent ?? _notApplicable);
+            logProperties.Add(nameof(IRequestContext.RequestPath), _appContext.RequestPath ?? _notApplicable);
 
             if (!string.IsNullOrWhiteSpace(_appContext.CurrentUser?.TenantId))
             {
-                logProperties.Add(nameof(IAppContext.CurrentUser.TenantId), _appContext.CurrentUser!.TenantId);
+                logProperties.Add(nameof(IRequestContext.CurrentUser.TenantId), _appContext.CurrentUser!.TenantId);
             }
 
             // Add extensions with prefix, limiting count
@@ -188,7 +188,7 @@ internal sealed class LoggingBehavior : IBehavior
         else
         {
             _correlationId = Guid.NewGuid().ToString();
-            logProperties.Add(nameof(IAppContext.CorrelationId), _correlationId);
+            logProperties.Add(nameof(IRequestContext.CorrelationId), _correlationId);
         }
 
         // Log with structured properties

@@ -167,7 +167,7 @@ public sealed class ResultTests
     public static TheoryData<ResultLike[]> SequenceValidTestCases()
     {
         Func<ResultBase> successResultDelegate = Result.Ok;
-        Func<ResultBase> failureResultDelegate = () => Result.Fail(ErrorTestData.ErrorNoCode);
+        Func<ResultBase> failureResultDelegate = () => Result.Fail(ErrorTestData.ErrorNoMessage);
 
         TheoryData<ResultLike[]> testCases = [];
 
@@ -178,7 +178,7 @@ public sealed class ResultTests
         testCases.Add([
             Result.Ok(),
             Result.Fail(ErrorTestData.Error),
-            Result<int>.Fail(ErrorTestData.ErrorWithDetails),
+            Result<int>.Fail(ErrorTestData.DetailedError),
             successResultDelegate
         ]);
 
@@ -187,7 +187,7 @@ public sealed class ResultTests
         [
             failureResultDelegate,
             Result.Fail(ErrorTestData.Error),
-            Result<int>.Fail(ErrorTestData.ErrorWithCode)
+            Result<int>.Fail(ErrorTestData.ErrorWithMessage)
         ]);
 
         return testCases;

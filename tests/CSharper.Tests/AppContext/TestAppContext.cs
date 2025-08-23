@@ -1,12 +1,13 @@
-﻿using CSharper.AppContext;
+﻿using CSharper.RequestContext;
+using CSharper.RequestContext;
 using Moq;
 
 namespace CSharper.Tests.AppContext;
 
 /// <summary>
-/// A test implementation of <see cref="IAppContext"/> for use in unit tests.
+/// A test implementation of <see cref="IRequestContext"/> for use in unit tests.
 /// </summary>
-internal sealed class TestAppContext : IAppContext
+internal sealed class TestAppContext : IRequestContext
 {
 
     public const string DefaultRequestId = "req123";
@@ -83,7 +84,7 @@ internal sealed class TestAppContext : IAppContext
         return default!;
     }
 
-    public static IAppContext GetDefaultAppContext()
+    public static IRequestContext GetDefaultAppContext()
     {
         Mock<IUserContext> userMock = new();
         userMock.Setup(user => user.UserId).Returns(DefaultUserId);
@@ -101,7 +102,7 @@ internal sealed class TestAppContext : IAppContext
         };
     }
 
-    public static IAppContext GetAppContext(Dictionary<string, object> extensions)
+    public static IRequestContext GetAppContext(Dictionary<string, object> extensions)
     {
         Mock<IUserContext> userMock = new();
         userMock.Setup(user => user.UserId).Returns(DefaultUserId);

@@ -94,14 +94,14 @@ public sealed class ResultLikeTests
         Result test1 = Result.Ok();
         Result test2 = Result.Fail(ErrorTestData.Error);
         Result<int> test3 = Result.Ok(42);
-        Result<string> test4 = Result.Fail<string>("Error");
+        Result<string> test4 = Result.Fail<string>(code: "Error");
 
         return new TheoryData<ResultBase>
         {
             { Result.Ok() },
             { Result.Fail(ErrorTestData.Error) },
             { Result.Ok(42) },
-            { Result.Fail<string>("Error") },
+            { Result.Fail<string>(code: "Error") },
         };
     }
 
@@ -110,14 +110,14 @@ public sealed class ResultLikeTests
         Result test1 = Result.Ok();
         Result test2 = Result.Fail(ErrorTestData.Error);
         Result<int> test3 = Result.Ok(42);
-        Result<string> test4 = Result.Fail<string>("Error");
+        Result<string> test4 = Result.Fail<string>(code: "Error");
 
         return new TheoryData<Func<ResultBase>>
         {
             { Result.Ok },
             { () => Result.Fail(ErrorTestData.Error) },
             { () => Result.Ok(42) },
-            { () => Result.Fail<string>("Error") },
+            { () => Result.Fail<string>(code: "Error") },
         };
     }
 }

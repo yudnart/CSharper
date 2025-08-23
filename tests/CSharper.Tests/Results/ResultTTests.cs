@@ -26,7 +26,7 @@ public sealed class ResultTTests
     public void FailT_WithError_ReturnsFailureResult()
     {
         // Act
-        Error error = ErrorTestData.ErrorNoCode;
+        Error error = ErrorTestData.ErrorNoMessage;
         Result<int> result = Result.Fail<int>(error);
 
         // Assert
@@ -56,7 +56,7 @@ public sealed class ResultTTests
         string message, string? code = null)
     {
         // Act
-        Result<string> result = Result.Fail<string>(message, code);
+        Result<string> result = Result.Fail<string>(code, message);
 
         // Assert
         Assert.Multiple(() =>
@@ -72,11 +72,10 @@ public sealed class ResultTTests
         nameof(TestData.FailInvalidMessageTestCases),
         MemberType = typeof(TestData)
     )]
-    public void FailT_InvalidMessage_ThrowArgumentNullException(
-        string? message)
+    public void FailT_InvalidMessage_ThrowArgumentNullException(string? message)
     {
         // Arrange
-        Action act = () => _ = Result.Fail<string>(message!);
+        Action act = () => _ = Result.Fail<string>(code: message!);
 
         // Act & Assert
         act.Should().ThrowExactly<ArgumentException>()
