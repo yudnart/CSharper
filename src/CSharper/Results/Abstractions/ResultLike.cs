@@ -46,11 +46,7 @@ public sealed class ResultLike
         };
     }
 
-    [ExcludeFromCodeCoverage
-#if NET8_0_OR_GREATER
-        (Justification = "Unreachable defensive code.")
-#endif
-    ]
+    [ExcludeFromCodeCoverage]
     private static ResultBase ThrowInvalidResultType(object result)
     {
         throw new NotSupportedException($"Invalid result type. (${result.GetType().FullName})");

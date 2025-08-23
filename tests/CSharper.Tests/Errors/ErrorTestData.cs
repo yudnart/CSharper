@@ -7,7 +7,7 @@ public abstract class ErrorTestData
     public static readonly Error Error = new("ERR001");
     public static readonly Error ErrorWithMessage = new("ERR002", "Error with code");
     public static readonly Error ErrorNoMessage = new("ERR002");
-    public static readonly DetailedError DetailedError = new(
+    public static readonly AggregateError DetailedError = new(
         "ERR001", "Error with details",
         new Error("Error detail 1", "ERR001-1"),
         new Error("Error detail 2", "ERR001-2"));

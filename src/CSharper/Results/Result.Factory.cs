@@ -116,13 +116,13 @@ public sealed partial class Result
     /// <param name="code">The error code for the aggregated error. Defaults to "AggregateError".</param>
     /// <param name="message">The optional message for the aggregated error. Defaults to "One or more operations failed."</param>
     /// <returns>A DetailedError containing the aggregated errors.</returns>
-    public static DetailedError AggregateError(
+    public static AggregateError AggregateError(
         IEnumerable<Error> errors, 
         string code = "AggregateError", 
         string message = "One or more operations failed.")
     {
         code.ThrowIfNullOrWhitespace(nameof(code));
-        return new DetailedError(code, message, [.. errors]);
+        return new AggregateError(code, message, [.. errors]);
     }
 
     #endregion

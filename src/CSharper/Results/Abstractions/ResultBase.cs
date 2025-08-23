@@ -114,11 +114,7 @@ public abstract class ResultBase
     /// This method is called internally during construction to enforce the invariant that success results have no errors
     /// and failure results have a valid error. It is excluded from code coverage as it represents defensive validation.
     /// </remarks>
-    [ExcludeFromCodeCoverage
-#if NET8_0_OR_GREATER
-        (Justification = "Unreachable defensive code.")
-#endif
-    ]
+    [ExcludeFromCodeCoverage]
     private void ValidateErrors()
     {
         if (IsSuccess && _error != null)

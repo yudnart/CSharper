@@ -7,18 +7,19 @@ namespace CSharper.Errors;
 /// <summary>
 /// Represents a basic error with a required code and optional message.
 /// </summary>
-public class Error
+public class Error : IEquatable<Error>
 {
+    private readonly Lazy<string> _cachedToString;
+
     /// <summary>
-    /// Gets the optional error code for programmatic identification.
-    /// </summary>
-    /// <value>The error code, or null if not specified.</value>
+    /// Gets the error code for programmatic identification.
+    /// </summary>/// <value>The required error code.</value>
     public string Code { get; }
 
     /// <summary>
-    /// Gets the error message describing the issue.
+    /// Gets the optional error message describing the error.
     /// </summary>
-    /// <value>The descriptive message of the error.</value>
+    /// <value>The descriptive message of the error, or null if not specified.</value>
     public string? Message { get; }
 
     /// <summary>
@@ -31,32 +32,40 @@ public class Error
     {
         code.ThrowIfNullOrWhitespace(nameof(code));
         Code = code;
-        Message = message;
+        Message = message?.Trim();
+        _cachedToString = new Lazy<string>(() => GetStringBuilder().ToString());
     }
 
     /// <summary>
-    /// Returns a string representation of the error.
+    /// Returns a string representation of the error in the format "Code={Code}, Message={Message}".
+    /// Message is omitted if null or empty.
     /// </summary>
-    public override string ToString() => GetStringBuilder().ToString();
+    public override string ToString() => _cachedToString.Value;
+
+    /// <summary>
+    /// Determines whether the specified object is equal to the current error.
+    /// </summary>
+    /// <param name="other">The object to compare with the current error.</param>
+    /// <returns>true if the specified object is an <see cref="Error"/> with the same <see cref="Code"/> and <see cref="Message"/>; otherwise, false.</returns>
+    public bool Equals(Error? other) => other != null && Code == other.Code && Message == other.Message;
 
     /// <summary>
     /// Determines whether the specified object is equal to the current error.
     /// </summary>
     /// <param name="obj">The object to compare with the current error.</param>
     /// <returns>true if the specified object is an <see cref="Error"/> with the same <see cref="Message"/> and <see cref="Code"/>; otherwise, false.</returns>
-    public override bool Equals(object? obj)
-    {
-        if (obj is Error other)
-        {
-            return Code == other.Code && Message == other.Message;
-        }
-        return false;
-    }
+    public override bool Equals(object? obj) => Equals(obj as Error);
 
     /// <summary>
     /// Returns a hash code for the current error.
     /// </summary>
     public override int GetHashCode() => (Code, Message).GetHashCode();
+
+    /// <inheritdoc/>
+    public static bool operator ==(Error? left, Error? right) => Equals(left, right);
+
+    /// <inheritdoc/>
+    public static bool operator !=(Error? left, Error? right) => !Equals(left, right);
 
     /// <summary>
     /// Creates and returns a StringBuilder with the string representation of the error.

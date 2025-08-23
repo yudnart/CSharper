@@ -100,7 +100,7 @@ public static class ResultTExtensions
     {
         if (result.IsSuccess)
         {
-            throw new InvalidOperationException("Success result cannot map to an failed result.");
+            throw new InvalidOperationException("Cannot map a successful result to a failed result.");
         }
         return Result.Fail(result.Error!);
     }
@@ -126,7 +126,7 @@ public static class ResultTExtensions
     {
         if (result.IsSuccess)
         {
-            throw new InvalidOperationException("Success result cannot map to an failed result.");
+            throw new InvalidOperationException("Cannot map a successful result to a failed result.");
         }
         return Result.Fail<U>(result.Error!);
     }

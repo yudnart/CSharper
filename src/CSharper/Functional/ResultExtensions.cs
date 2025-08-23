@@ -74,7 +74,7 @@ public static class ResultExtensions
     {
         if (result.IsSuccess)
         {
-            throw new InvalidOperationException("Success result cannot map to an failed result.");
+            throw new InvalidOperationException("Cannot map a successful result to a failed result.");
         }
         return Result.Fail<T>(result.Error!);
     }
@@ -121,6 +121,12 @@ public static class ResultExtensions
     {
         onSuccess.ThrowIfNull(nameof(onSuccess));
         onFailure.ThrowIfNull(nameof(onFailure));
+
+        if (result.IsFailure && result.Error == null)
+        {
+            throw new InvalidOperationException("Result is failed but Error is null.");
+        }
+
         return result.IsSuccess ? onSuccess() : onFailure(result.Error!);
     }
 
@@ -145,6 +151,7 @@ public static class ResultExtensions
         {
             return result;
         }
+
         onFailure(result.Error!);
         return Result.Ok();
     }
