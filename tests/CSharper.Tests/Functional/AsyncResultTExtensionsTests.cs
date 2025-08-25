@@ -58,7 +58,7 @@ public sealed class AsyncResultTExtensionsTests
                 }
                 else
                 {
-                    TestUtility.AssertFailureResult(result, initial.Error);
+                    TestUtility.AssertFailure(result, initial.Error);
                 }
             }
         });
@@ -90,7 +90,7 @@ public sealed class AsyncResultTExtensionsTests
         }
         else
         {
-            TestUtility.AssertFailureResult(result, initial.Error);
+            TestUtility.AssertFailure(result, initial.Error);
         }
     }
 
@@ -172,7 +172,7 @@ public sealed class AsyncResultTExtensionsTests
                 }
                 else
                 {
-                    TestUtility.AssertFailureResult(result, initial.Error);
+                    TestUtility.AssertFailure(result, initial.Error);
                 }
             }
         });
@@ -204,7 +204,7 @@ public sealed class AsyncResultTExtensionsTests
         }
         else
         {
-            TestUtility.AssertFailureResult(result, initial.Error);
+            TestUtility.AssertFailure(result, initial.Error);
         }
     }
 
@@ -259,12 +259,12 @@ public sealed class AsyncResultTExtensionsTests
         // Assert
         if (initial.IsSuccess)
         {
-            TestUtility.AssertSuccessResult(result, value);
+            TestUtility.AssertSuccess(result, value);
             mapParam.Should().Be(initial.Value);
         }
         else
         {
-            TestUtility.AssertFailureResult(result, initial.Error);
+            TestUtility.AssertFailure(result, initial.Error);
         }
     }
 
@@ -304,7 +304,7 @@ public sealed class AsyncResultTExtensionsTests
         else
         {
             Result result = await act();
-            TestUtility.AssertFailureResult(result, initial.Error);
+            TestUtility.AssertFailure(result, initial.Error);
         }
     }
 
@@ -328,7 +328,7 @@ public sealed class AsyncResultTExtensionsTests
         else
         {
             Result<string> result = await act();
-            TestUtility.AssertFailureResult(result, initial.Error);
+            TestUtility.AssertFailure(result, initial.Error);
         }
     }
 

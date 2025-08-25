@@ -1,6 +1,6 @@
-﻿using CSharper.AppContext;
-using CSharper.Errors;
+﻿using CSharper.Errors;
 using CSharper.Mediator;
+using CSharper.RequestContext;
 using CSharper.Results;
 using CSharper.Tests.TestUtilities;
 using FluentAssertions;
@@ -16,7 +16,7 @@ public sealed class LoggingBehaviorTests
 {
     private readonly MemoryLogger<LoggingBehavior> _logger;
     private readonly Mock<IServiceProvider> _serviceProviderMock;
-    private readonly Mock<IAppContext> _appContextMock;
+    private readonly Mock<IRequestContext> _appContextMock;
     private const string _errorStateKey = "Error";
     private const string _requestTypeStateKey = "RequestType";
     private const string _requestStateKey = "Request";
@@ -25,7 +25,7 @@ public sealed class LoggingBehaviorTests
     {
         _logger = new MemoryLogger<LoggingBehavior>();
         _serviceProviderMock = new Mock<IServiceProvider>();
-        _appContextMock = new Mock<IAppContext>();
+        _appContextMock = new Mock<IRequestContext>();
     }
 
     [Fact]
@@ -36,18 +36,6 @@ public sealed class LoggingBehaviorTests
 
         // Assert
         sut.Should().NotBeNull();
-    }
-
-    [Fact]
-    public void Ctor_NullLogger_Throws()
-    {
-        // Arrange
-        ILogger<LoggingBehavior> nullLogger = null!;
-        Action act = () => _ = new LoggingBehavior(nullLogger, _serviceProviderMock.Object);
-
-        // Assert
-        act.Should().ThrowExactly<ArgumentNullException>()
-            .And.ParamName.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]

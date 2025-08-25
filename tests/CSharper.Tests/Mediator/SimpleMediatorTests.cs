@@ -1,5 +1,6 @@
 ﻿using CSharper.Mediator;
 using CSharper.Results;
+using CSharper.Tests.Results;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -49,7 +50,7 @@ public sealed class SimpleMediatorTests
         // Assert
         Assert.Multiple(() =>
         {
-            ResultTestUtility.AssertSuccessResult(result);
+            ResultTestUtility.AssertSuccess(result);
             _executionOrder.Should().Equal("H");
         });
     }
@@ -136,7 +137,7 @@ public sealed class SimpleMediatorTests
         // Assert
         Assert.Multiple(() =>
         {
-            ResultTestUtility.AssertSuccessResult(result);
+            ResultTestUtility.AssertSuccess(result);
             _executionOrder.Should().Equal("H");
         });
     }
@@ -156,7 +157,7 @@ public sealed class SimpleMediatorTests
         // Assert
         Assert.Multiple(() =>
         {
-            ResultTestUtility.AssertSuccessResult(result, handler.ReturnValue);
+            ResultTestUtility.AssertSuccess(result, handler.ReturnValue);
             _executionOrder.Should().Equal("H");
         });
     }
@@ -188,7 +189,7 @@ public sealed class SimpleMediatorTests
         // Assert
         Assert.Multiple(() =>
         {
-            ResultTestUtility.AssertSuccessResult(result);
+            ResultTestUtility.AssertSuccess(result);
             _executionOrder.Should().Equal("G1", "G2", "S1", "S2", "H");
         });
     }
@@ -220,7 +221,7 @@ public sealed class SimpleMediatorTests
         // Assert
         Assert.Multiple(() =>
         {
-            ResultTestUtility.AssertSuccessResult(result, handler.ReturnValue);
+            ResultTestUtility.AssertSuccess(result, handler.ReturnValue);
             _executionOrder.Should().Equal("G1", "G2", "S1", "S2", "H");
         });
     }
@@ -242,7 +243,7 @@ public sealed class SimpleMediatorTests
         // Assert
         Assert.Multiple(() =>
         {
-            ResultTestUtility.AssertFailureResult(result);
+            ResultTestUtility.AssertFailure(result);
             _executionOrder.Should().BeEmpty();
         });
     }
@@ -264,7 +265,7 @@ public sealed class SimpleMediatorTests
         // Assert
         Assert.Multiple(() =>
         {
-            ResultTestUtility.AssertFailureResult(result);
+            ResultTestUtility.AssertFailure(result);
             _executionOrder.Should().BeEmpty();
         });
     }
@@ -391,9 +392,9 @@ public sealed class SimpleMediatorTests
         // Act & Assert
         Assert.Multiple(async () =>
         {
-            InvalidOperationException ex = await Assert
-                .ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
-            ex.Should().Be(handler.Exception);
+            AggregateException ex = await Assert
+                .ThrowsAsync<AggregateException>(() => sut.Send(request));
+            ex.InnerException.Should().Be(handler.Exception);
         });
     }
 
@@ -444,9 +445,9 @@ public sealed class SimpleMediatorTests
         // Act & Assert
         Assert.Multiple(async () =>
         {
-            InvalidOperationException ex = await Assert
-                .ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
-            ex.Should().Be(handler.Exception);
+            AggregateException ex = await Assert
+                .ThrowsAsync<AggregateException>(() => sut.Send(request));
+            ex.InnerException.Should().Be(handler.Exception);
             _executionOrder.Should().Equal("G1", "S1");
         });
     }

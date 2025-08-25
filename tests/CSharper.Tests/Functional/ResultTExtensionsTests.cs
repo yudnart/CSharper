@@ -34,7 +34,7 @@ public sealed class ResultTExtensionsTests
         }
         else
         {
-            TestUtility.AssertFailureResult(result, sut.Error);
+            TestUtility.AssertFailure(result, sut.Error);
         }
     }
 
@@ -60,7 +60,7 @@ public sealed class ResultTExtensionsTests
         }
         else
         {
-            TestUtility.AssertFailureResult(result, sut.Error);
+            TestUtility.AssertFailure(result, sut.Error);
         }
     }
 
@@ -104,7 +104,7 @@ public sealed class ResultTExtensionsTests
         }
         else
         {
-            TestUtility.AssertFailureResult(result, sut.Error);
+            TestUtility.AssertFailure(result, sut.Error);
         }
     }
 
@@ -130,7 +130,7 @@ public sealed class ResultTExtensionsTests
         }
         else
         {
-            TestUtility.AssertFailureResult(result, sut.Error);
+            TestUtility.AssertFailure(result, sut.Error);
         }
     }
 
@@ -172,12 +172,12 @@ public sealed class ResultTExtensionsTests
         // Assert
         if (sut.IsSuccess)
         {
-            TestUtility.AssertSuccessResult(result, value);
+            TestUtility.AssertSuccess(result, value);
             mapParam.Should().Be(sut.Value);
         }
         else
         {
-            TestUtility.AssertFailureResult(result, sut.Error);
+            TestUtility.AssertFailure(result, sut.Error);
         }
     }
 
@@ -217,7 +217,7 @@ public sealed class ResultTExtensionsTests
         else
         {
             Result result = act();
-            TestUtility.AssertFailureResult(result, sut.Error);
+            TestUtility.AssertFailure(result, sut.Error);
         }
     }
 
@@ -240,7 +240,7 @@ public sealed class ResultTExtensionsTests
         else
         {
             Result<int> result = act();
-            TestUtility.AssertFailureResult(result, sut.Error);
+            TestUtility.AssertFailure(result, sut.Error);
         }
     }
 
@@ -316,7 +316,7 @@ public sealed class ResultTExtensionsTests
         {
             T value = sut.IsSuccess
                 ? sut.Value : result.Value;
-            TestUtility.AssertSuccessResult(result, value);
+            TestUtility.AssertSuccess(result, value);
             if (sut.IsSuccess)
             {
                 result.Should().Be(sut);

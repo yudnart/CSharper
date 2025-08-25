@@ -1,5 +1,8 @@
 ﻿using CSharper.Extensions;
 using FluentAssertions;
+using System;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace CSharper.Tests.Extensions;
 
@@ -46,21 +49,6 @@ public sealed class TaskExtensionsTests
             resultTask.Status.Should().Be(TaskStatus.RanToCompletion);
             result.Should().Be(_value.ToString());
         });
-    }
-
-    [Fact]
-    public async Task ThenT_TaskFaultedSingleException_ThrowsInnerException()
-    {
-        // Arrange
-        InvalidOperationException innerException = new(_errorMessage);
-        Task<int> task = Task.FromException<int>(innerException);
-        string next(int x) => x.ToString();
-
-        // Act
-        Func<Task> act = async () => await task.Then(next);
-
-        // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage(_errorMessage);
     }
 
     [Fact]
@@ -121,5 +109,115 @@ public sealed class TaskExtensionsTests
         // Assert
         (await act.Should().ThrowExactlyAsync<ArgumentNullException>())
             .And.ParamName.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task Then_TaskCanceled_ThrowsTaskCanceledException()
+    {
+        // Arrange
+        var cts = new System.Threading.CancellationTokenSource();
+        cts.Cancel();
+        Task task = Task.FromCanceled(cts.Token);
+        int next() => _value;
+
+        // Act
+        Func<Task> act = async () => await task.Then(next);
+
+        // Assert
+        await act.Should().ThrowExactlyAsync<TaskCanceledException>();
+    }
+
+    [Fact]
+    public async Task ThenT_TaskCanceled_ThrowsTaskCanceledException()
+    {
+        // Arrange
+        var cts = new System.Threading.CancellationTokenSource();
+        cts.Cancel();
+        Task<int> task = Task.FromCanceled<int>(cts.Token);
+        string next(int x) => x.ToString();
+
+        // Act
+        Func<Task> act = async () => await task.Then(next);
+
+        // Assert
+        await act.Should().ThrowExactlyAsync<TaskCanceledException>();
+    }
+
+    [Fact]
+    public async Task Then_TaskFaulted_ThrowsAggregateException()
+    {
+        // Arrange
+        var tcs = new TaskCompletionSource<bool>();
+        tcs.SetException(new InvalidOperationException(_errorMessage));
+        Task task = tcs.Task;
+        int next() => _value;
+
+        // Act
+        Func<Task> act = async () => await task.Then(next);
+
+        // Assert
+        (await act.Should().ThrowExactlyAsync<AggregateException>())
+            .WithInnerException<InvalidOperationException>()
+            .WithMessage($"*{_errorMessage}*");
+    }
+
+    [Fact]
+    public async Task ThenT_TaskFaulted_ThrowsAggregateException()
+    {
+        // Arrange
+        var tcs = new TaskCompletionSource<int>();
+        tcs.SetException(new InvalidOperationException(_errorMessage));
+        Task<int> task = tcs.Task;
+        string next(int x) => x.ToString();
+
+        // Act
+        Func<Task> act = async () => await task.Then(next);
+
+        // Assert
+        (await act.Should().ThrowExactlyAsync<AggregateException>())
+            .WithInnerException<InvalidOperationException>()
+            .WithMessage($"*{_errorMessage}*");
+    }
+
+    [Fact]
+    public async Task Then_AsyncTaskSuccessful_ReturnsNext()
+    {
+        // Arrange
+        async Task task() => await Task.Delay(10);
+        int next() => _value;
+
+        // Act
+        Task<int> resultTask = task().Then(next);
+        int result = await resultTask;
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            resultTask.Status.Should().Be(TaskStatus.RanToCompletion);
+            result.Should().Be(_value);
+        });
+    }
+
+    [Fact]
+    public async Task ThenT_AsyncTaskSuccessful_ReturnsNext()
+    {
+        // Arrange
+        async Task<int> task()
+        {
+            await Task.Delay(10);
+            return _value;
+        }
+        string next(int x) => x.ToString();
+
+        // Act
+        Task<string> resultTask = task().Then(next);
+        string result = await resultTask;
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            resultTask.Status.Should().Be(TaskStatus.RanToCompletion);
+            result.Should().Be(_value.ToString());
+        });
     }
 }

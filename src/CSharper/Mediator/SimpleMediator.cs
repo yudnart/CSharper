@@ -99,9 +99,11 @@ internal sealed class SimpleMediator : IMediator
     {
         IBehavior<IRequest>[] behaviors = [.. _globalBehaviors, .. ResolveBehaviors(request)];
         Result<TValue> result = null!;
-        BehaviorDelegate next = BuildPipeline((req, ct) => Handle(request, ct)
-            .Tap(value => result = Result.Ok(value))
-            .Bind(_ => Result.Ok()), behaviors);
+        BehaviorDelegate next = BuildPipeline(async (req, ct) =>
+        {
+            result = await Handle(request, ct);
+            return Result.Ok();
+        }, behaviors);
         return next(request, cancellationToken).Bind(() => result);
     }
 

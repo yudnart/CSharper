@@ -102,15 +102,15 @@ public static class FunctionalResultTestData
 
     public static Error GetError(int detailSize = 1)
     {
-        return new Error(message: "Someting went wrong.",
-            errorDetails: [.. GetErrorDetails(detailSize)]);
+        return new AggregateError(code: "Someting went wrong.",
+            details: [.. GetErrorDetails(detailSize)]);
     }
 
-    private static IEnumerable<ErrorDetail> GetErrorDetails(int size = 1)
+    private static IEnumerable<Error> GetErrorDetails(int size = 1)
     {
         for (int i = 0; i < size; i++)
         {
-            yield return new ErrorDetail($"{i} - Something went wrong.");
+            yield return new Error($"{i} - Something went wrong.");
         }
     }
 
@@ -120,16 +120,17 @@ public static class FunctionalResultTestData
         {
             errorDetails = [.. GetErrorDetails(1)];
         }
-        return Result.Fail(new DetailedError("Something wrong.", errorDetails: errorDetails));
+        return Result.Fail(new AggregateError("Something wrong.", details: errorDetails));
     }
 
-    public static Result<T> GetFailureResult<T>(params ErrorDetail[] errorDetails)
+    public static Result<T> GetFailureResult<T>(params Error[] errorDetails)
     {
         if (errorDetails == null || errorDetails.Length == 0)
         {
             errorDetails = [.. GetErrorDetails(1)];
         }
-        return Result.Fail<T>(new("Something wrong.", errorDetails: errorDetails));
+        return Result.Fail<T>(new AggregateError(
+            "Something wrong.", details: errorDetails));
     }
 
     private static IEnumerable<object[]> GetMatchTestData(

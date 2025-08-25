@@ -25,6 +25,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Functional\AsyncResultExtensionsTests.cs" />
+    <Compile Include="Functional\AsyncResultTExtensionsTests.cs" />
+    <Compile Include="Functional\FunctionalResultTestData.cs" />
+    <Compile Include="Functional\ResultExtensionsTests.cs" />
+    <Compile Include="Functional\ResultTExtensionsTests.cs" />
+    <Compile Include="Mediator\LoggingBehaviorTests.cs" />
+    <Compile Include="Mediator\MediatorModuleTests.cs" />
+    <Compile Include="Mediator\SimpleMediatorTests.cs" />
+    <Compile Include="Mediator\TestClasses.cs" />
     <Compile Include="Results\Abstractions\ResultBaseTests.cs" />
     <Compile Include="Results\Abstractions\ResultLikeTests.cs" />
     <Compile Include="Results\ResultTestData.cs" />

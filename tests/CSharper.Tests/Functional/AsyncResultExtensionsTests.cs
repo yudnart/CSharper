@@ -72,7 +72,7 @@ public sealed class AsyncResultExtensionsTests
         }
         else
         {
-            TestUtility.AssertFailureResult(result, initial.Error);
+            TestUtility.AssertFailure(result, initial.Error);
         }
     }
 
@@ -145,7 +145,7 @@ public sealed class AsyncResultExtensionsTests
                 }
                 else
                 {
-                    TestUtility.AssertFailureResult(result, initial.Error);
+                    TestUtility.AssertFailure(result, initial.Error);
                 }
             }
         });
@@ -175,7 +175,7 @@ public sealed class AsyncResultExtensionsTests
         }
         else
         {
-            TestUtility.AssertFailureResult(result, initial.Error);
+            TestUtility.AssertFailure(result, initial.Error);
         }
     }
 
@@ -231,7 +231,7 @@ public sealed class AsyncResultExtensionsTests
             else
             {
                 Result<string> result = await act();
-                TestUtility.AssertFailureResult(result, initial.Error);
+                TestUtility.AssertFailure(result, initial.Error);
             }
         });
     }

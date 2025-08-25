@@ -51,7 +51,7 @@ public sealed class ResultExtensionsTests
         }
         else
         {
-            TestUtility.AssertFailureResult(result, sut.Error);
+            TestUtility.AssertFailure(result, sut.Error);
         }
     }
     public Result<int> NextValue()
@@ -93,7 +93,7 @@ public sealed class ResultExtensionsTests
         }
         else
         {
-            TestUtility.AssertFailureResult(result, sut.Error);
+            TestUtility.AssertFailure(result, sut.Error);
         }
     }
 
@@ -119,7 +119,7 @@ public sealed class ResultExtensionsTests
         }
         else
         {
-            TestUtility.AssertFailureResult(result, sut.Error);
+            TestUtility.AssertFailure(result, sut.Error);
         }
     }
 
@@ -162,7 +162,7 @@ public sealed class ResultExtensionsTests
             else
             {
                 Result<string> result = act();
-                TestUtility.AssertFailureResult(result, sut.Error);
+                TestUtility.AssertFailure(result, sut.Error);
             }
         });
     }
@@ -225,7 +225,7 @@ public sealed class ResultExtensionsTests
         // Assert
         Assert.Multiple(() =>
         {
-            TestUtility.AssertSuccessResult(result);
+            TestUtility.AssertSuccess(result);
             if (sut.IsSuccess)
             {
                 result.Should().Be(sut);
