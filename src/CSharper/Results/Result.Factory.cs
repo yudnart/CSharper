@@ -82,12 +82,18 @@ public sealed partial class Result
     /// if only one error exists, or a DetailedError with all errors if multiple errors exist.
     /// </summary>
     /// <param name="results">The collection of results to evaluate.</param>
+    /// <param name="code">The failure error code. Defaults to "AggregateError".</param>
+    /// <param name="message">[Optional] The failure error message.</param>
     /// <returns>A Result representing the aggregated outcome.</returns>
     /// <exception cref="ArgumentException">Thrown if <paramref name="results"/> is null or empty.</exception>
     /// <exception cref="ArgumentNullException">Thrown if any <see cref="ResultLike.Value"/> is null.</exception>
-    public static Result Sequence(IEnumerable<ResultLike> results)
+    public static Result Sequence(
+        IEnumerable<ResultLike> results,
+        string code = "AggregateError",
+        string? message = null)
     {
         results.ThrowIfNullOrEmpty(nameof(results));
+        code.ThrowIfNullOrWhitespace(nameof(code));
 
         List<Error> errors = [];
 
@@ -104,8 +110,7 @@ public sealed partial class Result
         return errors.Count switch
         {
             0 => Ok(),
-            1 => Fail(errors[0]),
-            _ => Fail(AggregateError(errors))
+            _ => Fail(AggregateError(errors, code, message))
         };
     }
 
@@ -119,7 +124,7 @@ public sealed partial class Result
     public static AggregateError AggregateError(
         IEnumerable<Error> errors, 
         string code = "AggregateError", 
-        string message = "One or more operations failed.")
+        string? message = "One or more operations failed.")
     {
         code.ThrowIfNullOrWhitespace(nameof(code));
         return new AggregateError(code, message, [.. errors]);

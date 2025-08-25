@@ -17,7 +17,7 @@ public sealed class ResultBaseTests
         TestResultBase result = new();
 
         // Assert
-        TestUtility.AssertSuccessResult(result);
+        TestUtility.AssertSuccess(result);
     }
 
     [Fact]
@@ -30,11 +30,7 @@ public sealed class ResultBaseTests
         TestResultBase result = new(error);
 
         // Assert
-        Assert.Multiple(() =>
-        {
-            TestUtility.AssertFailureResult(result);
-            result.Error.Should().BeSameAs(error);
-        });
+        TestUtility.AssertFailure(result, error);
     }
 
     [Fact]

@@ -33,8 +33,16 @@ public static class TaskExtensions
         next.ThrowIfNull(nameof(next));
         return task.ContinueWith(t =>
         {
-            if (t.IsCanceled) throw new TaskCanceledException();
-            if (t.IsFaulted) throw t.Exception!;
+            if (t.IsCanceled)
+            {
+                throw new TaskCanceledException();
+            }
+
+            if (t.IsFaulted)
+            {
+                throw t.Exception!;
+            }
+
             return next();
         });
     }
@@ -64,8 +72,16 @@ public static class TaskExtensions
         next.ThrowIfNull(nameof(next));
         return task.ContinueWith(t =>
         {
-            if (t.IsCanceled) throw new TaskCanceledException();
-            if (t.IsFaulted) throw t.Exception!;
+            if (t.IsCanceled)
+            {
+                throw new TaskCanceledException();
+            }
+
+            if (t.IsFaulted)
+            {
+                throw t.Exception!;
+            }
+
             return next(t.Result);
         });
     }

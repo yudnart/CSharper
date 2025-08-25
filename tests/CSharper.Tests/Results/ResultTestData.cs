@@ -1,51 +1,47 @@
 ﻿using CSharper.Errors;
+using CSharper.Extensions;
 using CSharper.Results;
 using CSharper.Tests.Errors;
-using System.Text;
 
 namespace CSharper.Tests.Results;
 
 public static class ResultTestData
 {
-    public static TheoryData<string?> FailInvalidMessageTestCases()
+    public static TheoryData<string, string?> FailValidParams()
     {
-        return new TheoryData<string?>
+        return new TheoryData<string, string?>
+            {
+                { "ERR001", null },
+                { "ERR002", "" },
+                { "ERR003", "Error with code" }
+            };
+    }
+
+    public static TheoryData<string> NullOrEmptyStrings()
+    {
+        return new TheoryData<string>
         {
-            { null },
+            { null! },
             { "" },
             { " " }
         };
     }
 
-    public static TheoryData<string, string?> FailValidTestCases()
-    {
-        return new TheoryData<string, string?>
-            {
-                { "Test error", null },
-                { "Error with code", "ERR001" },
-                { "Minimal", "" }
-            };
-    }
-
     public static TheoryData<string, Result, string> ToStringTestCases()
     {
-        Error error = ErrorTestData.DetailedError;
+        Error error = ErrorTestData.Error;
 
         return new TheoryData<string, Result, string>
             {
                 {
                     "Success result",
                     Result.Ok(),
-                    "Success" },
-                {
-                    "Error result",
-                    Result.Fail("Test error."),
-                    "Error: Test error."
+                    $"{nameof(Result)}: Success"
                 },
                 {
-                    "Error result with details",
+                    "Error result",
                     Result.Fail(error),
-                    MapErrorToExpectedString(error)
+                    $"{nameof(Result)}: {error}"
                 }
             };
     }
@@ -59,30 +55,34 @@ public static class ResultTestData
         yield return [
             "Failed string result",
             Result.Fail<string>(ErrorTestData.Error),
-            MapErrorToExpectedString(ErrorTestData.Error)
+            $"{typeof(Result<string>).GetFriendlyTypeName()}: {ErrorTestData.Error}"
         ];
-        yield return ["Null value", Result.Ok<string?>(null), "Success: null"];
+        yield return [
+            "Null value", 
+            Result.Ok<string?>(null), 
+            "Result<string>: null"
+        ];
     }
 
-    private static string MapErrorToExpectedString(Error error)
-    {
-        StringBuilder sb = new($"Code={error.Code}");
-        if (!string.IsNullOrWhiteSpace(error.Message))
-        {
-            sb.Append($", Message={error.Message}");
-        }
+    //private static string MapErrorToExpectedString(Error error)
+    //{
+    //    StringBuilder sb = new($"Code={error.Code}");
+    //    if (!string.IsNullOrWhiteSpace(error.Message))
+    //    {
+    //        sb.Append($", Message={error.Message}");
+    //    }
 
-        if (error is DetailedError detailedError)
-        {
-            foreach (Error detail in detailedError.Details)
-            {
-                sb.AppendLine();
-                sb.Append(DetailedError.IndentMarker)
-                    .Append(' ')
-                    .Append(detail.ToString());
-            }
-        }
+    //    if (error is AggregateError detailedError)
+    //    {
+    //        foreach (Error detail in detailedError.Details)
+    //        {
+    //            sb.AppendLine();
+    //            sb.Append(AggregateError.IndentMarker)
+    //                .Append(' ')
+    //                .Append(detail.ToString());
+    //        }
+    //    }
 
-        return sb.ToString();
-    }
+    //    return sb.ToString();
+    //}
 }

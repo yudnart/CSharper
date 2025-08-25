@@ -33,7 +33,7 @@ public class Error : IEquatable<Error>
         code.ThrowIfNullOrWhitespace(nameof(code));
         Code = code;
         Message = message?.Trim();
-        _cachedToString = new Lazy<string>(() => GetStringBuilder().ToString());
+        _cachedToString = new Lazy<string>(() => StringFormatBuilder().ToString());
     }
 
     /// <summary>
@@ -47,7 +47,15 @@ public class Error : IEquatable<Error>
     /// </summary>
     /// <param name="other">The object to compare with the current error.</param>
     /// <returns>true if the specified object is an <see cref="Error"/> with the same <see cref="Code"/> and <see cref="Message"/>; otherwise, false.</returns>
-    public bool Equals(Error? other) => other != null && Code == other.Code && Message == other.Message;
+    public bool Equals(Error? other)
+    {
+        if (other == null)
+        {
+            return false;
+        }
+
+        return Code == other.Code && Message == other.Message;
+    }
 
     /// <summary>
     /// Determines whether the specified object is equal to the current error.
@@ -61,24 +69,25 @@ public class Error : IEquatable<Error>
     /// </summary>
     public override int GetHashCode() => (Code, Message).GetHashCode();
 
-    /// <inheritdoc/>
-    public static bool operator ==(Error? left, Error? right) => Equals(left, right);
-
-    /// <inheritdoc/>
-    public static bool operator !=(Error? left, Error? right) => !Equals(left, right);
-
     /// <summary>
     /// Creates and returns a StringBuilder with the string representation of the error.
     /// </summary>
     /// <returns>A StringBuilder containing the error's string representation.</returns>
-    protected virtual StringBuilder GetStringBuilder()
+    protected virtual StringBuilder StringFormatBuilder()
     {
-        StringBuilder sb = new();
-        sb.Append($"Code={Code}");
+        StringBuilder sb = new($"Type={GetType().Name}, Code={Code}");
         if (!string.IsNullOrWhiteSpace(Message))
         {
             sb.Append($", Message={Message}");
         }
         return sb;
     }
+
+    /// <inheritdoc/>
+    public static bool operator ==(Error? left, Error? right) 
+        => Equals(left, right);
+
+    /// <inheritdoc/>
+    public static bool operator !=(Error? left, Error? right) 
+        => !Equals(left, right);
 }

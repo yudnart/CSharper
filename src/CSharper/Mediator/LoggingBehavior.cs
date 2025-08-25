@@ -1,10 +1,11 @@
-﻿using CSharper.RequestContext;
-using CSharper.Errors;
+﻿using CSharper.Errors;
 using CSharper.Extensions;
 using CSharper.Functional;
+using CSharper.RequestContext;
 using CSharper.Results;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -54,7 +55,7 @@ internal sealed class LoggingBehavior : IBehavior
     /// <summary>
     /// The optional application context providing metadata like user details and request IDs.
     /// </summary>
-    private readonly IRequestContext? _appContext;
+    private readonly IRequestContext? _requestContext;
 
     /// <summary>
     /// A generated correlation ID used when no application context is available.
@@ -69,8 +70,8 @@ internal sealed class LoggingBehavior : IBehavior
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
     public LoggingBehavior(ILogger<LoggingBehavior> logger, IServiceProvider serviceProvider)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _appContext = serviceProvider.GetService<IRequestContext>();
+        _logger = logger ?? NullLogger<LoggingBehavior>.Instance;
+        _requestContext = serviceProvider.GetService<IRequestContext>();
     }
 
     /// <summary>
@@ -99,7 +100,7 @@ internal sealed class LoggingBehavior : IBehavior
             _logger.LogError(ex,
                 _requestFailedWithException,
                 request.GetType().Name,
-                _correlationId ?? _appContext?.CorrelationId);
+                _correlationId ?? _requestContext?.CorrelationId);
 
             throw;
         }
@@ -158,31 +159,21 @@ internal sealed class LoggingBehavior : IBehavior
         };
 
         // Add app context properties or generate correlation ID
-        if (_appContext is not null)
+        if (_requestContext is not null)
         {
-            logProperties.Add(nameof(IRequestContext.RequestId), _appContext.RequestId);
-            logProperties.Add(nameof(IRequestContext.CorrelationId), _appContext.CorrelationId);
-            logProperties.Add(nameof(IRequestContext.CurrentUser.UserId), _appContext.CurrentUser?.UserId ?? _anonymousUserId);
-            logProperties.Add(nameof(IRequestContext.ClientIpAddress), _appContext.ClientIpAddress ?? _notApplicable);
-            logProperties.Add(nameof(IRequestContext.UserAgent), _appContext.UserAgent ?? _notApplicable);
-            logProperties.Add(nameof(IRequestContext.RequestPath), _appContext.RequestPath ?? _notApplicable);
-
-            if (!string.IsNullOrWhiteSpace(_appContext.CurrentUser?.TenantId))
+            logProperties.Add(nameof(IRequestContext.RequestId), _requestContext.RequestId);
+            logProperties.Add(nameof(IRequestContext.CorrelationId), _requestContext.CorrelationId);
+            logProperties.Add(nameof(IRequestContext.UserId), _requestContext.UserId ?? _anonymousUserId);
+            if (_requestContext is IClientContext clientContext)
             {
-                logProperties.Add(nameof(IRequestContext.CurrentUser.TenantId), _appContext.CurrentUser!.TenantId);
+                logProperties.Add(nameof(IClientContext.ClientIpAddress), clientContext.ClientIpAddress ?? _notApplicable);
+                logProperties.Add(nameof(IClientContext.UserAgent), clientContext.UserAgent ?? _notApplicable);
+                logProperties.Add(nameof(IClientContext.RequestPath), clientContext.RequestPath ?? _notApplicable);
             }
 
-            // Add extensions with prefix, limiting count
-            int extensionCount = 0;
-            foreach (KeyValuePair<string, object> extension in _appContext.Extensions)
+            if (!string.IsNullOrWhiteSpace(_requestContext.TenantId))
             {
-                if (extensionCount >= _maxExtensions)
-                {
-                    _logger.LogWarning(_extensionsLimited, _maxExtensions);
-                    break;
-                }
-                logProperties[$"{_extensionPrefix}{extension.Key}"] = extension.Value;
-                extensionCount++;
+                logProperties.Add(nameof(IRequestContext.TenantId), _requestContext.TenantId);
             }
         }
         else

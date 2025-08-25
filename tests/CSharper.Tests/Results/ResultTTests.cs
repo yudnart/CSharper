@@ -19,7 +19,7 @@ public sealed class ResultTTests
         Result<T> result = Result.Ok(value);
 
         // Assert
-        TestUtility.AssertSuccessResult(result, value);
+        TestUtility.AssertSuccess(result, value);
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public sealed class ResultTTests
         Result<int> result = Result.Fail<int>(error);
 
         // Assert
-        TestUtility.AssertFailureResult(result, error);
+        TestUtility.AssertFailure(result, error);
     }
 
     [Fact]
@@ -49,11 +49,11 @@ public sealed class ResultTTests
 
     [Theory]
     [MemberData(
-        nameof(TestData.FailValidTestCases),
+        nameof(TestData.FailValidParams),
         MemberType = typeof(TestData)
     )]
     public void FailT_ValidParams_ReturnsFailureResult(
-        string message, string? code = null)
+        string code, string? message = null)
     {
         // Act
         Result<string> result = Result.Fail<string>(code, message);
@@ -61,21 +61,21 @@ public sealed class ResultTTests
         // Assert
         Assert.Multiple(() =>
         {
-            TestUtility.AssertFailureResult(result);
-            result.Error!.Message.Should().Be(message);
+            TestUtility.AssertFailure(result);
             result.Error!.Code.Should().Be(code);
+            result.Error!.Message.Should().Be(message);
         });
     }
 
     [Theory]
     [MemberData(
-        nameof(TestData.FailInvalidMessageTestCases),
+        nameof(TestData.NullOrEmptyStrings),
         MemberType = typeof(TestData)
     )]
-    public void FailT_InvalidMessage_ThrowArgumentNullException(string? message)
+    public void FailT_InvalidMessage_ThrowArgumentNullException(string code)
     {
         // Arrange
-        Action act = () => _ = Result.Fail<string>(code: message!);
+        Action act = () => _ = Result.Fail<string>(code: code);
 
         // Act & Assert
         act.Should().ThrowExactly<ArgumentException>()

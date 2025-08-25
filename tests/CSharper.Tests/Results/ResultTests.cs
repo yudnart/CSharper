@@ -19,7 +19,7 @@ public sealed class ResultTests
         Result result = Result.Ok();
 
         // Assert
-        TestUtility.AssertSuccessResult(result);
+        TestUtility.AssertSuccess(result);
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public sealed class ResultTests
         Result result = Result.Fail(ErrorTestData.Error);
 
         // Assert
-        TestUtility.AssertFailureResult(result, error);
+        TestUtility.AssertFailure(result, error);
     }
 
     [Fact]
@@ -49,29 +49,29 @@ public sealed class ResultTests
 
     [Theory]
     [MemberData(
-        nameof(TestData.FailValidTestCases),
+        nameof(TestData.FailValidParams),
         MemberType = typeof(TestData)
     )]
     public void Fail_ValidParams_ReturnsFailureResult(
-        string message, string? code = null)
+        string code, string? message = null)
     {
         // Act
-        Result result = Result.Fail(message, code);
+        Result result = Result.Fail(code, message);
 
         // Assert
         Assert.Multiple(() =>
         {
-            TestUtility.AssertFailureResult(result);
+            TestUtility.AssertFailure(result);
 
             Error error = result.Error!;
-            error.Message.Should().Be(message);
             error.Code.Should().Be(code);
+            error.Message.Should().Be(message);
         });
     }
 
     [Theory]
     [MemberData(
-        nameof(TestData.FailInvalidMessageTestCases),
+        nameof(TestData.NullOrEmptyStrings),
         MemberType = typeof(TestData)
     )]
     public void Fail_InvalidMessage_ThrowArgumentNullException(
@@ -90,38 +90,31 @@ public sealed class ResultTests
     public void Sequence_ValidParams_ReturnsExpectedResult(ResultLike[] results)
     {
         // Arrange
-        string message = "Sequence error.";
         ResultBase[] failures = [
             .. results.Where(r => r.Value.IsFailure).Select(r => r.Value)];
         bool expectedIsSuccess = failures.Length == 0;
 
         // Act
-        Result result = Result.Sequence(results, message);
+        Result result = Result.Sequence(results);
 
         // Assert
         Assert.Multiple(() =>
         {
             if (expectedIsSuccess)
             {
-                TestUtility.AssertSuccessResult(result);
+                TestUtility.AssertSuccess(result);
             }
             else
             {
-                TestUtility.AssertFailureResult(result);
-                List<ErrorDetail> errorDetails = [];
-                foreach (ResultBase failure in failures)
-                {
-                    Error failureError = failure.Error!;
-                    errorDetails.Add(new(failureError.Message, failureError.Code));
-                    foreach (ErrorDetail errorDetail in failureError.ErrorDetails)
-                    {
-                        string _message = $"> {errorDetail.Message}";
-                        errorDetails.Add(new(_message, errorDetail.Code));
-                    }
-                }
-                Error error = result.Error!;
-                error.Message.Should().Be(message);
-                error.ErrorDetails.Should().ContainInOrder(errorDetails);
+                TestUtility.AssertFailure(result);
+
+                AggregateError error = result.Error
+                    .Should().BeOfType<AggregateError>().Subject;
+
+                IEnumerable<Error> details = failures
+                    .Select(r => r.Error!);
+                
+                error.Details.Should().ContainInOrder(details);
             }
         });
     }
@@ -129,10 +122,10 @@ public sealed class ResultTests
     [Theory]
     [MemberData(nameof(SequenceInvalidTestCases))]
     public void Sequence_InvalidParams_ThrowArgumentException(
-        ResultLike[] results, string message)
+        ResultLike[] results, string code)
     {
         // Arrange
-        Action act = () => Result.Sequence(results, message);
+        Action act = () => Result.Sequence(results, code);
 
         // Act & Assert
         Assert.Multiple(() =>
@@ -142,7 +135,7 @@ public sealed class ResultTests
                 act.Should().ThrowExactly<ArgumentException>()
                     .And.ParamName.Should().NotBeNull();
             }
-            else if (string.IsNullOrWhiteSpace(message))
+            else if (string.IsNullOrWhiteSpace(code))
             {
                 act.Should().ThrowExactly<ArgumentException>()
                     .And.ParamName.Should().NotBeNull();
@@ -197,8 +190,8 @@ public sealed class ResultTests
     {
         return new TheoryData<ResultLike[], string>
         {
-            { null!, ErrorTestData.Error.Message },
-            { [], ErrorTestData.Error.Message },
+            { null!, ErrorTestData.Error.Code },
+            { [], ErrorTestData.Error.Code },
             { [Result.Ok()], null! },
             { [Result.Ok()], "" },
             { [Result.Ok()], " " }

@@ -1,6 +1,8 @@
 ﻿using CSharper.Errors;
+using CSharper.Extensions;
 using CSharper.Results.Abstractions;
 using System;
+using System.Text;
 
 namespace CSharper.Results;
 
@@ -50,18 +52,19 @@ public sealed class Result<TValue> : ResultBase
         _value = default!;
     }
 
-    /// <summary>
-    /// Returns a string representation of the result.
-    /// </summary>
-    /// <returns>
-    /// For a success result, returns the value's string representation or "Success: null" if the value is null.
-    /// For a failure result, returns the base class's string representation.
-    /// </returns>
-    public override string ToString()
+    /// <remarks>
+    /// Returns the value string representation. If null, then returns 
+    /// <see cref="StringBuilder"/> with <c>{TypeName}: Success</c>.
+    /// </remarks>
+    /// <inheritdoc/>
+    protected override StringBuilder SuccessFormatBuilder()
     {
-        return IsSuccess ?
-            Value?.ToString() ?? "Success: null" : base.ToString();
+        return new(Value?.ToString() ?? $"{GetType().GetFriendlyTypeName()}: null");
     }
+
+    /// <inheritdoc/>
+    protected override StringBuilder ErrorFormatBuilder(Error error) =>
+        new($"{GetType().GetFriendlyTypeName()}: {Error}");
 
     /// <summary>
     /// Creates a successful <see cref="Result{TValue}"/> instance with the specified value.

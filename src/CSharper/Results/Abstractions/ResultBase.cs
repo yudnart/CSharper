@@ -1,6 +1,8 @@
 ﻿using CSharper.Errors;
+using CSharper.Extensions;
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace CSharper.Results.Abstractions;
 
@@ -10,6 +12,8 @@ namespace CSharper.Results.Abstractions;
 /// </summary>
 public abstract class ResultBase
 {
+    private readonly Lazy<string> _cachedToString;
+
     /// <summary>
     /// The error associated with a failure result, or null for a success result.
     /// </summary>
@@ -50,7 +54,8 @@ public abstract class ResultBase
     protected ResultBase()
     {
         IsSuccess = true;
-        ValidateErrors();
+        EnsureInvariants();
+        _cachedToString = new(() => SuccessFormatBuilder().ToString());
     }
 
     /// <summary>
@@ -71,38 +76,48 @@ public abstract class ResultBase
     {
         _error = error ?? throw new ArgumentNullException(nameof(error));
         IsSuccess = false;
-        ValidateErrors();
+        EnsureInvariants();
+        _cachedToString = new(() => ErrorFormatBuilder(error).ToString());
     }
+
+    /// <summary>
+    /// Builds a <see cref="StringBuilder"/> containing the string representation for a success result.
+    /// </summary>
+    /// <returns>A <see cref="StringBuilder"/> initialized with the result type name and success details.</returns>
+    /// <remarks>
+    /// The base implementation initializes the <see cref="StringBuilder"/> with <c>{TypeName}: Success</c>.
+    /// Derived classes can override this method to append additional details, such as a value in <c>Result{T}</c>.
+    /// Ensure the implementation is efficient to maintain performance in logging scenarios.
+    /// </remarks>
+    protected virtual StringBuilder SuccessFormatBuilder() =>
+        new($"{GetType().Name}: Success");
+
+    /// <summary>
+    /// Builds a <see cref="StringBuilder"/> containing the string representation for a failure result.
+    /// </summary>
+    /// <param name="error">The non-null error associated with the failure result.</param>
+    /// <returns>A <see cref="StringBuilder"/> initialized with the result type name and error details.</returns>
+    /// <remarks>
+    /// The base implementation initializes the <see cref="StringBuilder"/> with <c>{TypeName}: Error: {error}</c>.
+    /// Derived classes can override this method to customize the error representation.
+    /// Ensure the implementation is efficient to maintain performance in logging scenarios.
+    /// </remarks>
+    protected virtual StringBuilder ErrorFormatBuilder(Error error) =>
+        new($"{GetType().GetFriendlyTypeName()}: {Error}");
 
     /// <summary>
     /// Returns a string representation of the result.
     /// </summary>
     /// <returns>
-    /// <c>"Success"</c> for a success result, or a formatted string with the error details for a failure result.
+    /// A string in the format <c>{TypeName}: Success</c> for success results or <c>{TypeName}: Error: {Error}</c> for failure results,
+    /// as defined by <see cref="SuccessFormatBuilder"/> and <see cref="ErrorFormatBuilder"/>. The result is cached for performance.
     /// </returns>
     /// <remarks>
-    /// For a success result, returns <c>"Success"</c>. For a failure result, returns a string in the format
-    /// <c>"Error: {error}"</c>, where <c>{error}</c> is the result of <see cref="Error.ToString"/>.
+    /// The output includes the result type name for context and is optimized for logging and debugging, such as in
+    /// <c>CSharper.Mediator.LoggingBehavior</c>. The string is computed once and cached using <see cref="Lazy{T}"/>.
+    /// Derived classes can customize the output by overriding <see cref="SuccessFormatBuilder"/> and <see cref="ErrorFormatBuilder"/>.
     /// </remarks>
-    /// <example>
-    /// <code>
-    /// var success = new Result();
-    /// Console.WriteLine(success.ToString()); // Output: Success
-    /// 
-    /// var error = new Error("Operation failed");
-    /// var failure = new Result(error);
-    /// Console.WriteLine(failure.ToString()); // Output: Error: Operation failed
-    /// </code>
-    /// </example>
-    public override string ToString()
-    {
-        if (IsSuccess)
-        {
-            return "Success";
-        }
-
-        return $"Error: {Error}";
-    }
+    public override string ToString() => _cachedToString.Value;
 
     /// <summary>
     /// Validates the consistency of the result's state, ensuring success results have no errors and failure results have at least one.
@@ -115,7 +130,7 @@ public abstract class ResultBase
     /// and failure results have a valid error. It is excluded from code coverage as it represents defensive validation.
     /// </remarks>
     [ExcludeFromCodeCoverage]
-    private void ValidateErrors()
+    private void EnsureInvariants()
     {
         if (IsSuccess && _error != null)
         {

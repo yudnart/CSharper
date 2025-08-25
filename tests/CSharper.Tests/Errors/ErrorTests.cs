@@ -15,13 +15,13 @@ public sealed class ErrorTests
         MemberType = typeof(TestData)
     )]
     public void Ctor_ValidParams_Succeeds(
-        string message, string? code)
+        string code, string? message)
     {
         // Act
-        TestError result = new(message, code);
+        Error result = new(code, message);
 
         // Assert
-        TestUtility.AssertError(result, message, code);
+        TestUtility.AssertError(result, code, message);
     }
 
     [Theory]
@@ -29,10 +29,10 @@ public sealed class ErrorTests
         nameof(TestData.CtorNullOrEmptyCode),
         MemberType = typeof(TestData)
     )]
-    public void Ctor_InvalidMessage_ThrowsArgumentException(string? message)
+    public void Ctor_InvalidMessage_ThrowsArgumentException(string code)
     {
         // Arrange
-        Action act = () => new TestError(message!);
+        Action act = () => new Error(code);
 
         // Act & Assert
         act.Should().Throw<ArgumentException>()
@@ -48,8 +48,8 @@ public sealed class ErrorTests
         string message, string? code)
     {
         // Arrange
-        TestError sut = new(message, code);
-        TestError error = new(message, code);
+        Error sut = new(message, code);
+        Error error = new(message, code);
 
         // Act
         bool result = sut.Equals(error);
@@ -71,8 +71,8 @@ public sealed class ErrorTests
         string message, string? code)
     {
         // Arrange
-        TestError sut = new(message, code);
-        TestError[] errors = [
+        Error sut = new(message, code);
+        Error[] errors = [
             new($"{message}Test", code),
             new(message, $"{code}Test"),
             new($"{message}Test", $"{code}Test"),
@@ -96,7 +96,7 @@ public sealed class ErrorTests
     public void Equals_TypeNotErrorBase_ReturnsFalse()
     {
         // Arrange
-        TestError sut = new("Test error");
+        Error sut = new("Test error");
         object other = new();
 
         // Act
@@ -104,11 +104,5 @@ public sealed class ErrorTests
 
         // Assert
         result.Should().BeFalse();
-    }
-
-    private sealed class TestError(string message, string? code = null)
-        : Error(message, code)
-    {
-        // Intentionally blank
     }
 }

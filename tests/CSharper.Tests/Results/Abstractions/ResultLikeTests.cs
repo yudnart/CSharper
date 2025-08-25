@@ -26,11 +26,11 @@ public sealed class ResultLikeTests
         ResultLike result = sut;
         if (expected.IsSuccess)
         {
-            TestUtility.AssertSuccessResult(result.Value);
+            TestUtility.AssertSuccess(result.Value);
         }
         else
         {
-            TestUtility.AssertFailureResult(result.Value, expected.Error);
+            TestUtility.AssertFailure(result.Value, expected.Error);
         }
     }
 

@@ -10,15 +10,27 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="AppContext\**" />
     <Compile Remove="Functional\**" />
     <Compile Remove="Mediator\**" />
     <Compile Remove="Results\**" />
+    <EmbeddedResource Remove="AppContext\**" />
     <EmbeddedResource Remove="Functional\**" />
     <EmbeddedResource Remove="Mediator\**" />
     <EmbeddedResource Remove="Results\**" />
+    <None Remove="AppContext\**" />
     <None Remove="Functional\**" />
     <None Remove="Mediator\**" />
     <None Remove="Results\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Results\Abstractions\ResultBaseTests.cs" />
+    <Compile Include="Results\Abstractions\ResultLikeTests.cs" />
+    <Compile Include="Results\ResultTestData.cs" />
+    <Compile Include="Results\ResultTests.cs" />
+    <Compile Include="Results\ResultTestUtility.cs" />
+    <Compile Include="Results\ResultTTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

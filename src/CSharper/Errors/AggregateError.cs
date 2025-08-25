@@ -40,27 +40,6 @@ public class AggregateError : Error
     }
 
     /// <summary>
-    /// Creates and returns a StringBuilder with the string representation of the error, including nested errors.
-    /// </summary>
-    protected override StringBuilder GetStringBuilder()
-    {
-        StringBuilder sb = base.GetStringBuilder();
-        foreach (Error detail in Details)
-        {
-            sb.AppendLine();
-            sb.Append(IndentMarker)
-                .Append(' ')
-                .Append(detail.ToString());
-        }
-        return sb;
-    }
-
-    /// <summary>
-    /// Determines whether the specified object is equal to the current error.
-    /// </summary>
-    public override bool Equals(object? obj) => Equals(obj as AggregateError);
-
-    /// <summary>
     /// Determines whether the specified error is equal to the current error.
     /// </summary>
     public bool Equals(AggregateError? other)
@@ -69,9 +48,15 @@ public class AggregateError : Error
         {
             return false;
         }
-        
-        return base.Equals(other) && Details.SequenceEqual(other.Details);
+
+        return base.Equals(other) 
+            && Details.SequenceEqual(other.Details);
     }
+
+    /// <summary>
+    /// Determines whether the specified object is equal to the current error.
+    /// </summary>
+    public override bool Equals(object? obj) => Equals(obj as AggregateError);
 
     /// <summary>
     /// Returns a hash code for the current error.
@@ -87,5 +72,21 @@ public class AggregateError : Error
             }
             return hash;
         }
+    }
+
+    /// <summary>
+    /// Creates and returns a StringBuilder with the string representation of the error, including nested errors.
+    /// </summary>
+    protected override StringBuilder StringFormatBuilder()
+    {
+        StringBuilder sb = base.StringFormatBuilder();
+        foreach (Error detail in Details)
+        {
+            sb.AppendLine();
+            sb.Append(IndentMarker)
+                .Append(' ')
+                .Append(detail.ToString());
+        }
+        return sb;
     }
 }

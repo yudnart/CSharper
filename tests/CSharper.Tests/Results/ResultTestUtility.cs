@@ -7,105 +7,44 @@ namespace CSharper.Tests.Results;
 
 public static class ResultTestUtility
 {
-    public static void AssertFailureResult(ResultBase result, Error? error = null)
+    public static void AssertSuccess(ResultBase result)
     {
-        Assert.Multiple(() =>
-        {
-            AssertFailureResultInternal(result, error);
-        });
+        Assert.Multiple(() => AssertSuccessCommon(result));
     }
 
-    public static void AssertFailureResult<T>(Result<T> result, Error? error = null)
+    public static void AssertSuccess<T>(Result<T> result, T value)
     {
         Assert.Multiple(() =>
         {
-            AssertFailureResultInternal(result, error);
-
-            Action getValue = () => _ = result.Value;
-            getValue.Should().
-                ThrowExactly<InvalidOperationException>()
-                .And.Message.Should().NotBeNullOrWhiteSpace();
-        });
-    }
-
-    public static void AssertFailureResult(
-        ResultBase result, params string[] detailMessages)
-    {
-        Assert.Multiple(() =>
-        {
-            AssertFailureResultInternal(result, detailMessages);
-        });
-    }
-
-    public static void AssertFailureResult<T>(
-        Result<T> result, params string[] detailMessages)
-    {
-        Assert.Multiple(() =>
-        {
-            AssertFailureResultInternal(result, detailMessages);
-
-            Action getValue = () => _ = result.Value;
-            getValue.Should().
-                ThrowExactly<InvalidOperationException>()
-                .And.Message.Should().NotBeNullOrWhiteSpace();
-        });
-    }
-
-    public static void AssertSuccessResult(ResultBase result)
-    {
-        Assert.Multiple(() =>
-        {
-            AssertSuccessResultInternal(result);
-        });
-    }
-
-    public static void AssertSuccessResult<T>(Result<T> result, T value)
-    {
-        Assert.Multiple(() =>
-        {
-            AssertSuccessResultInternal(result);
+            AssertSuccessCommon(result);
             result.Value.Should().Be(value);
+        });
+    }
+
+    public static void AssertFailure(ResultBase result, Error? error = null)
+    {
+        Assert.Multiple(() =>
+        {
+            AssertFailureCommon(result, error);
+        });
+    }
+
+    public static void AssertFailure<T>(Result<T> result, Error? error = null)
+    {
+        Assert.Multiple(() =>
+        {
+            AssertFailureCommon(result, error);
+
+            Action getValue = () => _ = result.Value;
+            getValue.Should().
+                ThrowExactly<InvalidOperationException>()
+                .And.Message.Should().NotBeNullOrWhiteSpace();
         });
     }
 
     #region Internal
 
-    private static void AssertFailureResultCommon(ResultBase result)
-    {
-        result.Should().NotBeNull();
-        result.IsSuccess.Should().BeFalse();
-        result.IsFailure.Should().BeTrue();
-        result.Error.Should().NotBeNull();
-    }
-
-    private static void AssertFailureResultInternal(ResultBase result, Error? error)
-    {
-        AssertFailureResultCommon(result);
-
-        if (error != null)
-        {
-            result.Error.Should().Be(error);
-            result.Error.Message.Should().Be(error.Message);
-            result.Error.Code.Should().Be(error.Code);
-            result.Error.ErrorDetails.Should()
-                .ContainInOrder(error.ErrorDetails);
-        }
-    }
-
-    private static void AssertFailureResultInternal(
-        ResultBase result, params string[] detailMessages)
-    {
-        AssertFailureResultCommon(result);
-
-        if (detailMessages?.Length > 0)
-        {
-            result.Error!.ErrorDetails
-                .Select(e => e.Message)
-                .Should().ContainInOrder(detailMessages);
-        }
-    }
-
-    private static void AssertSuccessResultInternal(ResultBase result)
+    private static void AssertSuccessCommon(ResultBase result)
     {
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeTrue();
@@ -115,6 +54,20 @@ public static class ResultTestUtility
         getError.Should()
             .ThrowExactly<InvalidOperationException>()
             .And.Message.Should().NotBeNullOrWhiteSpace();
+    }
+
+    private static void AssertFailureCommon(ResultBase result, Error? error)
+    {
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().NotBeNull();
+
+
+        if (error != null)
+        {
+            result.Error.Should().Be(error);
+        }
     }
 
     #endregion

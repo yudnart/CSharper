@@ -5,18 +5,15 @@ namespace CSharper.Tests.Errors;
 
 public static class ErrorTestUtility
 {
-    public static void AssertError(Error error, string message, string? code)
+    public static void AssertError(Error error, string code, string? message)
     {
-        Assert.Multiple(() =>
-        {
-            AssertErrorInternal(error, message, code);
-        });
+        Assert.Multiple(() => AssertErrorCommon(error, code, message));
     }
 
-    private static void AssertErrorInternal(Error error, string message, string? code)
+    private static void AssertErrorCommon(Error error, string code, string? message)
     {
         error.Should().NotBeNull();
-        error.Message.Should().Be(message);
         error.Code.Should().Be(code);
+        error.Message.Should().Be(message);
     }
 }
