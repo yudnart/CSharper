@@ -177,9 +177,6 @@ jobs:
         shell: pwsh
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/test-results-action@v1
         with:
-          files: ./coverage/*.opencover.xml
           token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
-          verbose: true
