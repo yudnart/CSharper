@@ -1,5 +1,8 @@
 ﻿using CSharper.Extensions;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace CSharper.Errors;
@@ -23,16 +26,23 @@ public class Error : IEquatable<Error>
     public string? Message { get; }
 
     /// <summary>
+    /// Gets the optional context data associated with the error.
+    /// </summary>
+    /// <value>A read-only dictionary containing key-value pairs of error context, or an empty dictionary if not specified.</value>
+    public Dictionary<string, object?> Data { get; } = [];
+
+    /// <summary>
     /// Initializes a new instance of <see cref="Error"/> with a required code and optional message.
     /// </summary>
     /// <param name="code">The required error code for identification.</param>
     /// <param name="message">The optional descriptive message of the error. Defaults to null.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="code"/> is null, empty, or whitespace.</exception>
-    public Error(string code, string? message = null)
+    public Error(string code, string? message = null, object? data = null)
     {
         code.ThrowIfNullOrWhitespace(nameof(code));
         Code = code;
         Message = message?.Trim();
+        Data = ToDictionary(data) ?? [];
         _cachedToString = new Lazy<string>(() => StringFormatBuilder().ToString());
     }
 
@@ -54,7 +64,10 @@ public class Error : IEquatable<Error>
             return false;
         }
 
-        return Code == other.Code && Message == other.Message;
+        return Code == other.Code
+            && Message == other.Message
+            && Data.Count == other.Data.Count
+            && Data.All(kvp => other.Data.TryGetValue(kvp.Key, out object? otherValue) && Equals(kvp.Value, otherValue));
     }
 
     /// <summary>
@@ -81,6 +94,36 @@ public class Error : IEquatable<Error>
             sb.Append($", Message={Message}");
         }
         return sb;
+    }
+
+    /// <summary>
+    /// Converts an object to a dictionary, handling dictionaries and anonymous objects.
+    /// </summary>
+    /// <param name="data">The object to convert.</param>
+    /// <returns>A dictionary containing the object's key-value pairs, or null if the input is null.</returns>
+    private static Dictionary<string, object?>? ToDictionary(object? data)
+    {
+        if (data == null)
+        {
+            return null;
+        }
+
+        if (data is IDictionary<string, object> dictionary)
+        {
+            return new Dictionary<string, object>(dictionary);
+        }
+
+        // Handle anonymous objects using reflection
+        PropertyInfo[] properties = data
+            .GetType()
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+        Dictionary<string, object?> result = [];
+        foreach (PropertyInfo prop in properties)
+        {
+            result[prop.Name] = prop.GetValue(data);
+        }
+        return result;
     }
 
     /// <inheritdoc/>
