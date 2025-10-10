@@ -1,4 +1,4 @@
-﻿using CSharper.Errors;
+using CSharper.Errors;
 using CSharper.Extensions;
 using CSharper.Results;
 using System;
@@ -251,4 +251,35 @@ public static class ResultTExtensions
         }
         return result;
     }
+
+    #region Ensure helpers
+
+    /// <summary>
+    /// Ensures an additional predicate holds for a successful result; otherwise returns failure.
+    /// </summary>
+    public static Result<T> Ensure<T>(this Result<T> result, Func<T, bool> predicate, Error error)
+    {
+        predicate.ThrowIfNull(nameof(predicate));
+        error.ThrowIfNull(nameof(error));
+        if (result.IsFailure)
+        {
+            return result;
+        }
+        return predicate(result.Value) ? result : Result.Fail<T>(error);
+    }
+
+    /// <summary>
+    /// Ensures the value is not null for class types; otherwise returns failure.
+    /// </summary>
+    public static Result<T> EnsureNotNull<T>(this Result<T?> result, Error error) where T : class
+    {
+        error.ThrowIfNull(nameof(error));
+        if (result.IsFailure)
+        {
+            return result!;
+        }
+        return result.Value is null ? Result.Fail<T>(error) : result!;
+    }
+
+    #endregion
 }

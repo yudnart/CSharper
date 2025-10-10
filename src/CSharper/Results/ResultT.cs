@@ -1,4 +1,4 @@
-﻿using CSharper.Errors;
+using CSharper.Errors;
 using CSharper.Extensions;
 using CSharper.Results.Abstractions;
 using System;
@@ -64,7 +64,7 @@ public sealed class Result<TValue> : ResultBase
 
     /// <inheritdoc/>
     protected override StringBuilder ErrorFormatBuilder(Error error) =>
-        new($"{GetType().GetFriendlyTypeName()}: {Error}");
+        new($"{GetType().GetFriendlyTypeName()}: {error}");
 
     /// <summary>
     /// Creates a successful <see cref="Result{TValue}"/> instance with the specified value.

@@ -1,4 +1,4 @@
-﻿using CSharper.Extensions;
+using CSharper.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,21 +28,25 @@ public class Error : IEquatable<Error>
     /// <summary>
     /// Gets the optional context data associated with the error.
     /// </summary>
-    /// <value>A read-only dictionary containing key-value pairs of error context, or an empty dictionary if not specified.</value>
-    public Dictionary<string, object?> Data { get; } = [];
+    /// <value>
+    /// A read-only dictionary containing key-value pairs of error context,
+    /// or an empty dictionary if not specified.
+    /// </value>
+    public IReadOnlyDictionary<string, object?> Data { get; }
 
     /// <summary>
     /// Initializes a new instance of <see cref="Error"/> with a required code and optional message.
     /// </summary>
     /// <param name="code">The required error code for identification.</param>
     /// <param name="message">The optional descriptive message of the error. Defaults to null.</param>
+    /// <param name="data">Optional structured context to attach to the error (anonymous object or dictionary).</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="code"/> is null, empty, or whitespace.</exception>
     public Error(string code, string? message = null, object? data = null)
     {
         code.ThrowIfNullOrWhitespace(nameof(code));
         Code = code;
         Message = message?.Trim();
-        Data = ToDictionary(data) ?? [];
+        Data = ToDictionary(data) ?? new Dictionary<string, object?>();
         _cachedToString = new Lazy<string>(() => StringFormatBuilder().ToString());
     }
 
@@ -108,9 +112,19 @@ public class Error : IEquatable<Error>
             return null;
         }
 
+        // Support both nullable and non-nullable object-valued dictionaries
+        if (data is IDictionary<string, object?> nullableDictionary)
+        {
+            return new Dictionary<string, object?>(nullableDictionary);
+        }
         if (data is IDictionary<string, object> dictionary)
         {
-            return new Dictionary<string, object>(dictionary);
+            Dictionary<string, object?> converted = new();
+            foreach (KeyValuePair<string, object> kvp in dictionary)
+            {
+                converted[kvp.Key] = kvp.Value;
+            }
+            return converted;
         }
 
         // Handle anonymous objects using reflection
@@ -133,4 +147,38 @@ public class Error : IEquatable<Error>
     /// <inheritdoc/>
     public static bool operator !=(Error? left, Error? right) 
         => !Equals(left, right);
+
+    /// <summary>
+    /// Creates a new <see cref="Error"/> instance using the provided components.
+    /// </summary>
+    /// <param name="code">The required error code for identification.</param>
+    /// <param name="message">Optional human-readable message.</param>
+    /// <param name="data">Optional structured context to attach.</param>
+    public static Error With(string code, string? message = null, object? data = null) => new(code, message, data);
+
+    /// <summary>
+    /// Creates an <see cref="Error"/> from an <see cref="Exception"/>.
+    /// </summary>
+    /// <param name="ex">The exception to convert.</param>
+    /// <param name="code">The error code to use. Defaults to "Exception".</param>
+    /// <param name="data">Optional structured context to attach.</param>
+    public static Error FromException(Exception ex, string code = "Exception", object? data = null)
+    {
+        ex.ThrowIfNull(nameof(ex));
+        Dictionary<string, object?> ctx = new()
+        {
+            ["ExceptionType"] = ex.GetType().FullName,
+            ["Message"] = ex.Message,
+            ["StackTrace"] = ex.StackTrace
+        };
+        Dictionary<string, object?>? extra = ToDictionary(data);
+        if (extra != null)
+        {
+            foreach (KeyValuePair<string, object?> kv in extra)
+            {
+                ctx[kv.Key] = kv.Value;
+            }
+        }
+        return new Error(code, ex.Message, ctx);
+    }
 }

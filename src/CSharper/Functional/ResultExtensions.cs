@@ -1,4 +1,4 @@
-﻿using CSharper.Errors;
+using CSharper.Errors;
 using CSharper.Extensions;
 using CSharper.Results;
 using System;
@@ -203,4 +203,39 @@ public static class ResultExtensions
         }
         return result;
     }
+
+    #region Ensure/Try helpers
+
+    /// <summary>
+    /// Ensures an additional predicate holds for a successful result, otherwise maps to failure.
+    /// </summary>
+    public static Result Ensure(this Result result, Func<bool> predicate, Error error)
+    {
+        predicate.ThrowIfNull(nameof(predicate));
+        error.ThrowIfNull(nameof(error));
+        if (result.IsFailure)
+        {
+            return result;
+        }
+        return predicate() ? result : Result.Fail(error);
+    }
+
+    /// <summary>
+    /// Executes a function and captures exceptions as an Error via mapper.
+    /// </summary>
+    public static Result<T> Try<T>(Func<T> thunk, Func<Exception, Error> map)
+    {
+        thunk.ThrowIfNull(nameof(thunk));
+        map.ThrowIfNull(nameof(map));
+        try
+        {
+            return Result.Ok(thunk());
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail<T>(map(ex));
+        }
+    }
+
+    #endregion
 }

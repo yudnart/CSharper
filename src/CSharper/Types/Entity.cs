@@ -1,4 +1,4 @@
-﻿using CSharper.Extensions;
+using CSharper.Extensions;
 using CSharper.Extensions.Internal;
 using CSharper.Types.Proxy;
 using System;
@@ -34,7 +34,7 @@ public abstract class Entity<TId> : IEntity
 
     #region Events
 
-    private readonly Queue<DomainEvent> _evenStore = [];
+    private readonly Queue<DomainEvent> _eventStore = [];
 
     /// <summary>
     /// Queues a domain event to be dispatched.
@@ -43,7 +43,7 @@ public abstract class Entity<TId> : IEntity
     protected void QueueEvent(DomainEvent @event)
     {
         @event.ThrowIfNull(nameof(@event));
-        _evenStore.Enqueue(@event);
+        _eventStore.Enqueue(@event);
     }
 
     /// <summary>
@@ -52,7 +52,7 @@ public abstract class Entity<TId> : IEntity
     /// <returns>An enumerable of domain events.</returns>
     public IEnumerable<DomainEvent> FlushEvents()
     {
-        while (_evenStore.TryDequeueCommon(out DomainEvent? result))
+        while (_eventStore.TryDequeueCommon(out DomainEvent? result))
         {
             yield return result!;
         }

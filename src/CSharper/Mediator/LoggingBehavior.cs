@@ -1,4 +1,4 @@
-﻿using CSharper.Errors;
+using CSharper.Errors;
 using CSharper.Extensions;
 using CSharper.Functional;
 using CSharper.RequestContext;
@@ -86,6 +86,10 @@ internal sealed class LoggingBehavior : IBehavior
     {
         try
         {
+            // Prepare scope properties and open a scope for the full request lifetime
+            Dictionary<string, object?> scopeProperties = BuildScopeProperties(request);
+            using IDisposable? scope = _logger.BeginScope(scopeProperties);
+
             // Log request start
             LogRequest(request);
 
@@ -151,11 +155,24 @@ internal sealed class LoggingBehavior : IBehavior
             requestJson = request.ToString() ?? _notApplicable;
         }
 
-        // Prepare log properties
+        // Log with structured properties; include the serialized request in a nested scope
+        using (_logger.BeginScope(new Dictionary<string, object?>
+        {
+            { _request, requestJson }
+        }))
+        {
+            _logger.LogInformation(_requestProcessing, request.GetType().Name);
+        }
+    }
+
+    /// <summary>
+    /// Builds structured scope properties for the request and optional context.
+    /// </summary>
+    private Dictionary<string, object?> BuildScopeProperties(IRequest request)
+    {
         Dictionary<string, object?> logProperties = new()
         {
-            { _requestType, request.GetType().Name },
-            { _request, requestJson }
+            { _requestType, request.GetType().Name }
         };
 
         // Add app context properties or generate correlation ID
@@ -182,11 +199,7 @@ internal sealed class LoggingBehavior : IBehavior
             logProperties.Add(nameof(IRequestContext.CorrelationId), _correlationId);
         }
 
-        // Log with structured properties
-        using (_logger.BeginScope(logProperties))
-        {
-            _logger.LogInformation(_requestProcessing, request.GetType().Name);
-        }
+        return logProperties;
     }
 
     /// <summary>

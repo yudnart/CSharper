@@ -1,4 +1,4 @@
-﻿using CSharper.Errors;
+using CSharper.Errors;
 using CSharper.Extensions;
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -103,7 +103,7 @@ public abstract class ResultBase
     /// Ensure the implementation is efficient to maintain performance in logging scenarios.
     /// </remarks>
     protected virtual StringBuilder ErrorFormatBuilder(Error error) =>
-        new($"{GetType().GetFriendlyTypeName()}: {Error}");
+        new($"{GetType().GetFriendlyTypeName()}: {error}");
 
     /// <summary>
     /// Returns a string representation of the result.
