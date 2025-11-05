@@ -129,7 +129,7 @@ jobs:
               $OUTPUT_FILE = "test-output-$($PROJ.BaseName).txt"
               if ($USE_PARALLEL -eq "true") {
                 # Parallel execution
-                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --settings tests/parallel.runsettings --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage > $OUTPUT_FILE
+                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage > $OUTPUT_FILE
               } else {
                 # Sequential execution
                 dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --framework net48 --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage > $OUTPUT_FILE
@@ -154,7 +154,7 @@ jobs:
               }
             } elseif ($LOG_MODE -eq "minimal") {
               if ($USE_PARALLEL -eq "true") {
-                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --settings tests/parallel.runsettings --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage
+                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage
               } else {
                 dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net48 --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage
                 if ($LASTEXITCODE -eq 0) {
@@ -164,7 +164,7 @@ jobs:
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             } else {
               if ($USE_PARALLEL -eq "true") {
-                dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --settings tests/parallel.runsettings --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage
+                dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage
               } else {
                 dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --framework net48 --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage
                 if ($LASTEXITCODE -eq 0) {
@@ -180,3 +180,6 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/**/coverage.cobertura.xml
+          fail_ci_if_error: false
+          verbose: true
