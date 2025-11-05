@@ -1,8 +1,5 @@
 ﻿using CSharper.Extensions;
 using FluentAssertions;
-using System;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace CSharper.Tests.Extensions;
 

@@ -94,7 +94,7 @@ public sealed class ResultLikeTests
         Result test1 = Result.Ok();
         Result test2 = Result.Fail(ErrorTestData.Error);
         Result<int> test3 = Result.Ok(42);
-        Result<string> test4 = Result.Fail<string>(code: "Error");
+        Result<string> test4 = Result.Fail<string>("Error");
 
         return new TheoryData<ResultBase>
         {

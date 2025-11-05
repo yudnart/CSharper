@@ -33,7 +33,7 @@ public static class NHibernateProxyTypeHelper
     {
         ProxyTypeHelper.ConfigureGetUnproxiedTypeDelegate(obj =>
         {
-            obj.ThrowIfNull(nameof(obj));
+            Guard.ThrowIfNull(obj, nameof(obj));
 
             Type type = obj.GetType();
             string typeString = type.ToString();

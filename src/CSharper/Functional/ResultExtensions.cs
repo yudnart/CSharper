@@ -29,7 +29,7 @@ public static class ResultExtensions
     /// </example>
     public static Result Bind(this Result result, Func<Result> next)
     {
-        next.ThrowIfNull(nameof(next));
+        Guard.ThrowIfNull(next, nameof(next));
         return result.IsSuccess ? next() : result;
     }
 
@@ -50,7 +50,7 @@ public static class ResultExtensions
     /// </example>
     public static Result<T> Bind<T>(this Result result, Func<Result<T>> next)
     {
-        next.ThrowIfNull(nameof(next));
+        Guard.ThrowIfNull(next, nameof(next));
         return result.IsSuccess ? next() : result.MapError<T>();
     }
 
@@ -96,7 +96,7 @@ public static class ResultExtensions
     /// </example>
     public static T? Match<T>(this Result result, Func<T> onSuccess)
     {
-        onSuccess.ThrowIfNull(nameof(onSuccess));
+        Guard.ThrowIfNull(onSuccess, nameof(onSuccess));
         return result.IsSuccess ? onSuccess() : default;
     }
 
@@ -119,8 +119,8 @@ public static class ResultExtensions
     /// </example>
     public static T Match<T>(this Result result, Func<T> onSuccess, Func<Error, T> onFailure)
     {
-        onSuccess.ThrowIfNull(nameof(onSuccess));
-        onFailure.ThrowIfNull(nameof(onFailure));
+        Guard.ThrowIfNull(onSuccess, nameof(onSuccess));
+        Guard.ThrowIfNull(onFailure, nameof(onFailure));
 
         if (result.IsFailure && result.Error == null)
         {
@@ -146,7 +146,7 @@ public static class ResultExtensions
     /// </example>
     public static Result Recover(this Result result, Action<Error> onFailure)
     {
-        onFailure.ThrowIfNull(nameof(onFailure));
+        Guard.ThrowIfNull(onFailure, nameof(onFailure));
         if (result.IsSuccess)
         {
             return result;
@@ -172,7 +172,7 @@ public static class ResultExtensions
     /// </example>
     public static Result Tap(this Result result, Action action)
     {
-        action.ThrowIfNull(nameof(action));
+        Guard.ThrowIfNull(action, nameof(action));
         if (result.IsSuccess)
         {
             action();
@@ -196,7 +196,7 @@ public static class ResultExtensions
     /// </example>
     public static Result TapError(this Result result, Action<Error> action)
     {
-        action.ThrowIfNull(nameof(action));
+        Guard.ThrowIfNull(action, nameof(action));
         if (result.IsFailure)
         {
             action(result.Error!);

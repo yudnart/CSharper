@@ -32,7 +32,7 @@ public static class ProxyTypeHelper
     /// </example>
     public static void ConfigureGetUnproxiedTypeDelegate(Func<object, Type> getUnproxiedTypeDelegate)
     {
-        getUnproxiedTypeDelegate.ThrowIfNull(nameof(getUnproxiedTypeDelegate));
+        Guard.ThrowIfNull(getUnproxiedTypeDelegate, nameof(getUnproxiedTypeDelegate));
         _getUnproxiedTypeDelegate = getUnproxiedTypeDelegate;
     }
 
@@ -72,7 +72,7 @@ public static class ProxyTypeHelper
     /// </example>
     public static Type GetUnproxiedType(object obj)
     {
-        obj.ThrowIfNull(nameof(obj));
+        Guard.ThrowIfNull(obj, nameof(obj));
         return _getUnproxiedTypeDelegate(obj);
     }
 }

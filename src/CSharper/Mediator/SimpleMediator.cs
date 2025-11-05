@@ -49,7 +49,7 @@ internal sealed class SimpleMediator : IMediator
     /// <inheritdoc />
     public Task<Result> Send(IRequest request, CancellationToken cancellationToken = default)
     {
-        request.ThrowIfNull(nameof(request));
+        Guard.ThrowIfNull(request, nameof(request));
         return ExecutePipeline(request, cancellationToken);
     }
 
@@ -57,14 +57,31 @@ internal sealed class SimpleMediator : IMediator
     public Task<Result<TValue>> Send<TValue>(
         IRequest<TValue> request, CancellationToken cancellationToken = default)
     {
-        request.ThrowIfNull(nameof(request));
+        Guard.ThrowIfNull(request, nameof(request));
         return ExecutePipeline(request, cancellationToken);
     }
 
     #region Internal
 
+    /// <summary>
+    /// Builds the behavior pipeline by wrapping behaviors around the handler in reverse order.
+    /// </summary>
+    /// <param name="handle">The final handler delegate to be wrapped by behaviors.</param>
+    /// <param name="behaviors">The array of behaviors in the order they should execute.</param>
+    /// <returns>A delegate representing the complete pipeline.</returns>
+    /// <remarks>
+    /// The pipeline is built inside-out by reversing the behaviors array. This ensures that:
+    /// - The first behavior in the array executes first (outermost layer)
+    /// - The last behavior executes last (innermost layer, just before the handler)
+    /// - The handler executes last (core)
+    /// 
+    /// Example: Given behaviors [A, B, C] and handler H, the execution order is: A -> B -> C -> H
+    /// This is achieved by building the pipeline as: A(B(C(H)))
+    /// </remarks>
     private static BehaviorDelegate BuildPipeline(BehaviorDelegate handle, IBehavior<IRequest>[] behaviors)
     {
+        // Reverse the behaviors to build the pipeline inside-out
+        // This ensures behaviors execute in registration order (first registered, first executed)
         foreach (IBehavior<IRequest> behavior in behaviors.Reverse())
         {
             BehaviorDelegate prev = handle;

@@ -1,5 +1,6 @@
 ﻿using CSharper.Extensions;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -36,10 +37,11 @@ public class Error : IEquatable<Error>
     /// </summary>
     /// <param name="code">The required error code for identification.</param>
     /// <param name="message">The optional descriptive message of the error. Defaults to null.</param>
+    /// <param name="data">Provide optional context data for the error.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="code"/> is null, empty, or whitespace.</exception>
     public Error(string code, string? message = null, object? data = null)
     {
-        code.ThrowIfNullOrWhitespace(nameof(code));
+        Guard.ThrowIfNullOrWhitespace(code, nameof(code));
         Code = code;
         Message = message?.Trim();
         Data = ToDictionary(data) ?? [];
@@ -104,26 +106,32 @@ public class Error : IEquatable<Error>
     private static Dictionary<string, object?>? ToDictionary(object? data)
     {
         if (data == null)
-        {
             return null;
-        }
 
-        if (data is IDictionary<string, object> dictionary)
+        // Handle any dictionary-like structure that implements IEnumerable<KeyValuePair<string, object?>>
+        if (data is IEnumerable<KeyValuePair<string, object?>> kvps1)
         {
-            return new Dictionary<string, object>(dictionary);
+            return kvps1.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }
 
-        // Handle anonymous objects using reflection
-        PropertyInfo[] properties = data
-            .GetType()
-            .GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-        Dictionary<string, object?> result = [];
-        foreach (PropertyInfo prop in properties)
+        // Handle dictionaries with non-nullable object values
+        if (data is IEnumerable<KeyValuePair<string, object>> kvps2)
         {
-            result[prop.Name] = prop.GetValue(data);
+            return kvps2.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value);
         }
-        return result;
+
+        // Handle non-generic IDictionary (legacy types)
+        if (data is IDictionary dict)
+        {
+            return dict.Cast<DictionaryEntry>()
+                .Where(e => e.Key is string)
+                .ToDictionary(e => (string)e.Key, e => e.Value)!;
+        }
+
+        // Handle POCOs and anonymous objects via reflection
+        return data.GetType()
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .ToDictionary(prop => prop.Name, prop => prop.GetValue(data))!;
     }
 
     /// <inheritdoc/>

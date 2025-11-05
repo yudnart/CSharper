@@ -113,7 +113,7 @@ internal sealed class LoggingBehavior : IBehavior
     /// <param name="error">The errors causing the failure.</param>
     private void LogFailure(IRequest request, Error error)
     {
-        error.ThrowIfNull(nameof(error));
+        Guard.ThrowIfNull(error, nameof(error));
         _logger.LogWarning(
             _requestFailedWithErrors, request.GetType().Name, error);
     }

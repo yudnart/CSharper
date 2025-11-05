@@ -30,7 +30,7 @@ public static class ResultTExtensions
     /// </example>
     public static Result Bind<T>(this Result<T> result, Func<T, Result> next)
     {
-        next.ThrowIfNull(nameof(next));
+        Guard.ThrowIfNull(next, nameof(next));
         return result.IsSuccess ? next(result.Value) : result.MapError();
     }
 
@@ -52,7 +52,7 @@ public static class ResultTExtensions
     /// </example>
     public static Result<U> Bind<T, U>(this Result<T> result, Func<T, Result<U>> next)
     {
-        next.ThrowIfNull(nameof(next));
+        Guard.ThrowIfNull(next, nameof(next));
         return result.IsSuccess ? next(result.Value) : result.MapError<T, U>();
     }
 
@@ -74,7 +74,7 @@ public static class ResultTExtensions
     /// </example>
     public static Result<U> Map<T, U>(this Result<T> result, Func<T, U> transform)
     {
-        transform.ThrowIfNull(nameof(transform));
+        Guard.ThrowIfNull(transform, nameof(transform));
         return result.IsSuccess
             ? Result.Ok(transform(result.Value))
             : result.MapError<T, U>();
@@ -149,7 +149,7 @@ public static class ResultTExtensions
     /// </example>
     public static U? Match<T, U>(this Result<T> result, Func<T, U> onSuccess)
     {
-        onSuccess.ThrowIfNull(nameof(onSuccess));
+        Guard.ThrowIfNull(onSuccess, nameof(onSuccess));
         return result.IsSuccess ? onSuccess(result.Value) : default;
     }
 
@@ -174,8 +174,8 @@ public static class ResultTExtensions
     public static U Match<T, U>(this Result<T> result,
         Func<T, U> onSuccess, Func<Error, U> onFailure)
     {
-        onSuccess.ThrowIfNull(nameof(onSuccess));
-        onFailure.ThrowIfNull(nameof(onFailure));
+        Guard.ThrowIfNull(onSuccess, nameof(onSuccess));
+        Guard.ThrowIfNull(onFailure, nameof(onFailure));
         return result.IsSuccess
             ? onSuccess(result.Value)
             : onFailure(result.Error!);
@@ -198,7 +198,7 @@ public static class ResultTExtensions
     /// </example>
     public static Result<T> Recover<T>(this Result<T> result, Func<Error, Result<T>> fallback)
     {
-        fallback.ThrowIfNull(nameof(fallback));
+        Guard.ThrowIfNull(fallback, nameof(fallback));
         return result.IsSuccess ? result : fallback(result.Error!);
     }
 
@@ -219,7 +219,7 @@ public static class ResultTExtensions
     /// </example>
     public static Result<T> Tap<T>(this Result<T> result, Action<T> action)
     {
-        action.ThrowIfNull(nameof(action));
+        Guard.ThrowIfNull(action, nameof(action));
         if (result.IsSuccess)
         {
             action(result.Value);
@@ -244,11 +244,42 @@ public static class ResultTExtensions
     /// </example>
     public static Result<T> TapError<T>(this Result<T> result, Action<Error> action)
     {
-        action.ThrowIfNull(nameof(action));
+        Guard.ThrowIfNull(action, nameof(action));
         if (result.IsFailure)
         {
             action(result.Error!);
         }
         return result;
+    }
+
+    /// <summary>
+    /// Validates a <see cref="Result{T}"/> value against a condition. If successful and the condition is true, returns the original result.
+    /// If successful but the condition is false, returns a failed result with the specified error.
+    /// </summary>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
+    /// <param name="result">The result to validate.</param>
+    /// <param name="predicate">The condition to evaluate with the value if <paramref name="result"/> is successful.</param>
+    /// <param name="errorCode">The error code to use if the condition fails.</param>
+    /// <param name="errorMessage">The optional error message to use if the condition fails.</param>
+    /// <returns>The original result if successful and the condition is true, or a failed result if the condition is false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="errorCode"/> is null or whitespace.</exception>
+    /// <example>
+    /// <code>
+    /// Result&lt;int&gt; result = Result.Ok(42);
+    /// Result&lt;int&gt; final = result.Ensure(x => x > 0, "INVALID_VALUE", "Value must be positive");
+    /// </code>
+    /// </example>
+    public static Result<T> Ensure<T>(this Result<T> result, Func<T, bool> predicate, string errorCode, string? errorMessage = null)
+    {
+        Guard.ThrowIfNull(predicate, nameof(predicate));
+        Guard.ThrowIfNullOrWhitespace(errorCode, nameof(errorCode));
+
+        if (result.IsFailure)
+            return result;
+
+        return predicate(result.Value)
+            ? result
+            : Result.Fail<T>(errorCode, errorMessage);
     }
 }

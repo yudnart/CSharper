@@ -3,6 +3,7 @@ using CSharper.Extensions;
 using CSharper.Results.Abstractions;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CSharper.Results;
 
@@ -28,13 +29,41 @@ public sealed partial class Result
     /// Creates a failed <see cref="Result"/> instance with an error constructed from the specified message and code.
     /// </summary>
     /// <param name="code">The descriptive message of the error.</param>
-    /// <param name="message">The optional error code for identification. Defaults to null.</param>
     /// <returns>A new <see cref="Result"/> representing a failed operation.</returns>
     /// <exception cref="ArgumentException">Thrown if <paramref name="code"/> is null, empty, or whitespace.</exception>
-    public static Result Fail(string code, string? message = null)
+    public static Result Fail(string code)
     {
-        code.ThrowIfNullOrWhitespace(nameof(code));
-        return Fail(new Error(code, message));
+        Guard.ThrowIfNullOrWhitespace(code, nameof(code));
+        return Fail(new Error(code));
+    }
+
+    /// <summary>
+    /// Create a failed <see cref="Result"/> instance within error constructed from the specified message and data.
+    /// </summary>
+    /// <param name="code">The descriptive message of the error.</param>
+    /// <param name="data">Provide optional context data for the error.</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="code"/> is null, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="data"/> is null.</exception>
+    public static Result Fail(string code, object data)
+    {
+        Guard.ThrowIfNullOrWhitespace(code, nameof(code));
+        Guard.ThrowIfNull(data, nameof(data));
+        return Fail(new Error(code, data: data));
+    }
+
+    /// <summary>
+    /// Creates a failed <see cref="Result"/> instance with an error constructed from the specified message and code.
+    /// </summary>
+    /// <param name="code">The descriptive message of the error.</param>
+    /// <param name="message">The optional error code for identification. Defaults to null.</param>
+    /// <param name="data">Provide optional context data for the error.</param>
+    /// <returns>A new <see cref="Result"/> representing a failed operation.</returns>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="code"/> is null, empty, or whitespace.</exception>
+    public static Result Fail(string code, string? message, object? data = null)
+    {
+        Guard.ThrowIfNullOrWhitespace(code, nameof(code));
+        return Fail(new Error(code, message, data));
     }
 
     #endregion
@@ -63,13 +92,164 @@ public sealed partial class Result
     /// </summary>
     /// <typeparam name="TValue">The type of the result value.</typeparam>
     /// <param name="code">The optional error code for identification. Defaults to null.</param>
+    /// <returns>A new <see cref="Result{T}"/> representing a failed operation.</returns>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="code"/> is null.</exception>
+    public static Result<TValue> Fail<TValue>(string code)
+    {
+        Guard.ThrowIfNullOrWhitespace(code, nameof(code));
+        return Fail<TValue>(new Error(code));
+    }
+
+    /// <summary>
+    /// Creates a failed <see cref="Result{T}"/> instance with an error constructed from the specified message and code.
+    /// </summary>
+    /// <typeparam name="TValue">The type of the result value.</typeparam>
+    /// <param name="code">The optional error code for identification. Defaults to null.</param>
+    /// <param name="data">Provide optional context data for the error.</param>
+    /// <returns>A new <see cref="Result{T}"/> representing a failed operation.</returns>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="code"/> is null, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="data"/> is null.</exception>
+    public static Result<TValue> Fail<TValue>(string code, object data)
+    {
+        Guard.ThrowIfNullOrWhitespace(code, nameof(code));
+        Guard.ThrowIfNull(data, nameof(data));
+        return Fail<TValue>(new Error(code, data: data));
+    }
+
+    /// <summary>
+    /// Creates a failed <see cref="Result{T}"/> instance with an error constructed from the specified message and code.
+    /// </summary>
+    /// <typeparam name="TValue">The type of the result value.</typeparam>
+    /// <param name="code">The optional error code for identification. Defaults to null.</param>
     /// <param name="message">The descriptive message of the error.</param>
+    /// <param name="data">Provide optional context data for the error.</param>
     /// <returns>A new <see cref="Result{T}"/> representing a failed operation.</returns>
     /// <exception cref="ArgumentException">Thrown if <paramref name="message"/> is null, empty, or whitespace.</exception>
-    public static Result<TValue> Fail<TValue>(string code, string? message = null)
+    public static Result<TValue> Fail<TValue>(string code, string? message, object? data = null)
     {
-        code.ThrowIfNullOrWhitespace(nameof(code));
-        return Fail<TValue>(new Error(code, message));
+        Guard.ThrowIfNullOrWhitespace(code, nameof(code));
+        return Fail<TValue>(new Error(code, message, data));
+    }
+
+    #endregion
+
+    #region Try
+
+    /// <summary>
+    /// Executes a function and returns a successful <see cref="Result"/> if no exception is thrown.
+    /// If an exception occurs, returns a failed <see cref="Result"/> with the exception details.
+    /// </summary>
+    /// <param name="action">The action to execute.</param>
+    /// <param name="errorCode">The error code to use if an exception occurs. Defaults to "EXCEPTION".</param>
+    /// <returns>A <see cref="Result"/> representing the outcome of the operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="action"/> is null.</exception>
+    public static Result Try(Action action, string errorCode = "EXCEPTION")
+    {
+        Guard.ThrowIfNull(action, nameof(action));
+        Guard.ThrowIfNullOrWhitespace(errorCode, nameof(errorCode));
+
+        try
+        {
+            action();
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return Fail(errorCode, ex.Message, new 
+            { 
+                ExceptionType = ex.GetType().Name, 
+                ex.StackTrace 
+            });
+        }
+    }
+
+    /// <summary>
+    /// Executes a function and returns a successful <see cref="Result{T}"/> with the result value if no exception is thrown.
+    /// If an exception occurs, returns a failed <see cref="Result{T}"/> with the exception details.
+    /// </summary>
+    /// <typeparam name="T">The type of the result value.</typeparam>
+    /// <param name="func">The function to execute.</param>
+    /// <param name="errorCode">The error code to use if an exception occurs. Defaults to "EXCEPTION".</param>
+    /// <returns>A <see cref="Result{T}"/> representing the outcome of the operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="func"/> is null.</exception>
+    public static Result<T> Try<T>(Func<T> func, string errorCode = "EXCEPTION")
+    {
+        Guard.ThrowIfNull(func, nameof(func));
+        Guard.ThrowIfNullOrWhitespace(errorCode, nameof(errorCode));
+
+        try
+        {
+            return Ok(func());
+        }
+        catch (Exception ex)
+        {
+            return Fail<T>(errorCode, ex.Message, new 
+            { 
+                ExceptionType = ex.GetType().Name, 
+                ex.StackTrace
+            });
+        }
+    }
+
+    #endregion
+
+    #region TryAsync
+
+    /// <summary>
+    /// Executes a function and returns a successful <see cref="Result"/> if no exception is thrown.
+    /// If an exception occurs, returns a failed <see cref="Result"/> with the exception details.
+    /// </summary>
+    /// <param name="action">The action to execute.</param>
+    /// <param name="errorCode">The error code to use if an exception occurs. Defaults to "EXCEPTION".</param>
+    /// <returns>A <see cref="Result"/> representing the outcome of the operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="action"/> is null.</exception>
+    public static async Task<Result> Try(Func<Task> action, string errorCode = "EXCEPTION")
+    {
+        Guard.ThrowIfNull(action, nameof(action));
+        Guard.ThrowIfNullOrWhitespace(errorCode, nameof(errorCode));
+
+        try
+        {
+            await action();
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return Fail(errorCode, ex.Message, new 
+            { 
+                ExceptionType = ex.GetType().Name, 
+                ex.StackTrace 
+            });
+        }
+    }
+
+    /// <summary>
+    /// Executes a function and returns a successful <see cref="Result{T}"/> with the result value if no exception is thrown.
+    /// If an exception occurs, returns a failed <see cref="Result{T}"/> with the exception details.
+    /// </summary>
+    /// <typeparam name="T">The type of the result value.</typeparam>
+    /// <param name="func">The function to execute.</param>
+    /// <param name="errorCode">The error code to use if an exception occurs. Defaults to "EXCEPTION".</param>
+    /// <returns>A <see cref="Result{T}"/> representing the outcome of the operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="func"/> is null.</exception>
+    public static async Task<Result<T>> Try<T>(Func<Task<T>> func, string errorCode = "EXCEPTION")
+    {
+        Guard.ThrowIfNull(func, nameof(func));
+        Guard.ThrowIfNullOrWhitespace(errorCode, nameof(errorCode));
+
+        try
+        {
+            T value = await func();
+            return Ok(value);
+        }
+        catch (Exception ex)
+        {
+            return Fail<T>(errorCode, ex.Message, new 
+            { 
+                ExceptionType = ex.GetType().Name, 
+                ex.StackTrace
+            });
+        }
     }
 
     #endregion
@@ -92,8 +272,8 @@ public sealed partial class Result
         string code = "AggregateError",
         string? message = null)
     {
-        results.ThrowIfNullOrEmpty(nameof(results));
-        code.ThrowIfNullOrWhitespace(nameof(code));
+        Guard.ThrowIfNullOrEmpty(results, nameof(results));
+        Guard.ThrowIfNullOrWhitespace(code, nameof(code));
 
         List<Error> errors = [];
 
@@ -126,8 +306,8 @@ public sealed partial class Result
         string code = "AggregateError", 
         string? message = "One or more operations failed.")
     {
-        code.ThrowIfNullOrWhitespace(nameof(code));
-        return new AggregateError(code, message, [.. errors]);
+        Guard.ThrowIfNullOrWhitespace(code, nameof(code));
+        return new AggregateError(code, message, details: [.. errors]);
     }
 
     #endregion

@@ -29,7 +29,7 @@ internal static class QueueExtensions
 #if NET8_0_OR_GREATER
         return queue.TryDequeue(out result);
 #else
-        queue.ThrowIfNull(nameof(queue));
+        Guard.ThrowIfNull(queue, nameof(queue));
 
         if (queue.Count == 0)
         {

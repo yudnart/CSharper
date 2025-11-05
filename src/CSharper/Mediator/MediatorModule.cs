@@ -19,7 +19,7 @@ public static class MediatorModule
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="services"/> is null.</exception>
     public static IServiceCollection AddSimpleMediator(this IServiceCollection services)
     {
-        services.ThrowIfNull(nameof(services));
+        Guard.ThrowIfNull(services, nameof(services));
         services.AddScoped<IMediator, SimpleMediator>();
         return services;
     }
@@ -39,7 +39,7 @@ public static class MediatorModule
     /// </remarks>
     public static IServiceCollection AddLoggingBehavior(this IServiceCollection services)
     {
-        services.ThrowIfNull(nameof(services));
+        Guard.ThrowIfNull(services, nameof(services));
         services.AddScoped<IBehavior, LoggingBehavior>();
         return services;
     }
@@ -55,7 +55,7 @@ public static class MediatorModule
     public static IServiceCollection AddLoggingBehavior<TContext>(this IServiceCollection services)
         where TContext : class, IRequestContext
     {
-        services.ThrowIfNull(nameof(services));
+        Guard.ThrowIfNull(services, nameof(services));
         services.TryAddScoped<IRequestContext, TContext>();
         services.AddScoped<IBehavior, LoggingBehavior>();
         return services;
@@ -73,8 +73,8 @@ public static class MediatorModule
         this IServiceCollection services, 
         Func<IServiceProvider, IRequestContext> requestContextFactory)
     {
-        services.ThrowIfNull(nameof(services));
-        requestContextFactory.ThrowIfNull(nameof(requestContextFactory));
+        Guard.ThrowIfNull(services, nameof(services));
+        Guard.ThrowIfNull(requestContextFactory, nameof(requestContextFactory));
         services.TryAddScoped(requestContextFactory);
         services.AddScoped<IBehavior, LoggingBehavior>();
         return services;

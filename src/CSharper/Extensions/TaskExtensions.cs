@@ -29,8 +29,8 @@ public static class TaskExtensions
     [DebuggerStepThrough]
     public static Task<T> Then<T>(this Task task, Func<T> next)
     {
-        task.ThrowIfNull(nameof(task));
-        next.ThrowIfNull(nameof(next));
+        Guard.ThrowIfNull(task, nameof(task));
+        Guard.ThrowIfNull(next, nameof(next));
         return task.ContinueWith(t =>
         {
             if (t.IsCanceled)
@@ -68,8 +68,8 @@ public static class TaskExtensions
     [DebuggerStepThrough]
     public static Task<U> Then<T, U>(this Task<T> task, Func<T, U> next)
     {
-        task.ThrowIfNull(nameof(task));
-        next.ThrowIfNull(nameof(next));
+        Guard.ThrowIfNull(task, nameof(task));
+        Guard.ThrowIfNull(next, nameof(next));
         return task.ContinueWith(t =>
         {
             if (t.IsCanceled)

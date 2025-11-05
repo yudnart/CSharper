@@ -24,16 +24,21 @@ public class AggregateError : Error
     /// <value>A read-only list of <see cref="Error"/> instances, never null.</value>
     public IReadOnlyList<Error> Details { get; }
 
+    /// <inheritdoc/>
     /// <summary>
     /// Initializes a new instance of <see cref="AggregateError"/> with a required code, optional message, and detailed errors.
     /// </summary>
     /// <param name="code">The required error code for identification.</param>
     /// <param name="message">The optional descriptive message of the error. Defaults to null.</param>
+    /// <param name="data">Provide optional context data for the error.</param>
     /// <param name="details">An array of detailed errors. Defaults to an empty array.</param>
     /// <exception cref="ArgumentException">Thrown if <paramref name="code"/> is null, empty, or whitespace.</exception>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="details"/> is null.</exception>
-    public AggregateError(string code, string? message = null, params Error[] details)
-        : base(code, message)
+    public AggregateError(
+        string code, 
+        string? message = null, 
+        object? data = null, params Error[] details)
+        : base(code, message, data)
     {
         details = details ?? throw new ArgumentNullException(nameof(details));
         Details = details.Length == 0 ? Array.Empty<Error>() : details.ToList().AsReadOnly();

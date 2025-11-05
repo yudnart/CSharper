@@ -42,7 +42,7 @@ public abstract class Entity<TId> : IEntity
     /// <param name="event">The domain event to be queued.</param>
     protected void QueueEvent(DomainEvent @event)
     {
-        @event.ThrowIfNull(nameof(@event));
+        Guard.ThrowIfNull(@event, nameof(@event));
         _evenStore.Enqueue(@event);
     }
 

@@ -9,6 +9,17 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
+  <!-- Coverlet Code Coverage Configuration -->
+  <PropertyGroup>
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>json,cobertura,lcov,opencover</CoverletOutputFormat>
+    <CoverletOutput>./coverage/</CoverletOutput>
+    <ExcludeByFile>**/*.Designer.cs,**/obj/**,**/bin/**</ExcludeByFile>
+    <ExcludeByAttribute>Obsolete,GeneratedCode,CompilerGenerated</ExcludeByAttribute>
+    <Exclude>[xunit.*]*,[*.Tests]*</Exclude>
+    <Include>[CSharper]*</Include>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="AppContext\**" />
     <Compile Remove="Functional\**" />
@@ -44,6 +55,10 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.msbuild" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

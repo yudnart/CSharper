@@ -12,27 +12,27 @@ on:
   workflow_call:
     inputs:
       branch:
-        description: 'Branch to test (e.g., main, feature/branch-name)'
+        description: "Branch to test (e.g., main, feature/branch-name)"
         required: false
         type: string
       log-mode:
-        description: 'Test logging mode: detailed, minimal, or failed-only'
+        description: "Test logging mode: detailed, minimal, or failed-only"
         required: false
-        default: 'failed-only'
+        default: "failed-only"
         type: string
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Branch to test (e.g., main, feature/branch-name)'
+        description: "Branch to test (e.g., main, feature/branch-name)"
         required: false
       log-mode:
-        description: 'Test logging mode: detailed, minimal, or failed-only'
+        description: "Test logging mode: detailed, minimal, or failed-only"
         required: false
-        default: 'failed-only'
+        default: "failed-only"
 
 jobs:
   main:
-    runs-on: windows-latest  # Required for net48
+    runs-on: windows-latest # Required for net48
 
     steps:
       - name: Checkout repository
@@ -129,13 +129,13 @@ jobs:
               $OUTPUT_FILE = "test-output-$($PROJ.BaseName).txt"
               if ($USE_PARALLEL -eq "true") {
                 # Parallel execution
-                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --settings tests/parallel.runsettings --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE > $OUTPUT_FILE
+                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --settings tests/parallel.runsettings --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage > $OUTPUT_FILE
               } else {
                 # Sequential execution
-                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --framework net48 --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE > $OUTPUT_FILE
+                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --framework net48 --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage > $OUTPUT_FILE
                 $EXIT_CODE_NET48 = $LASTEXITCODE
                 if ($EXIT_CODE_NET48 -eq 0) {
-                  dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --framework net8.0 --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE >> $OUTPUT_FILE
+                  dotnet test $PROJ --configuration Release --no-build --verbosity minimal --logger "console;verbosity=minimal" --framework net8.0 --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage >> $OUTPUT_FILE
                 }
               }
               $EXIT_CODE = $LASTEXITCODE
@@ -154,21 +154,21 @@ jobs:
               }
             } elseif ($LOG_MODE -eq "minimal") {
               if ($USE_PARALLEL -eq "true") {
-                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --settings tests/parallel.runsettings --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE
+                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --settings tests/parallel.runsettings --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage
               } else {
-                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net48 --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE
+                dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net48 --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage
                 if ($LASTEXITCODE -eq 0) {
-                  dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net8.0 --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE
+                  dotnet test $PROJ --configuration Release --no-build --verbosity minimal --framework net8.0 --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage
                 }
               }
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             } else {
               if ($USE_PARALLEL -eq "true") {
-                dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --settings tests/parallel.runsettings --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE
+                dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --settings tests/parallel.runsettings --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage
               } else {
-                dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --framework net48 --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE
+                dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --framework net48 --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage
                 if ($LASTEXITCODE -eq 0) {
-                  dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --framework net8.0 --collect:"XPlat Code Coverage" --results-directory ./coverage /p:CoverletOutputFormat=opencover /p:CoverletOutput=../$COVERAGE_FILE
+                  dotnet test $PROJ --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed" --framework net8.0 --collect:"XPlat Code Coverage" --settings tests/CSharper.Tests/coverlet.runsettings --results-directory ./coverage
                 }
               }
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

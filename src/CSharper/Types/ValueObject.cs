@@ -46,8 +46,10 @@ public abstract class ValueObject : IComparable, IComparable<ValueObject>
         try
         {
             ValueObject valueObject = (ValueObject)obj;
-            return GetEqualityComponents()
-                .SequenceEqual(valueObject.GetEqualityComponents());
+            // Materialize both enumerables once to avoid multiple enumerations
+            object[] thisComponents = GetEqualityComponents().ToArray();
+            object[] otherComponents = valueObject.GetEqualityComponents().ToArray();
+            return thisComponents.SequenceEqual(otherComponents);
         }
         catch
         {
