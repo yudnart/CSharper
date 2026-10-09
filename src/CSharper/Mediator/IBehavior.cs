@@ -1,4 +1,5 @@
 ﻿using CSharper.Results;
+using CSharper.Results.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,12 +22,17 @@ public interface IBehavior<TRequest> where TRequest : IRequest
     /// <param name="request">The request to process, of type <typeparamref name="TRequest"/>.</param>
     /// <param name="next">A delegate to invoke the next behavior or handler in the pipeline.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>A task that resolves to a <see cref="Result"/> indicating the outcome of the behavior.</returns>
+    /// <returns>
+    /// A task that resolves to a <see cref="ResultBase"/> indicating the outcome of the behavior.
+    /// Behaviors that only care about success or failure may return a non-generic <see cref="Result"/>.
+    /// Value-aware behaviors may return a <see cref="Result{TValue}"/> to short-circuit typed requests
+    /// (for example, idempotency or caching).
+    /// </returns>
     /// <remarks>
     /// Implementations should call <paramref name="next"/> to continue the pipeline unless they intend to short-circuit it.
-    /// A failed <see cref="Result"/> returned by this method will halt the pipeline and propagate errors to the caller.
+    /// A failed <see cref="ResultBase"/> returned by this method will halt the pipeline and propagate errors to the caller.
     /// </remarks>
-    Task<Result> Handle(TRequest request, BehaviorDelegate next, CancellationToken cancellationToken);
+    Task<ResultBase> Handle(TRequest request, BehaviorDelegate next, CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -46,5 +52,8 @@ public interface IBehavior : IBehavior<IRequest>
 /// </summary>
 /// <param name="request">The request to process.</param>
 /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-/// <returns>A task that resolves to a <see cref="Result"/> indicating the outcome of the next step.</returns>
-public delegate Task<Result> BehaviorDelegate(IRequest request, CancellationToken cancellationToken);
+/// <returns>
+/// A task that resolves to a <see cref="ResultBase"/> indicating the outcome of the next step.
+/// This may be a non-generic <see cref="Result"/> or a <see cref="Result{TValue}"/> depending on the request.
+/// </returns>
+public delegate Task<ResultBase> BehaviorDelegate(IRequest request, CancellationToken cancellationToken);

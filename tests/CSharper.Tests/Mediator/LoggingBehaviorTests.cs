@@ -2,6 +2,7 @@
 using CSharper.Mediator;
 using CSharper.RequestContext;
 using CSharper.Results;
+using CSharper.Results.Abstractions;
 using CSharper.Tests.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -46,13 +47,13 @@ public sealed class LoggingBehaviorTests
 
         IRequest request = TestRequest.Instance;
         Result nextResult = Result.Ok();
-        Task<Result> next(IRequest r, CancellationToken c) => Task.FromResult(nextResult);
+        BehaviorDelegate next = (_, _) => Task.FromResult<ResultBase>(nextResult);
 
         string requestType = request.GetType().Name;
         string requestData = JsonSerializer.Serialize(request, typeof(TestRequest));
 
         // Act
-        Result result = await sut.Handle(request, next, CancellationToken.None);
+        ResultBase result = await sut.Handle(request, next, CancellationToken.None);
         IReadOnlyList<LogEntry> logs = _logger.GetLogEntries();
 
         // Assert
@@ -81,13 +82,13 @@ public sealed class LoggingBehaviorTests
         string errorMessage = "Test error";
         Error error = new(errorMessage);
         Result nextResult = Result.Fail(error);
-        Task<Result> next(IRequest r, CancellationToken c) => Task.FromResult(nextResult);
+        BehaviorDelegate next = (_, _) => Task.FromResult<ResultBase>(nextResult);
 
         string requestType = request.GetType().Name;
         string requestData = JsonSerializer.Serialize(request, typeof(TestRequest));
 
         // Act
-        Result result = await sut.Handle(request, next, CancellationToken.None);
+        ResultBase result = await sut.Handle(request, next, CancellationToken.None);
         IReadOnlyList<LogEntry> logs = _logger.GetLogEntries();
 
         // Assert
@@ -117,7 +118,7 @@ public sealed class LoggingBehaviorTests
         IRequest request = TestRequest.Instance;
         string exceptionMessage = "Test exception";
         InvalidOperationException exception = new(exceptionMessage);
-        Task<Result> next(IRequest r, CancellationToken c) => throw exception;
+        BehaviorDelegate next = (_, _) => throw exception;
 
         string requestType = request.GetType().Name;
         string requestData = JsonSerializer.Serialize(request, typeof(TestRequest));
@@ -149,14 +150,14 @@ public sealed class LoggingBehaviorTests
     {
         // Arrange;
         Result result = Result.Ok();
-        BehaviorDelegate next = (_, _) => Task.FromResult(result);
+        BehaviorDelegate next = (_, _) => Task.FromResult<ResultBase>(result);
         LoggingBehavior behavior = new(_logger, _serviceProviderMock.Object);
 
         IRequest request = UnserializableTestRequest.Instance;
         string requestData = request.ToString()!;
 
         // Act
-        Result outcome = await behavior.Handle(request, next, CancellationToken.None);
+        ResultBase outcome = await behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
         Assert.Multiple(() =>

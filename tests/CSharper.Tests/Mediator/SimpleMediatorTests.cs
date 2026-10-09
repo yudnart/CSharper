@@ -271,6 +271,34 @@ public sealed class SimpleMediatorTests
     }
 
     [Fact]
+    public async Task SendT_BehaviorReturnsCachedValue_ShortCircuitsWithoutHandler()
+    {
+        // Arrange
+        const string cachedValue = "Cached";
+        CachingBehavior cachingBehavior = new(cachedValue, _executionOrder);
+        TestHandlerTValue handler = new(_executionOrder);
+
+        ServiceCollection services = new();
+        services.AddScoped<IBehavior<TestRequest<string>>>(_ => cachingBehavior);
+        services.AddScoped<IRequestHandler<TestRequest<string>, string>>(_ => handler);
+        IServiceProvider provider = services.BuildServiceProvider().CreateScope().ServiceProvider;
+
+        SimpleMediator sut = new(provider, provider.GetServices<IBehavior>());
+        TestRequest<string> request = new();
+
+        // Act
+        Result<string> result = await sut.Send(request);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            ResultTestUtility.AssertSuccess(result, cachedValue);
+            _executionOrder.Should().Equal("Cache");
+            _executionOrder.Should().NotContain("H");
+        });
+    }
+
+    [Fact]
     public async Task Send_BehaviorFails_CascadesErrorAndStopsPipeline()
     {
         // Arrange
@@ -392,9 +420,9 @@ public sealed class SimpleMediatorTests
         // Act & Assert
         Assert.Multiple(async () =>
         {
-            AggregateException ex = await Assert
-                .ThrowsAsync<AggregateException>(() => sut.Send(request));
-            ex.InnerException.Should().Be(handler.Exception);
+            InvalidOperationException ex = await Assert
+                .ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+            ex.Should().Be(handler.Exception);
         });
     }
 
@@ -445,9 +473,9 @@ public sealed class SimpleMediatorTests
         // Act & Assert
         Assert.Multiple(async () =>
         {
-            AggregateException ex = await Assert
-                .ThrowsAsync<AggregateException>(() => sut.Send(request));
-            ex.InnerException.Should().Be(handler.Exception);
+            InvalidOperationException ex = await Assert
+                .ThrowsAsync<InvalidOperationException>(() => sut.Send(request));
+            ex.Should().Be(handler.Exception);
             _executionOrder.Should().Equal("G1", "S1");
         });
     }

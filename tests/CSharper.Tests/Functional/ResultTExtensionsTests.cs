@@ -391,4 +391,93 @@ public sealed class ResultTExtensionsTests
             }
         });
     }
+
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultTData),
+        MemberType = typeof(TestData)
+    )]
+    public void Ensure_WhenPredicatePasses_ReturnsOriginal<T>(Result<T> sut)
+    {
+        // Arrange
+        const string errorCode = "ENSURE_FAILED";
+        T? predicateParam = default!;
+        bool predicate(T value)
+        {
+            predicateParam = value;
+            return true;
+        }
+
+        // Act
+        Result<T> result = sut.Ensure(predicate, errorCode, "Predicate failed");
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            result.Should().Be(sut);
+            if (sut.IsSuccess)
+            {
+                predicateParam.Should().Be(sut.Value);
+            }
+            else
+            {
+                predicateParam.Should().Be(default(T));
+            }
+        });
+    }
+
+    [Theory]
+    [InlineData(42)]
+    [InlineData("value")]
+    [InlineData(true)]
+    public void Ensure_WhenPredicateFails_ReturnsFailure<T>(T value)
+    {
+        // Arrange
+        const string errorCode = "ENSURE_FAILED";
+        const string errorMessage = "Predicate failed";
+        Result<T> sut = Result.Ok(value);
+
+        // Act
+        Result<T> result = sut.Ensure(_ => false, errorCode, errorMessage);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            TestUtility.AssertFailure(result);
+            result.Error!.Code.Should().Be(errorCode);
+            result.Error.Message.Should().Be(errorMessage);
+        });
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultTData),
+        MemberType = typeof(TestData)
+    )]
+    public void Ensure_WithNullPredicate_ThrowsArgumentNullException<T>(Result<T> sut)
+    {
+        // Arrange
+        Func<T, bool> predicate = null!;
+        Action act = () => sut.Ensure(predicate, "CODE");
+
+        // Act & Assert
+        act.Should().ThrowExactly<ArgumentNullException>()
+            .And.ParamName.Should().Be(nameof(predicate));
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultTInvalidErrorMessages),
+        MemberType = typeof(TestData)
+    )]
+    public void Ensure_WithInvalidErrorCode_ThrowsArgumentException<T>(
+        Result<T> sut, string errorCode)
+    {
+        // Arrange
+        Action act = () => sut.Ensure(_ => true, errorCode);
+
+        // Act & Assert
+        act.Should().ThrowExactly<ArgumentException>()
+            .And.ParamName.Should().Be(nameof(errorCode));
+    }
 }

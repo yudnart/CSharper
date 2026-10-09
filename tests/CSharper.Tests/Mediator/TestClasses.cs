@@ -1,5 +1,6 @@
 ﻿using CSharper.Mediator;
 using CSharper.Results;
+using CSharper.Results.Abstractions;
 
 namespace CSharper.Tests.Mediator;
 
@@ -47,7 +48,7 @@ internal sealed class TestGlobalBehavior : IBehavior
         _order = order;
     }
 
-    public async Task<Result> Handle(IRequest request, BehaviorDelegate next, CancellationToken ct)
+    public async Task<ResultBase> Handle(IRequest request, BehaviorDelegate next, CancellationToken ct)
     {
         _order.Add(_id);
         return await next(request, ct);
@@ -65,7 +66,7 @@ internal sealed class TestSpecificBehavior : IBehavior<TestRequest>
         _order = order;
     }
 
-    public async Task<Result> Handle(TestRequest request, BehaviorDelegate next, CancellationToken ct)
+    public async Task<ResultBase> Handle(TestRequest request, BehaviorDelegate next, CancellationToken ct)
     {
         _order.Add(_id);
         return await next(request, ct);
@@ -83,7 +84,7 @@ internal sealed class TestSpecificBehaviorTValue : IBehavior<TestRequest<string>
         _order = order;
     }
 
-    public async Task<Result> Handle(TestRequest<string> request, BehaviorDelegate next, CancellationToken ct)
+    public async Task<ResultBase> Handle(TestRequest<string> request, BehaviorDelegate next, CancellationToken ct)
     {
         _order.Add(_id);
         return await next(request, ct);
@@ -92,9 +93,30 @@ internal sealed class TestSpecificBehaviorTValue : IBehavior<TestRequest<string>
 
 internal sealed class FailingBehavior : IBehavior
 {
-    public Task<Result> Handle(IRequest request, BehaviorDelegate next, CancellationToken ct)
+    public Task<ResultBase> Handle(IRequest request, BehaviorDelegate next, CancellationToken ct)
     {
-        return Task.FromResult(Result.Fail("Failed"));
+        return Task.FromResult<ResultBase>(Result.Fail("Failed"));
+    }
+}
+
+/// <summary>
+/// Short-circuits a typed request by returning a cached <see cref="Result{T}"/> without calling next.
+/// </summary>
+internal sealed class CachingBehavior : IBehavior<TestRequest<string>>
+{
+    private readonly string _cachedValue;
+    private readonly List<string> _order;
+
+    public CachingBehavior(string cachedValue, List<string> order)
+    {
+        _cachedValue = cachedValue;
+        _order = order;
+    }
+
+    public Task<ResultBase> Handle(TestRequest<string> request, BehaviorDelegate next, CancellationToken ct)
+    {
+        _order.Add("Cache");
+        return Task.FromResult<ResultBase>(Result.Ok(_cachedValue));
     }
 }
 

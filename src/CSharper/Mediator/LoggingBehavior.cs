@@ -1,8 +1,7 @@
 ﻿using CSharper.Errors;
 using CSharper.Extensions;
-using CSharper.Functional;
 using CSharper.RequestContext;
-using CSharper.Results;
+using CSharper.Results.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -82,7 +81,7 @@ internal sealed class LoggingBehavior : IBehavior
     /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <returns>A task representing the result of the request processing.</returns>
     /// <exception cref="Exception">Rethrows any exception from processing, after logging it.</exception>
-    public async Task<Result> Handle(IRequest request, BehaviorDelegate next, CancellationToken cancellationToken)
+    public async Task<ResultBase> Handle(IRequest request, BehaviorDelegate next, CancellationToken cancellationToken)
     {
         try
         {
@@ -90,9 +89,17 @@ internal sealed class LoggingBehavior : IBehavior
             LogRequest(request);
 
             // Proceed with the request and log success or failure
-            return await next(request, cancellationToken)
-                .Tap(() => LogSuccess(request))
-                .TapError(error => LogFailure(request, error));
+            ResultBase result = await next(request, cancellationToken);
+            if (result.IsSuccess)
+            {
+                LogSuccess(request);
+            }
+            else
+            {
+                LogFailure(request, result.Error!);
+            }
+
+            return result;
         }
         catch (Exception ex)
         {

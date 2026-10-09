@@ -1,6 +1,6 @@
 ﻿using CSharper.Extensions;
-using CSharper.Functional;
 using CSharper.Results;
+using CSharper.Results.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Concurrent;
@@ -82,7 +82,7 @@ internal sealed class SimpleMediator : IMediator
     {
         // Reverse the behaviors to build the pipeline inside-out
         // This ensures behaviors execute in registration order (first registered, first executed)
-        foreach (IBehavior<IRequest> behavior in behaviors.Reverse())
+        foreach (IBehavior<IRequest> behavior in Enumerable.Reverse(behaviors))
         {
             BehaviorDelegate prev = handle;
             handle = (req, ct) => behavior.Handle(req, prev, ct);
@@ -97,11 +97,12 @@ internal sealed class SimpleMediator : IMediator
     /// <param name="request">The request to process.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A task yielding the result of the pipeline execution.</returns>
-    private Task<Result> ExecutePipeline(IRequest request, CancellationToken cancellationToken)
+    private async Task<Result> ExecutePipeline(IRequest request, CancellationToken cancellationToken)
     {
         IBehavior<IRequest>[] behaviors = [.. _globalBehaviors, .. ResolveBehaviors(request)];
         BehaviorDelegate next = BuildPipeline(Handle, behaviors);
-        return next(request, cancellationToken);
+        ResultBase pipelineResult = await next(request, cancellationToken);
+        return Normalize(pipelineResult);
     }
 
     /// <summary>
@@ -111,17 +112,15 @@ internal sealed class SimpleMediator : IMediator
     /// <param name="request">The request to process.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A task yielding the result of the pipeline execution, including the value.</returns>
-    private Task<Result<TValue>> ExecutePipeline<TValue>(
+    private async Task<Result<TValue>> ExecutePipeline<TValue>(
         IRequest<TValue> request, CancellationToken cancellationToken)
     {
         IBehavior<IRequest>[] behaviors = [.. _globalBehaviors, .. ResolveBehaviors(request)];
-        Result<TValue> result = null!;
-        BehaviorDelegate next = BuildPipeline(async (req, ct) =>
-        {
-            result = await Handle(request, ct);
-            return Result.Ok();
-        }, behaviors);
-        return next(request, cancellationToken).Bind(() => result);
+        BehaviorDelegate next = BuildPipeline(
+            (req, ct) => Handle(request, ct),
+            behaviors);
+        ResultBase pipelineResult = await next(request, cancellationToken);
+        return Normalize<TValue>(pipelineResult);
     }
 
     /// <summary>
@@ -129,8 +128,8 @@ internal sealed class SimpleMediator : IMediator
     /// </summary>
     /// <param name="request">The request to handle.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A task yielding the result of the handler execution.</returns>
-    private async Task<Result> Handle(IRequest request, CancellationToken cancellationToken)
+    /// <returns>A task yielding the result of the handler execution as a <see cref="ResultBase"/>.</returns>
+    private async Task<ResultBase> Handle(IRequest request, CancellationToken cancellationToken)
     {
         (Type handlerType, MethodInfo handleMethod) = ResolveHandler(
             request.GetType(), typeof(IRequestHandler<>));
@@ -151,8 +150,8 @@ internal sealed class SimpleMediator : IMediator
     /// <typeparam name="TValue">The type of value returned by the handler.</typeparam>
     /// <param name="request">The request to handle.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A task yielding the result of the handler execution, including the value.</returns>
-    private async Task<Result<TValue>> Handle<TValue>(IRequest<TValue> request, CancellationToken cancellationToken)
+    /// <returns>A task yielding the result of the handler execution as a <see cref="ResultBase"/>.</returns>
+    private async Task<ResultBase> Handle<TValue>(IRequest<TValue> request, CancellationToken cancellationToken)
     {
         (Type handlerType, MethodInfo handleMethod) = ResolveHandler(
             request.GetType(), typeof(IRequestHandler<,>), typeof(TValue));
@@ -165,6 +164,53 @@ internal sealed class SimpleMediator : IMediator
         {
             throw ex.InnerException;
         }
+    }
+
+    /// <summary>
+    /// Normalizes a pipeline <see cref="ResultBase"/> to a non-generic <see cref="Result"/> for <see cref="Send"/>.
+    /// </summary>
+    /// <param name="result">The pipeline result.</param>
+    /// <returns>A <see cref="Result"/> representing success or failure.</returns>
+    private static Result Normalize(ResultBase result)
+    {
+        if (result is Result nonGeneric)
+        {
+            return nonGeneric;
+        }
+
+        if (result.IsFailure)
+        {
+            return Result.Fail(result.Error!);
+        }
+
+        // Success Result<T> (or other success ResultBase) has no meaningful value for void Send.
+        return Result.Ok();
+    }
+
+    /// <summary>
+    /// Normalizes a pipeline <see cref="ResultBase"/> to a typed <see cref="Result{TValue}"/> for <see cref="Send{TValue}"/>.
+    /// </summary>
+    /// <typeparam name="TValue">The expected value type.</typeparam>
+    /// <param name="result">The pipeline result.</param>
+    /// <returns>A <see cref="Result{TValue}"/> representing success with a value or failure.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the pipeline returns a successful result that is not a <see cref="Result{TValue}"/>.
+    /// </exception>
+    private static Result<TValue> Normalize<TValue>(ResultBase result)
+    {
+        if (result is Result<TValue> typed)
+        {
+            return typed;
+        }
+
+        if (result.IsFailure)
+        {
+            return Result.Fail<TValue>(result.Error!);
+        }
+
+        throw new InvalidOperationException(
+            $"Mediator pipeline returned a successful {result.GetType().Name} that is not Result<{typeof(TValue).Name}>. " +
+            "Behaviors that short-circuit a typed request must return Result<TValue>.");
     }
 
     /// <summary>
@@ -238,7 +284,7 @@ internal sealed class SimpleMediator : IMediator
         /// <param name="next">The delegate to invoke the next behavior or handler in the pipeline.</param>
         /// <param name="cancellationToken">A token to cancel the operation.</param>
         /// <returns>A task yielding the result of the behavior.</returns>
-        public Task<Result> Handle(IRequest request, BehaviorDelegate next, CancellationToken cancellationToken)
+        public Task<ResultBase> Handle(IRequest request, BehaviorDelegate next, CancellationToken cancellationToken)
         {
             return _requestBehavior.Handle((TRequest)request, next, cancellationToken);
         }

@@ -162,6 +162,30 @@ public static class AsyncResultTExtensions
     #region Map
 
     /// <summary>
+    /// Transforms a <see cref="Result{T}"/> value using an asynchronous mapping function if successful.
+    /// </summary>
+    /// <typeparam name="T">The type of the input result value.</typeparam>
+    /// <typeparam name="U">The type of the output result value.</typeparam>
+    /// <param name="result">The result to transform.</param>
+    /// <param name="transform">The asynchronous function to transform the value if <paramref name="result"/> is successful.</param>
+    /// <returns>The transformed result or a mapped error result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="transform"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Result&lt;int&gt; result = Result.Ok(42);
+    /// async Task&lt;string&gt; TransformAsync(int value) => await Task.FromResult(value.ToString());
+    /// Task&lt;Result&lt;string&gt;&gt; final = result.Map(TransformAsync);
+    /// </code>
+    /// </example>
+    public static Task<Result<U>> Map<T, U>(this Result<T> result, Func<T, Task<U>> transform)
+    {
+        Guard.ThrowIfNull(transform, nameof(transform));
+        return result.IsSuccess
+            ? transform(result.Value).Then(Result.Ok)
+            : Task.FromResult(result.MapError<T, U>());
+    }
+
+    /// <summary>
     /// Transforms an asynchronous <see cref="Result{T}"/> value using a synchronous mapping function if successful.
     /// </summary>
     /// <typeparam name="T">The type of the input result value.</typeparam>
@@ -181,6 +205,30 @@ public static class AsyncResultTExtensions
     {
         Guard.ThrowIfNull(transform, nameof(transform));
         return asyncResult.Then(r => r.Map(transform));
+    }
+
+    /// <summary>
+    /// Transforms an asynchronous <see cref="Result{T}"/> value using an asynchronous mapping function if successful.
+    /// </summary>
+    /// <typeparam name="T">The type of the input result value.</typeparam>
+    /// <typeparam name="U">The type of the output result value.</typeparam>
+    /// <param name="asyncResult">The asynchronous result to transform.</param>
+    /// <param name="transform">The asynchronous function to transform the value if the result is successful.</param>
+    /// <returns>The transformed result or a mapped error result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="transform"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// Task&lt;Result&lt;int&gt;&gt; asyncResult = Task.FromResult(Result.Ok(42));
+    /// async Task&lt;string&gt; TransformAsync(int value) => await Task.FromResult(value.ToString());
+    /// Task&lt;Result&lt;string&gt;&gt; final = asyncResult.Map(TransformAsync);
+    /// </code>
+    /// </example>
+    public static Task<Result<U>> Map<T, U>(this Task<Result<T>> asyncResult, Func<T, Task<U>> transform)
+    {
+        Guard.ThrowIfNull(transform, nameof(transform));
+        return asyncResult
+            .Then(r => r.Map(transform))
+            .Unwrap();
     }
 
     #endregion
@@ -595,6 +643,102 @@ public static class AsyncResultTExtensions
         Guard.ThrowIfNull(action, nameof(action));
         return asyncResult
             .Then(r => r.TapError(action))
+            .Unwrap();
+    }
+
+    #endregion
+
+    #region Ensure
+
+    /// <summary>
+    /// Validates a <see cref="Result{T}"/> value against an asynchronous condition.
+    /// If successful and the condition is true, returns the original result.
+    /// If successful but the condition is false, returns a failed result with the specified error.
+    /// </summary>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
+    /// <param name="result">The result to validate.</param>
+    /// <param name="predicate">The asynchronous condition to evaluate with the value if <paramref name="result"/> is successful.</param>
+    /// <param name="errorCode">The error code to use if the condition fails.</param>
+    /// <param name="errorMessage">The optional error message to use if the condition fails.</param>
+    /// <returns>The original result if successful and the condition is true, or a failed result if the condition is false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="errorCode"/> is null or whitespace.</exception>
+    /// <example>
+    /// <code>
+    /// Result&lt;int&gt; result = Result.Ok(42);
+    /// async Task&lt;bool&gt; IsValidAsync(int x) => await Task.FromResult(x &gt; 0);
+    /// Task&lt;Result&lt;int&gt;&gt; final = result.Ensure(IsValidAsync, "INVALID_VALUE", "Value must be positive");
+    /// </code>
+    /// </example>
+    public static Task<Result<T>> Ensure<T>(this Result<T> result,
+        Func<T, Task<bool>> predicate, string errorCode, string? errorMessage = null)
+    {
+        Guard.ThrowIfNull(predicate, nameof(predicate));
+        Guard.ThrowIfNullOrWhitespace(errorCode, nameof(errorCode));
+
+        if (result.IsFailure)
+        {
+            return Task.FromResult(result);
+        }
+
+        return predicate(result.Value).Then(passed =>
+            passed ? result : Result.Fail<T>(errorCode, errorMessage));
+    }
+
+    /// <summary>
+    /// Validates an asynchronous <see cref="Result{T}"/> value against a synchronous condition.
+    /// If successful and the condition is true, returns the original result.
+    /// If successful but the condition is false, returns a failed result with the specified error.
+    /// </summary>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
+    /// <param name="asyncResult">The asynchronous result to validate.</param>
+    /// <param name="predicate">The condition to evaluate with the value if the result is successful.</param>
+    /// <param name="errorCode">The error code to use if the condition fails.</param>
+    /// <param name="errorMessage">The optional error message to use if the condition fails.</param>
+    /// <returns>The original result if successful and the condition is true, or a failed result if the condition is false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="errorCode"/> is null or whitespace.</exception>
+    /// <example>
+    /// <code>
+    /// Task&lt;Result&lt;int&gt;&gt; asyncResult = Task.FromResult(Result.Ok(42));
+    /// Task&lt;Result&lt;int&gt;&gt; final = asyncResult.Ensure(x =&gt; x &gt; 0, "INVALID_VALUE", "Value must be positive");
+    /// </code>
+    /// </example>
+    public static Task<Result<T>> Ensure<T>(this Task<Result<T>> asyncResult,
+        Func<T, bool> predicate, string errorCode, string? errorMessage = null)
+    {
+        Guard.ThrowIfNull(predicate, nameof(predicate));
+        Guard.ThrowIfNullOrWhitespace(errorCode, nameof(errorCode));
+        return asyncResult.Then(r => r.Ensure(predicate, errorCode, errorMessage));
+    }
+
+    /// <summary>
+    /// Validates an asynchronous <see cref="Result{T}"/> value against an asynchronous condition.
+    /// If successful and the condition is true, returns the original result.
+    /// If successful but the condition is false, returns a failed result with the specified error.
+    /// </summary>
+    /// <typeparam name="T">The type of the successful result value.</typeparam>
+    /// <param name="asyncResult">The asynchronous result to validate.</param>
+    /// <param name="predicate">The asynchronous condition to evaluate with the value if the result is successful.</param>
+    /// <param name="errorCode">The error code to use if the condition fails.</param>
+    /// <param name="errorMessage">The optional error message to use if the condition fails.</param>
+    /// <returns>The original result if successful and the condition is true, or a failed result if the condition is false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="predicate"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="errorCode"/> is null or whitespace.</exception>
+    /// <example>
+    /// <code>
+    /// Task&lt;Result&lt;int&gt;&gt; asyncResult = Task.FromResult(Result.Ok(42));
+    /// async Task&lt;bool&gt; IsValidAsync(int x) => await Task.FromResult(x &gt; 0);
+    /// Task&lt;Result&lt;int&gt;&gt; final = asyncResult.Ensure(IsValidAsync, "INVALID_VALUE", "Value must be positive");
+    /// </code>
+    /// </example>
+    public static Task<Result<T>> Ensure<T>(this Task<Result<T>> asyncResult,
+        Func<T, Task<bool>> predicate, string errorCode, string? errorMessage = null)
+    {
+        Guard.ThrowIfNull(predicate, nameof(predicate));
+        Guard.ThrowIfNullOrWhitespace(errorCode, nameof(errorCode));
+        return asyncResult
+            .Then(r => r.Ensure(predicate, errorCode, errorMessage))
             .Unwrap();
     }
 

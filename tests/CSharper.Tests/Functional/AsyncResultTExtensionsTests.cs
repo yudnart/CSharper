@@ -245,27 +245,48 @@ public sealed class AsyncResultTExtensionsTests
     public async Task Map<T, U>(Result<T> initial, U value)
     {
         // Arrange
-        T? mapParam = default!;
+        List<T> mapParams = [];
+        List<Result<U>> results = [];
+
         U transform(T _value)
         {
-            mapParam = _value;
+            mapParams.Add(_value);
             return value;
         }
-        Task<Result<T>> sut = Task.FromResult(initial);
+        Task<U> transformAsync(T _value) => Task.FromResult(transform(_value));
 
         // Act
-        Result<U> result = await sut.Map(transform);
+
+        // Test 1:
+        // Map(this Result<T>, Func<T, Task<U>> transform)
+        results.Add(await initial.Map(transformAsync));
+
+        // Test 2:
+        // Map(this Task<Result<T>>, Func<T, U> transform)
+        results.Add(await Task.FromResult(initial).Map(transform));
+
+        // Test 3:
+        // Map(this Task<Result<T>>, Func<T, Task<U>> transform)
+        results.Add(await Task.FromResult(initial).Map(transformAsync));
 
         // Assert
-        if (initial.IsSuccess)
+        Assert.Multiple(() =>
         {
-            TestUtility.AssertSuccess(result, value);
-            mapParam.Should().Be(initial.Value);
-        }
-        else
-        {
-            TestUtility.AssertFailure(result, initial.Error);
-        }
+            for (int idx = 0; idx < results.Count; idx++)
+            {
+                Result<U> result = results[idx];
+                if (initial.IsSuccess)
+                {
+                    TestUtility.AssertSuccess(result, value);
+                    mapParams[idx].Should().Be(initial.Value);
+                }
+                else
+                {
+                    TestUtility.AssertFailure(result, initial.Error);
+                    mapParams.Should().BeEmpty();
+                }
+            }
+        });
     }
 
     [Theory]
@@ -273,15 +294,27 @@ public sealed class AsyncResultTExtensionsTests
         nameof(TestData.ResultTData),
         MemberType = typeof(TestData)
     )]
-    public void Map_WithNullMap_ThrowsArgumentNullException<T>(Result<T> sut)
+    public async Task Map_WithNullMap_ThrowsArgumentNullException<T>(Result<T> sut)
     {
         // Arrange
         Func<T, string> map = null!;
-        Func<Result<string>> act = () => sut.Map(map);
+        Func<T, Task<string>> mapAsync = null!;
+        Func<Task>[] acts = [
+            () => sut.Map(mapAsync),
+            () => Task.FromResult(sut).Map(map),
+            () => Task.FromResult(sut).Map(mapAsync)
+        ];
 
         // Act & Assert
-        act.Should().Throw<ArgumentNullException>()
-            .And.ParamName.Should().NotBeNullOrWhiteSpace();
+        Assert.Multiple(async () =>
+        {
+            foreach (Func<Task> act in acts)
+            {
+                await act.Should()
+                    .ThrowExactlyAsync<ArgumentNullException>()
+                    .Where(ex => !string.IsNullOrWhiteSpace(ex.ParamName));
+            }
+        });
     }
 
     [Theory]
@@ -576,6 +609,149 @@ public sealed class AsyncResultTExtensionsTests
                     Error actionParam = actionParams[idx];
                     actionParam.Should().Be(initial.Error);
                 }
+            }
+        });
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultTData),
+        MemberType = typeof(TestData)
+    )]
+    public async Task Ensure_WhenPredicatePasses_ReturnsOriginal<T>(Result<T> initial)
+    {
+        // Arrange
+        const string errorCode = "ENSURE_FAILED";
+        const string errorMessage = "Predicate failed";
+        List<T> predicateParams = [];
+        List<Result<T>> results = [];
+
+        bool predicate(T value)
+        {
+            predicateParams.Add(value);
+            return true;
+        }
+        Task<bool> predicateAsync(T value) => Task.FromResult(predicate(value));
+
+        // Act
+
+        // Test 1:
+        // Ensure(this Result<T>, Func<T, Task<bool>>, ...)
+        results.Add(await initial.Ensure(predicateAsync, errorCode, errorMessage));
+
+        // Test 2:
+        // Ensure(this Task<Result<T>>, Func<T, bool>, ...)
+        results.Add(await Task.FromResult(initial).Ensure(predicate, errorCode, errorMessage));
+
+        // Test 3:
+        // Ensure(this Task<Result<T>>, Func<T, Task<bool>>, ...)
+        results.Add(await Task.FromResult(initial).Ensure(predicateAsync, errorCode, errorMessage));
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            for (int idx = 0; idx < results.Count; idx++)
+            {
+                Result<T> result = results[idx];
+                result.Should().Be(initial);
+                if (initial.IsSuccess)
+                {
+                    predicateParams[idx].Should().Be(initial.Value);
+                }
+                else
+                {
+                    predicateParams.Should().BeEmpty();
+                }
+            }
+        });
+    }
+
+    [Theory]
+    [InlineData(42)]
+    [InlineData("value")]
+    [InlineData(true)]
+    public async Task Ensure_WhenPredicateFails_ReturnsFailure<T>(T value)
+    {
+        // Arrange
+        const string errorCode = "ENSURE_FAILED";
+        const string errorMessage = "Predicate failed";
+        Result<T> initial = Result.Ok(value);
+
+        bool predicate(T _) => false;
+        Task<bool> predicateAsync(T _) => Task.FromResult(false);
+
+        // Act
+        Result<T>[] results = [
+            await initial.Ensure(predicateAsync, errorCode, errorMessage),
+            await Task.FromResult(initial).Ensure(predicate, errorCode, errorMessage),
+            await Task.FromResult(initial).Ensure(predicateAsync, errorCode, errorMessage)
+        ];
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            foreach (Result<T> result in results)
+            {
+                TestUtility.AssertFailure(result);
+                result.Error!.Code.Should().Be(errorCode);
+                result.Error.Message.Should().Be(errorMessage);
+            }
+        });
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultTData),
+        MemberType = typeof(TestData)
+    )]
+    public async Task Ensure_WithNullPredicate_ThrowsArgumentNullException<T>(Result<T> sut)
+    {
+        // Arrange
+        Func<T, bool> predicate = null!;
+        Func<T, Task<bool>> predicateAsync = null!;
+        Func<Task>[] acts = [
+            () => sut.Ensure(predicateAsync, "CODE"),
+            () => Task.FromResult(sut).Ensure(predicate, "CODE"),
+            () => Task.FromResult(sut).Ensure(predicateAsync, "CODE")
+        ];
+
+        // Act & Assert
+        Assert.Multiple(async () =>
+        {
+            foreach (Func<Task> act in acts)
+            {
+                await act.Should()
+                    .ThrowExactlyAsync<ArgumentNullException>()
+                    .Where(ex => !string.IsNullOrWhiteSpace(ex.ParamName));
+            }
+        });
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(TestData.ResultTInvalidErrorMessages),
+        MemberType = typeof(TestData)
+    )]
+    public async Task Ensure_WithInvalidErrorCode_ThrowsArgumentException<T>(
+        Result<T> sut, string errorCode)
+    {
+        // Arrange
+        static bool predicate(T _) => true;
+        static Task<bool> predicateAsync(T _) => Task.FromResult(true);
+        Func<Task>[] acts = [
+            () => sut.Ensure(predicateAsync, errorCode),
+            () => Task.FromResult(sut).Ensure(predicate, errorCode),
+            () => Task.FromResult(sut).Ensure(predicateAsync, errorCode)
+        ];
+
+        // Act & Assert
+        Assert.Multiple(async () =>
+        {
+            foreach (Func<Task> act in acts)
+            {
+                await act.Should()
+                    .ThrowExactlyAsync<ArgumentException>()
+                    .Where(ex => !string.IsNullOrWhiteSpace(ex.ParamName));
             }
         });
     }
